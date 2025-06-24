@@ -1,0 +1,545 @@
+/* Import CSS variables từ Dashboard */
+@import '../Dashboard/index.css';
+
+/* Consultation Container */
+.consultation-container {
+  min-height: 100vh;
+  background: var(--background-color);
+  font-family: var(--font-family);
+}
+
+/* Header Styles */
+.consultation-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
+.consultation-header-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: center;
+}
+
+.consultation-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  font-family: var(--heading-font);
+}
+
+.consultation-subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Main Content */
+.consultation-main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* Consultation Types */
+.consultation-types-section {
+  margin-bottom: 32px;
+}
+
+.consultation-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.consultation-type-card {
+  background: var(--white);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.consultation-type-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px 0 rgba(58, 153, 183, 0.1);
+  transform: translateY(-2px);
+}
+
+.consultation-type-card.selected {
+  border-color: var(--primary-color);
+  background: #f8fcff;
+}
+
+.type-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.type-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+  color: var(--primary-color);
+}
+
+.consultation-type-card.selected .type-icon {
+  color: var(--primary-color);
+}
+
+.type-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.type-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.type-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-top: 12px;
+}
+
+/* Counselors Section */
+.counselors-section {
+  margin-bottom: 32px;
+}
+
+.counselors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.counselor-card {
+  background: var(--white);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.counselor-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px 0 rgba(58, 153, 183, 0.1);
+  transform: translateY(-2px);
+}
+
+.counselor-card.selected {
+  border-color: var(--primary-color);
+  background: #f8fcff;
+}
+
+.counselor-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.counselor-avatar {
+  width: 64px;
+  height: 64px;
+  background: var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.counselor-avatar svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+}
+
+.counselor-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.counselor-info .specialty {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+
+.counselor-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-star {
+  width: 16px;
+  height: 16px;
+  color: #ffb400;
+  fill: currentColor;
+}
+
+.rating-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.counselor-details {
+  margin-bottom: 16px;
+}
+
+.counselor-details p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+
+.online-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #4caf50;
+  border-radius: 50%;
+}
+
+.status-text {
+  font-size: 14px;
+  color: #4caf50;
+}
+
+.time-slots-preview {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.slots-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.slots-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.slot-tag {
+  font-size: 12px;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Book Button */
+.book-consultation-btn {
+  background: linear-gradient(135deg, var(--primary-color), #2980b9);
+  color: var(--white);
+  border: none;
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px 0 rgba(58, 153, 183, 0.3);
+  display: block;
+  margin: 0 auto;
+}
+
+.book-consultation-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px 0 rgba(58, 153, 183, 0.4);
+}
+
+/* Booking Form */
+.booking-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.booking-form-container {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.booking-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.booking-form-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Selected Counselor Summary */
+.counselor-summary {
+  background: var(--background-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+}
+
+.summary-avatar {
+  width: 48px;
+  height: 48px;
+  background: var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.summary-avatar svg {
+  width: 24px;
+  height: 24px;
+  color: var(--text-secondary);
+}
+
+.summary-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.summary-info .specialty {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 4px 0;
+}
+
+.summary-price {
+  font-size: 14px;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 24px;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+/* Date Selection */
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.date-option {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.date-option:hover {
+  border-color: var(--primary-color);
+  background: #f8fcff;
+}
+
+.date-option.selected {
+  border-color: var(--primary-color);
+  background: #e3f2fd;
+  color: var(--primary-color);
+}
+
+.date-day {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.date-number {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Time Selection */
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.time-option {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.time-option:hover {
+  border-color: var(--primary-color);
+  background: #f8fcff;
+}
+
+.time-option.selected {
+  border-color: var(--primary-color);
+  background: #e3f2fd;
+  color: var(--primary-color);
+}
+
+/* Reason Textarea */
+.reason-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 14px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.reason-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(58, 153, 183, 0.1);
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.form-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-btn.cancel {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.form-btn.cancel:hover {
+  background: #d3d6db;
+}
+
+.form-btn.confirm {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+.form-btn.confirm:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .consultation-main {
+    padding: 16px;
+  }
+  
+  .consultation-types-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .counselors-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .booking-form-container {
+    padding: 16px;
+    margin: 16px;
+  }
+  
+  .date-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+  
+  .time-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+} 

@@ -18,7 +18,7 @@ export default function Main() {
               </span>
             </div>
             <span className="gynexa-introduction">
-              GYNEXA là trung tâm y tế chuyên khoa hàng đầu Việt Nam trong lĩnh
+              GYNEXA là trung tâm y tế chuyên khoa hàng đầu Việt Nam trong lĩnh
               vực chăm sóc sức khỏe sinh sản và giới tính. Được thành lập năm
               2008 với tầm nhìn trở thành trung tâm y tế đạt chuẩn quốc tế,
               chúng tôi đã không ngừng đầu tư vào công nghệ y tế tiên tiến và
@@ -192,7 +192,7 @@ export default function Main() {
           <div className="doctors-card">
             <div className="rectangle-36" />
             <div className="group-37">
-              <span className="doctor-name">Doctor’s Name</span>
+              <span className="doctor-name">Doctor's Name</span>
               <span className="neurology">Neurology</span>
               <div className="rectangle-38" />
               <div className="vector-39" />
@@ -207,7 +207,7 @@ export default function Main() {
           <div className="doctors-card-3e">
             <div className="rectangle-3f" />
             <div className="group-40">
-              <span className="doctors-name">Doctor’s Name</span>
+              <span className="doctors-name">Doctor's Name</span>
               <span className="neurology-41">Neurology</span>
               <div className="rectangle-42" />
               <div className="vector-43" />
@@ -222,7 +222,7 @@ export default function Main() {
           <div className="doctors-card-49">
             <div className="rectangle-4a" />
             <div className="group-4b">
-              <span className="doctors-name-4c">Doctor’s Name</span>
+              <span className="doctors-name-4c">Doctor's Name</span>
               <span className="neurology-4d">Neurology</span>
               <div className="rectangle-4e" />
               <div className="vector-4f" />
@@ -248,7 +248,7 @@ export default function Main() {
                 Monday 05, September 2021 | By Author
               </span>
               <span className="article-title">
-                This Article’s Title goes Here, <br />
+                This Article's Title goes Here, <br />
                 but not too long.
               </span>
               <span className="text-2c">68</span>
@@ -262,7 +262,7 @@ export default function Main() {
                 Monday 05, September 2021 | By Author
               </span>
               <span className="article-title-5e">
-                This Article’s Title goes Here, <br />
+                This Article's Title goes Here, <br />
                 but not too long.
               </span>
               <span className="text-30">68</span>
@@ -278,7 +278,7 @@ export default function Main() {
                 Monday 05, September 2021 | By Author
               </span>
               <span className="article-title-63">
-                This Article’s Title goes Here, <br />
+                This Article's Title goes Here, <br />
                 but not too long.
               </span>
               <span className="number">68</span>
@@ -292,7 +292,7 @@ export default function Main() {
                 Monday 05, September 2021 | By Author
               </span>
               <span className="article-title-6a">
-                This Article’s Title goes Here, <br />
+                This Article's Title goes Here, <br />
                 but not too long.
               </span>
               <span className="number-6b">68</span>
@@ -373,17 +373,21 @@ export default function Main() {
           <div className="vector-89" />
           <div className="vector-8a" />
           <span className="copyright-info">
-            © 2021 Hospital’s name All Rights Reserved by PNTEC-LTD
+            © 2021 Hospital's name All Rights Reserved by PNTEC-LTD
           </span>
         </div>
         <div className="flex-row-cb">
           <div className="rectangle-8b" />
           <div className="frame">
             <div className="link-item">
-              <span className="login">Đăng nhập</span>
+              <a href="/login" className="login">
+                Đăng nhập
+              </a>
             </div>
             <div className="register">
-              <span className="frame-8c">Đăng kí</span>
+              <a href="/register" className="frame-8c">
+                Đăng kí
+              </a>
             </div>
           </div>
           <div className="streamline-health-care">

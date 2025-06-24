@@ -1,0 +1,427 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--background);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color);
+}
+
+/* Utilities */
+.container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 4rem;
+  }
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Focus styles */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Custom form styles */
+.form-input {
+  @apply w-full px-4 py-3 border rounded-lg transition-colors;
+  border-color: var(--border-color);
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-textarea {
+  @apply w-full px-4 py-3 border rounded-lg transition-colors resize-none;
+  border-color: var(--border-color);
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-select {
+  @apply w-full px-4 py-3 border rounded-lg transition-colors appearance-none;
+  border-color: var(--border-color);
+  background-color: var(--background);
+  color: var(--text-primary);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Button styles using global variables */
+.btn-primary {
+  background: var(--primary-color);
+  color: var(--text-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--background);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.btn-ghost {
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: var(--background-hover);
+}
+
+/* Card styles */
+.card {
+  background: var(--background);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  padding: var(--spacing-xl);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-hover {
+  transition: var(--transition);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Loading spinner */
+.spinner {
+  @apply animate-spin rounded-full border-2;
+  border-color: var(--border-light);
+  border-top-color: var(--primary-color);
+}
+
+/* Health/Medical specific styles */
+.health-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.health-badge.critical {
+  background: var(--error-light);
+  color: var(--error-color);
+}
+
+.health-badge.warning {
+  background: var(--warning-light);
+  color: var(--warning-color);
+}
+
+.health-badge.normal {
+  background: var(--success-light);
+  color: var(--success-color);
+}
+
+.health-badge.info {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+/* Custom CSS for better typography and spacing */
+@layer base {
+  html {
+    font-family: var(--font-family);
+  }
+  
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  /* Medical/Healthcare themed button variants */
+  .btn-medical {
+    background: var(--primary-color);
+    color: var(--text-white);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  
+  .btn-medical:hover {
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  
+  .btn-medical-outline {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  
+  .btn-medical-outline:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  
+  /* Card styles */
+  .health-card {
+    background: var(--background);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+  }
+  
+  .health-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* Form styles */
+  .form-label {
+    @apply block text-sm font-medium mb-2;
+    color: var(--text-primary);
+  }
+  
+  /* Navigation styles */
+  .nav-link {
+    @apply px-4 py-2 text-sm font-medium rounded-lg;
+    color: var(--text-secondary);
+    transition: var(--transition);
+  }
+  
+  .nav-link:hover {
+    color: var(--text-primary);
+    background: var(--background-hover);
+  }
+  
+  .nav-link-active {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  
+  /* Status badges */
+  .status-badge {
+    @apply px-3 py-1 text-xs font-semibold rounded-full;
+  }
+  
+  .status-badge.completed {
+    background: var(--success-light);
+    color: var(--success-color);
+  }
+  
+  .status-badge.pending {
+    background: var(--warning-light);
+    color: var(--warning-color);
+  }
+  
+  .status-badge.cancelled {
+    background: var(--error-light);
+    color: var(--error-color);
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes */
+  .text-gradient {
+    background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Smooth transitions for page changes */
+.page-transition {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles for better accessibility */
+.focus-visible:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .mobile-full-width {
+    @apply w-full;
+  }
+  
+  .mobile-text-center {
+    @apply text-center;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .health-card {
+    border: 2px solid var(--border-color);
+  }
+  
+  .btn-medical {
+    background: var(--primary-dark);
+  }
+} 
