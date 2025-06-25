@@ -95,19 +95,19 @@ const HomePage = () => {
       name: 'Dr. Nguyễn Thị Hương',
       specialty: 'Sản phụ khoa',
       rating: 4.9,
-      image: '/api/placeholder/300/300',
+      image: '/snapedit_1750865641043.jpeg',
     },
     {
       name: 'Dr. Lê Văn Minh',
       specialty: 'Tâm lý học',
       rating: 4.8,
-      image: '/api/placeholder/300/300',
+      image: '/snapedit_1750865641043.jpeg',
     },
     {
       name: 'Dr. Trần Thị Lan',
       specialty: 'Nội tiết',
       rating: 4.9,
-      image: '/api/placeholder/300/300',
+      image: '/snapedit_1750865641043.jpeg',
     },
   ];
 
@@ -118,7 +118,7 @@ const HomePage = () => {
       author: 'Dr. Nguyễn Thị Hương',
       views: '68',
       comments: '86',
-      image: '/api/placeholder/400/200',
+      image: '/snapedit_1750865641043.jpeg',
     },
     {
       title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
@@ -126,7 +126,7 @@ const HomePage = () => {
       author: 'Dr. Lê Văn Minh',
       views: '52',
       comments: '73',
-      image: '/api/placeholder/400/200',
+      image: '/snapedit_1750865641043.jpeg',
     },
     {
       title: 'Tầm quan trọng của việc xét nghiệm STI định kỳ',
@@ -134,7 +134,7 @@ const HomePage = () => {
       author: 'Dr. Trần Thị Lan',
       views: '94',
       comments: '121',
-      image: '/api/placeholder/400/200',
+      image: '/snapedit_1750865641043.jpeg',
     },
     {
       title: 'Lời khuyên từ chuyên gia về sức khỏe sinh sản',
@@ -142,7 +142,7 @@ const HomePage = () => {
       author: 'Dr. Nguyễn Thị Hương',
       views: '76',
       comments: '95',
-      image: '/api/placeholder/400/200',
+      image: '/snapedit_1750865641043.jpeg',
     },
   ];
 
@@ -199,9 +199,10 @@ const HomePage = () => {
 
       {/* Hero Section */}
       <section id="home" className={styles.hero}>
+        <div className={styles.heroOverlay}></div>
         <div className={styles.container}>
           <div className={styles.heroContent}>
-            <div className={styles.heroLeft}>
+            <div className={styles.heroTextContent}>
               <div className={styles.heroTag}>
                 <span>Chào mừng bạn đến với Gynexa</span>
               </div>
@@ -235,16 +236,6 @@ const HomePage = () => {
                   />
                   <button className={styles.searchBtn}>Tìm kiếm</button>
                 </div>
-              </div>
-            </div>
-
-            <div className={styles.heroRight}>
-              <div className={styles.heroImage}>
-                <img
-                  src="/api/placeholder/600/500"
-                  alt="Gynexa Healthcare"
-                  className={styles.heroImg}
-                />
               </div>
             </div>
           </div>
