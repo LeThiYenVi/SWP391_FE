@@ -6,6 +6,8 @@ import Consultation from '../pages/User/Consultation/index.jsx';
 import CycleTracking from '../pages/User/CycleTracking/index.jsx';
 import STITesting from '../pages/User/STITesting/index.jsx';
 import QA from '../pages/User/QA/index.jsx';
+import ProtectedRoute from '../components/ProtectedRoute';
+import MainLayout from '../layouts/MainLayout';
 
 // Simple placeholder components for missing pages
 const AboutPage = () => (
@@ -410,22 +412,46 @@ const HomePageRoutes = [
     element: <RegisterPage />,
   },
 
-  // Service pages with Vietnamese URLs
+  // Service pages with Vietnamese URLs (bọc ProtectedRoute + MainLayout)
   {
     path: '/tu-van',
-    element: <Consultation />,
+    element: (
+      <ProtectedRoute>
+        <MainLayout title="Tư vấn trực tuyến - Gynexa">
+          <Consultation />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/theo-doi-chu-ky',
-    element: <CycleTracking />,
+    element: (
+      <ProtectedRoute>
+        <MainLayout title="Theo dõi chu kỳ - Gynexa">
+          <CycleTracking />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/xet-nghiem-sti',
-    element: <STITesting />,
+    element: (
+      <ProtectedRoute>
+        <MainLayout title="Xét nghiệm STIs - Gynexa">
+          <STITesting />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/hoi-dap',
-    element: <QA />,
+    element: (
+      <ProtectedRoute>
+        <MainLayout title="Hỏi đáp - Gynexa">
+          <QA />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/suc-khoe',

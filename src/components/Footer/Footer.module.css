@@ -1,6 +1,6 @@
 /* ===== FOOTER STYLES ===== */
 .footer {
-  background: var(--primary-color, #3a99b7);
+  background: linear-gradient(135deg, #568392 0%, #2d5a66 100%);
   color: var(--text-white, #ffffff);
   position: relative;
   overflow: hidden;

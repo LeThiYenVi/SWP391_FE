@@ -16,10 +16,13 @@ import {
   CheckCircle,
   Heart,
   Send,
+  User,
+  LogOut,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer/Footer';
 import styles from './HomePage.module.css';
+import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,9 +36,18 @@ const HomePage = () => {
     doctor: '',
     message: '',
   });
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    navigate('/');
   };
 
   const handleSubmit = e => {
@@ -178,13 +190,90 @@ const HomePage = () => {
             </nav>
 
             <div className={styles.headerActions}>
-              <Link to="/login" className={styles.btnOutline}>
-                Đăng nhập
-              </Link>
-              <Link to="/register" className={styles.btnPrimary}>
-                Đăng ký
-              </Link>
-
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login" className={styles.btnOutline}>
+                    Đăng nhập
+                  </Link>
+                  <Link to="/register" className={styles.btnPrimary}>
+                    Đăng ký
+                  </Link>
+                </>
+              ) : (
+                <div style={{ position: 'relative' }}>
+                  <button
+                    className={styles.btnOutline}
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <User size={18} style={{ marginRight: 4 }} />
+                    {user?.name || 'Tài khoản'}
+                  </button>
+                  {showUserMenu && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '110%',
+                        background: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 8,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        minWidth: 180,
+                        zIndex: 100,
+                      }}
+                    >
+                      <Link
+                        to="/dashboard"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: 12,
+                          textDecoration: 'none',
+                          color: '#222',
+                          fontWeight: 500,
+                        }}
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <User size={16} /> Dashboard
+                      </Link>
+                      <Link
+                        to="/profile"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: 12,
+                          textDecoration: 'none',
+                          color: '#222',
+                          fontWeight: 500,
+                        }}
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <User size={16} /> Hồ sơ cá nhân
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: 12,
+                          width: '100%',
+                          background: 'none',
+                          border: 'none',
+                          color: '#d32f2f',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <LogOut size={16} /> Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <button
                 className={styles.menuToggle}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}

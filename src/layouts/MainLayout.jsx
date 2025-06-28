@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Header } from '../components/layout/Header';
-import { Footer } from '../components/layout/Footer';
+import Footer from '../components/Footer/Footer';
 
 export const MainLayout = ({
   title = 'Gynexa - Nền tảng chăm sóc sức khỏe giới tính',
@@ -41,7 +41,7 @@ export const MainLayout = ({
         <Header />
 
         {/* Main Content */}
-        <main className="flex-1">{children || <Outlet />}</main>
+        <main className="container flex-1">{children || <Outlet />}</main>
 
         {/* Footer */}
         <Footer />

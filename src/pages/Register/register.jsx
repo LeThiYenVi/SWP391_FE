@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
@@ -18,7 +18,10 @@ const Register = () => {
   });
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { register } = useAuth();
+
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
@@ -33,67 +36,53 @@ const Register = () => {
       toast.error('Vui lòng nhập email');
       return false;
     }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       toast.error('Email không hợp lệ');
       return false;
     }
-
     if (!formData.username.trim()) {
       toast.error('Vui lòng nhập tên đăng nhập');
       return false;
     }
-
     if (formData.username.length < 3) {
       toast.error('Tên đăng nhập phải có ít nhất 3 ký tự');
       return false;
     }
-
     if (!formData.password) {
       toast.error('Vui lòng nhập mật khẩu');
       return false;
     }
-
     if (formData.password.length < 6) {
       toast.error('Mật khẩu phải có ít nhất 6 ký tự');
       return false;
     }
-
     if (formData.password !== formData.confirmPassword) {
       toast.error('Mật khẩu xác nhận không khớp');
       return false;
     }
-
     if (!formData.agreeTerms) {
       toast.error('Vui lòng đồng ý với điều khoản sử dụng');
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-
     if (!validateForm()) {
       return;
     }
-
     setLoading(true);
-
     try {
-      // Simulate API call for registration
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Auto login after successful registration
-      const loginResult = await login({
+      // Đăng ký và tự động login
+      const result = await register({
         username: formData.username,
+        email: formData.email,
         password: formData.password,
       });
-
-      if (loginResult.success) {
+      if (result.success) {
         toast.success('Đăng ký thành công! Chào mừng bạn đến với Gynexa!');
-        navigate('/dashboard');
+        navigate(from, { replace: true });
       } else {
         toast.error('Có lỗi xảy ra sau khi đăng ký');
       }
@@ -121,18 +110,15 @@ const Register = () => {
           className="doctors-image"
         />
       </div>
-
       <div className="register-right">
         <Link to="/" className="close-button">
-          ✕
+          ×
         </Link>
-
         <div className="register-form">
           <h2>Đăng ký tài khoản</h2>
           <p>
             Bạn đã có tài khoản? <Link to="/login">Đăng nhập</Link>
           </p>
-
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <label htmlFor="email">Địa chỉ Email</label>
@@ -147,7 +133,6 @@ const Register = () => {
                 required
               />
             </div>
-
             <div className="input-group">
               <label htmlFor="username">Tên đăng nhập</label>
               <input
@@ -161,7 +146,6 @@ const Register = () => {
                 required
               />
             </div>
-
             <div className="input-group">
               <label htmlFor="password">Mật khẩu</label>
               <div className="password-wrapper">
@@ -183,7 +167,6 @@ const Register = () => {
                 </span>
               </div>
             </div>
-
             <div className="input-group">
               <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
               <div className="password-wrapper">
@@ -205,7 +188,6 @@ const Register = () => {
                 </span>
               </div>
             </div>
-
             <div className="checkbox-group">
               <input
                 type="checkbox"
@@ -227,7 +209,6 @@ const Register = () => {
                 </Link>
               </label>
             </div>
-
             <button
               type="submit"
               className="register-button"
@@ -235,11 +216,9 @@ const Register = () => {
             >
               {loading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>
-
             <div className="divider">
               <span>Hoặc đăng ký với</span>
             </div>
-
             <button
               type="button"
               className="google-register"

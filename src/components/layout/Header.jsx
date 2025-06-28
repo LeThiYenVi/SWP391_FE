@@ -123,25 +123,48 @@ export const Header = () => {
                 }
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <Link
-                  to={item.href}
-                  className={`
-                    flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium
-                    transition-all duration-200 hover:bg-gray-100
-                    ${
+                {item.children ? (
+                  <button
+                    type="button"
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 ${
                       isActivePath(item.href)
                         ? 'bg-gray-100'
                         : 'text-gray-700 hover:text-gray-900'
+                    }`}
+                    style={{
+                      color: isActivePath(item.href) ? '#3a99b7' : undefined,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() =>
+                      setActiveDropdown(
+                        activeDropdown === item.href ? null : item.href
+                      )
                     }
-                  `}
-                  style={{
-                    color: isActivePath(item.href) ? '#3a99b7' : undefined,
-                  }}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  {item.children && <ChevronDown className="w-4 h-4 ml-1" />}
-                </Link>
+                    aria-haspopup="true"
+                    aria-expanded={activeDropdown === item.href}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  </button>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 ${
+                      isActivePath(item.href)
+                        ? 'bg-gray-100'
+                        : 'text-gray-700 hover:text-gray-900'
+                    }`}
+                    style={{
+                      color: isActivePath(item.href) ? '#3a99b7' : undefined,
+                    }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                )}
 
                 {/* Dropdown Menu */}
                 <AnimatePresence>
@@ -159,6 +182,7 @@ export const Header = () => {
                             key={child.href}
                             to={child.href}
                             className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                            onClick={() => setActiveDropdown(null)}
                           >
                             <div className="mt-0.5">{child.icon}</div>
                             <div className="flex-1">
