@@ -1,6 +1,5 @@
 import React from 'react';
 import AdminDashboard from "../pages/admin/AdminDashboard"
-import AdminDesign from "../pages/admin/AdminDesign"
 import AdminOrder from "../pages/admin/AdminOrder"
 import AdminOrderDetails from "../pages/admin/AdminOrderDetails"
 import AdminProfile from "../pages/admin/AdminProfile"
@@ -16,73 +15,65 @@ const AdminRoutes = [
   {
     path: routes.adminDashboard,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminDashboard />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminTestingServices,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
-      <AdminTestingServices />
-    //  </ProtectedRoute>
-    ),
-  },
-  {
-    path: routes.adminDesign,
-    element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminDesign />
-        // </ProtectedRoute>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
+        <AdminTestingServices />
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminOrder,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminOrder />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminWaiting,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
-      <AdminWaiting />
+      // <ProtectedRoute allowedRoles={["Admin"]}>
+        <AdminWaiting />
       // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminOrderDetail,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminOrderDetails />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminProfile,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminProfile />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminUser,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminUser />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
   {
     path: routes.adminCounselor,
     element: (
-    //  <ProtectedRoute allowedRoles={["Admin"]}>
+      // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminCounselor />
-        // </ProtectedRoute>
+      // </ProtectedRoute>
     ),
   },
 ];
