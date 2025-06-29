@@ -7,8 +7,6 @@ export const routes = {
     resetPassword: "/reset-password",
     adminDashboard: "/admin/dashboard",
     adminTestingServices: "/admin/testing-services",
-    adminFurniture: "/admin/furniture",
-    adminDesign: "/admin/design",
     adminOrder: "/admin/order",
     adminOrderDetail: "/admin/orders/:orderId",
     adminProfile: "/admin/profile",

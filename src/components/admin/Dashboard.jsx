@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Card, Typography, Avatar, Stack, MenuItem, Select, FormControl } from '@mui/material';
+import { Box, Card, Typography, Avatar, Stack, MenuItem, Select, FormControl } from '@mui/material';
 import GroupsIcon from '@mui/icons-material/Groups';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -172,10 +172,10 @@ const Dashboard = () => {
   };
 
   return (
-    <Box >
-      <Grid container spacing={2} sx={{ mt: 0 }}>
+    <Box>
+      <Box sx={{ display: 'flex', gap: 2, mt: 0, flexWrap: 'wrap' }}>
         {/* Total User */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             {/* Icon góc phải */}
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
@@ -195,10 +195,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Order */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#FDEBD3', width: 56, height: 56 }}>
@@ -217,10 +217,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Pending */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#FFEFE3', width: 56, height: 56 }}>
@@ -239,10 +239,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Sales */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#DDF5EC', width: 56, height: 56 }}>
@@ -268,9 +268,9 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
-      </Grid>
+      </Box>
 
       {/* Line Chart */}
       <Card sx={{ mt: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>
@@ -330,9 +330,9 @@ const Dashboard = () => {
       </Card>
 
       {/* Phần biểu đồ ngang gồm 2 biểu đồ BarChart và Donut Chart */}
-      <Grid container spacing={2} mt={4}>
+      <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
         {/* Bar chart top 5 tư vấn viên doanh thu cao */}
-        <Grid item xs={12} md={6} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 500px', minWidth: '400px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
             <Typography variant="h6" fontWeight="bold" mb={2}>Top tư vấn viên doanh thu cao</Typography>
             <ResponsiveContainer width="100%" height={300}>
@@ -347,8 +347,8 @@ const Dashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Stacked Bar chart đơn hàng toàn hệ thống */}
       <Card sx={{ mt: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>

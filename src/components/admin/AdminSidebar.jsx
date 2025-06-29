@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import BrushIcon from '@mui/icons-material/Brush';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -24,7 +23,6 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 const menuItems = [
   { text: 'Thống kê', icon: <DashboardIcon />, route: 'adminDashboard' },
   { text: 'Dịch vụ xét nghiệm', icon: <AssignmentIcon />, route: 'adminTestingServices' },
-  { text: 'Thiết kế', icon: <BrushIcon />, route: 'adminDesign' },
   { text: 'Đơn hàng', icon: <ListAltIcon />, route: 'adminOrder' },
   { text: 'Tư vấn viên', icon: <PersonOutlineIcon />, route: 'adminCounselor' },
   { text: 'Người dùng', icon: <PeopleIcon />, route: 'adminUser' },
