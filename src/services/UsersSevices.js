@@ -1,4 +1,20 @@
 import instance from "./customize-axios";
+import { 
+  mockUsers, 
+  mockAwaitingDesigners, 
+  mockFurnitures, 
+  mockApiDelay, 
+  paginateData, 
+  filterUsersByRole, 
+  filterFurnituresByName,
+  mockNewProducts,
+  mockRevenueByDay,
+  mockTopDesigners,
+  mockOrdersByMonth,
+  mockCustomerGrowth,
+  mockOrders,
+  mockTopProducts
+} from "./mockData";
 
 
 // =============Auth============
@@ -66,20 +82,28 @@ const registerDesignerAPI = async (name, email, password, applicationUrl) => {
 
 const applicationResultAPI = async (email, isApproved) => {
   try {
-    const response = await instance.post(
-      `/api/auth/application-result`,
-      {}, 
-      {
-        params: {
-          email: email,
-          isApproved: isApproved,
-        },
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Find the designer in mock data
+    const designerIndex = mockAwaitingDesigners.findIndex(d => d.email === email);
+    
+    if (designerIndex !== -1) {
+      // Update the status in mock data
+      mockAwaitingDesigners[designerIndex].status = isApproved ? 'approved' : 'rejected';
+      
+      // If approved, move to main users list
+      if (isApproved) {
+        const approvedDesigner = { ...mockAwaitingDesigners[designerIndex] };
+        approvedDesigner.isActive = true;
+        mockUsers.push(approvedDesigner);
       }
-    );
-    console.log('Application result submitted:', response.data);
-    return response.data;
+    }
+
+    console.log('Application result submitted (mock):', { email, isApproved });
+    return { success: true, message: isApproved ? 'Approved successfully' : 'Rejected successfully' };
   } catch (error) {
-    console.error('Application result error:', error.response?.data || error.message);
+    console.error('Application result error:', error);
     throw error;
   }
 };
@@ -120,16 +144,20 @@ const updateFurnitureAPI = async (id, formData) => {
 
 const getAllFurnituresAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/furnitures', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get furnitures success:', response);
-    return response;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Paginate the testing services data
+    const result = paginateData(mockFurnitures, pageNumber, pageSize);
+
+    console.log('Get testing services success (mock):', result);
+    
+    // Return in the same format as the original API
+    return {
+      data: result
+    };
   } catch (error) {
-    console.error('Get furnitures error:', error);
+    console.error('Get testing services error:', error);
     throw error;
   }
 };
@@ -137,16 +165,21 @@ const getAllFurnituresAPI = async (pageNumber = -1, pageSize = -1) => {
 
 const getAllFursByDesAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/designer/furnitures', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get furnitures success:', response);
-    return response;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Filter testing services by designer (for now, return all services)
+    // In real implementation, this would filter by designer ID
+    const result = paginateData(mockFurnitures, pageNumber, pageSize);
+
+    console.log('Get designer testing services success (mock):', result);
+    
+    // Return in the same format as the original API
+    return {
+      data: result
+    };
   } catch (error) {
-    console.error('Get furnitures error:', error);
+    console.error('Get designer testing services error:', error);
     throw error;
   }
 };
@@ -171,14 +204,18 @@ const createFurnitureAPI = async (formData) => {
 // =============Design============
 const getAllDesignsAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/designs', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get designs success:', response);
-    return response;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Use testing services data as "designs" in healthcare context
+    const result = paginateData(mockFurnitures, pageNumber, pageSize);
+
+    console.log('Get designs success (mock):', result);
+    
+    // Return in the same format as the original API
+    return {
+      data: result
+    };
   } catch (error) {
     console.error('Get designs error:', error);
     throw error;
@@ -187,14 +224,18 @@ const getAllDesignsAPI = async (pageNumber = -1, pageSize = -1) => {
 
 const getAllDesignsByDesAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/designer/designs', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get designs success:', response);
-    return response;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Use testing services data as "designs" in healthcare context
+    const result = paginateData(mockFurnitures, pageNumber, pageSize);
+
+    console.log('Get designer designs success (mock):', result);
+    
+    // Return in the same format as the original API
+    return {
+      data: result
+    };
   } catch (error) {
     console.error('Get designs error:', error);
     throw error;
@@ -250,9 +291,18 @@ const getAllOrdersByDesAPI = async (pageNumber = -1, pageSize = -1) => {
 
 const getOrdersById = async (orderId) => {
   try {
-    const response = await instance.get(`/api/orders/${orderId}`);
-    console.log('Get order by ID success:', response.data);
-    return response.data;
+    // Add realistic delay for mock API
+    await mockApiDelay();
+    
+    // Find order by ID in mock data
+    const order = mockOrders.find(o => o.id === orderId || o.id === String(orderId));
+    
+    if (!order) {
+      throw new Error(`Order with ID ${orderId} not found`);
+    }
+    
+    console.log('Get order by ID success (mock):', order);
+    return order;
   } catch (error) {
     console.error(`Error getting order with ID ${orderId}:`, error);
     throw error;
@@ -261,13 +311,16 @@ const getOrdersById = async (orderId) => {
 
 const getAllOrdersAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/orders', {
-      params: { pageNumber, pageSize },
-    });
-    console.log('Get all orders by success:', response.data);
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Paginate the orders data
+    const result = paginateData(mockOrders, pageNumber, pageSize);
+
+    console.log('Get all orders success (mock):', result);
+    return result;
   } catch (error) {
-    console.error('Error getting orders :', error);
+    console.error('Error getting orders:', error);
     throw error;
   }
 };
@@ -276,46 +329,35 @@ const getAllOrdersAPI = async (pageNumber = -1, pageSize = -1) => {
 
 const getAllAccountsAPI = async (role = null, pageNumber = -1, pageSize = -1) => {
   try {
-    const params = {};
+    // Mock API delay
+    await mockApiDelay(500);
 
-    if (role !== null) {
-      params.role = role;
-    }
+    // Filter users by role if specified
+    let filteredUsers = filterUsersByRole(mockUsers, role);
 
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
-    }
+    // Paginate the results
+    const result = paginateData(filteredUsers, pageNumber, pageSize);
 
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
-    const response = await instance.get('/api/accounts', { params });
-    console.log('Get all accounts success:', response);
-    return response.data;
+    console.log('Get all accounts success (mock):', result);
+    return result;
   } catch (error) {
-    console.error('Error getting accounts:', error.response?.data || error.message);
+    console.error('Error getting accounts:', error);
     throw error;
   }
 };
 
 const getAwaitingDesignersAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const params = {};
+    // Mock API delay
+    await mockApiDelay(500);
 
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
-    }
+    // Paginate the awaiting designers
+    const result = paginateData(mockAwaitingDesigners, pageNumber, pageSize);
 
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
-    const response = await instance.get('/api/accounts/awaiting-designers', { params });
-    console.log('Get awaiting designers success:', response);
-    return response.data;
+    console.log('Get awaiting designers success (mock):', result);
+    return result;
   } catch (error) {
-    console.error('Error getting awaiting designers:', error.response?.data || error.message);
+    console.error('Error getting awaiting designers:', error);
     throw error;
   }
 };
@@ -364,16 +406,16 @@ const getProductByIdAPI = async (id) => {
 
 const getNewProductsAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/products/new', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get new products success:', response.data);
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Paginate the new products data
+    const result = paginateData(mockNewProducts, pageNumber, pageSize);
+
+    console.log('Get new products success (mock):', result);
+    return result;
   } catch (error) {
-    console.error('Error getting new products:', error.response?.data || error.message);
+    console.error('Error getting new products:', error);
     throw error;
   }
 };
@@ -396,11 +438,16 @@ const createNewProductAPI = async (id) => {
 
 const getRevenueByDayAPI = async (month, year) => {
   try {
-    const response = await instance.get('/api/dashboard/revenue-by-day', {
-      params: { month, year },
-    });
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Generate mock revenue data for the specified month/year
+    const revenueData = mockRevenueByDay(month, year);
+
+    console.log('Get revenue by day success (mock):', revenueData);
+    return revenueData;
   } catch (error) {
+    console.error('Error getting revenue by day:', error);
     throw error;
   }
 };
@@ -418,38 +465,55 @@ const getDesignerRevenueByDayAPI = async (month, year) => {
 
 const getTopDesignersByRevenueAPI = async (topN = 5) => {
   try {
-    const response = await instance.get('/api/dashboard/top-designers-by-revenue', {
-      params: { topN }
-    });
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    // Return top N designers
+    const topDesigners = mockTopDesigners.slice(0, topN);
+
+    console.log('Get top designers success (mock):', topDesigners);
+    return topDesigners;
   } catch (error) {
+    console.error('Error getting top designers:', error);
     throw error;
   }
 };
 
 const getOrderStatusByMonthAPI = async () => {
   try {
-    const response = await instance.get('/api/dashboard/orders');
-    return response.data; 
+    // Mock API delay
+    await mockApiDelay(500);
+
+    console.log('Get order status by month success (mock):', mockOrdersByMonth);
+    return mockOrdersByMonth;
   } catch (error) {
+    console.error('Error getting order status by month:', error);
     throw error;
   }
 };
 
 const getCustomerGrowthAPI = async () => {
   try {
-    const response = await instance.get('/api/dashboard/user-growth');
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    console.log('Get customer growth success (mock):', mockCustomerGrowth);
+    return mockCustomerGrowth;
   } catch (error) {
+    console.error('Error getting customer growth:', error);
     throw error;
   }
 };
 
 const getTopProductsAPI = async () => {
   try {
-    const response = await instance.get('/api/dashboard/top-products');
-    return response.data;
+    // Mock API delay
+    await mockApiDelay(500);
+
+    console.log('Get top products success (mock):', mockTopProducts);
+    return mockTopProducts;
   } catch (error) {
+    console.error('Error getting top products:', error);
     throw error;
   }
 };

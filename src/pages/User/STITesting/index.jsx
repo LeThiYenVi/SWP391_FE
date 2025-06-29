@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TestTube, MapPin, Clock, FileText, Download, Eye } from "lucide-react";
+import { TestTube, MapPin, Download, Eye, Calendar } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { toast } from "react-toastify";
 
@@ -7,7 +7,6 @@ const STITesting = () => {
   const [selectedTests, setSelectedTests] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
-  const [showBookingForm, setShowBookingForm] = useState(false);
   const [activeTab, setActiveTab] = useState("booking"); // booking, history, results
 
   const availableTests = [
@@ -132,7 +131,6 @@ const STITesting = () => {
     setSelectedTests([]);
     setSelectedDate("");
     setSelectedLocation("");
-    setShowBookingForm(false);
   };
 
   const generateAvailableDates = () => {

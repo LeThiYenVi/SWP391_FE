@@ -18,6 +18,7 @@ const Footer = () => {
     e.preventDefault();
     const email = e.target.email.value;
     // TODO: Integrate with backend API for newsletter subscription
+    console.log('Newsletter subscription for:', email);
     alert('Đăng ký newsletter thành công! Cảm ơn bạn đã quan tâm.');
     e.target.reset();
   };
