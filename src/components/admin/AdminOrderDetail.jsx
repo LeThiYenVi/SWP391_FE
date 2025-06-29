@@ -11,7 +11,8 @@ import {
     Divider,
     Chip,
 } from '@mui/material';
-import { getOrdersById } from '../../services/UsersSevices';
+// import { getOrdersById } from '../../services/UsersSevices';
+import { mockGetOrderByIdAPI } from '../../services/mockOrderTest';
 
 const AdminOrderDetail = ({ orderId }) => {
     const [order, setOrder] = useState(null);
@@ -28,16 +29,17 @@ const AdminOrderDetail = ({ orderId }) => {
             setLoading(true);
             setError(null);
             try {
-                const data = await getOrdersById(orderId);
-                console.log('OrderDetail: fetched data:', data);
-
+                // Use mock API for testing - switch to getOrdersById for production
+                const data = await mockGetOrderByIdAPI(orderId);
+                // const data = await getOrdersById(orderId);
+                
                 if (!data) {
                     setError('Không tìm thấy dữ liệu đơn hàng');
                     setOrder(null);
                 } else {
                     setOrder({
                         ...data,
-                        orderDetails: data.orderDetails || [],
+                        orderDetails: data.orderDetails || data.items || [],
                         statuses: data.statuses || [],
                     });
                 }
@@ -52,9 +54,6 @@ const AdminOrderDetail = ({ orderId }) => {
         fetchOrder();
     }, [orderId]);
 
-
-    console.log('OrderDetail render with orderId:', orderId, 'order:', order);
-
     const formatDateTime = (dateStr) => {
         if (!dateStr) return '';
         return new Date(dateStr).toLocaleString('vi-VN');
@@ -68,12 +67,30 @@ const AdminOrderDetail = ({ orderId }) => {
 
     const statusLabelMap = {
         Pending: 'Chờ xác nhận',
-        Processing: 'Đang xử lý',
-        Delivered: 'Đã giao hàng',
-        Refund: 'Hoàn tiền',
-        Cancelled: 'Đã hủy',
+        Processing: 'Đang điều trị',
         Completed: 'Hoàn tất',
-        Buy: 'Đã mua',
+        Cancelled: 'Đã hủy',
+        Refund: 'Hoàn tiền',
+        // Payment status mapping for backward compatibility
+        Delivered: 'Đã thanh toán',
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Pending':
+                return '#9E9E9E'; // Gray
+            case 'Processing':
+                return '#FF9800'; // Orange
+            case 'Completed':
+            case 'Delivered':
+                return '#4CAF50'; // Green
+            case 'Cancelled':
+                return '#F44336'; // Red
+            case 'Refund':
+                return '#FF6F3C'; // Orange-red
+            default:
+                return '#9E9E9E';
+        }
     };
 
     return (
@@ -83,10 +100,13 @@ const AdminOrderDetail = ({ orderId }) => {
             </Typography>
 
             <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="subtitle1">👤 Khách hàng: {order.customer?.name || 'N/A'}</Typography>
-                <Typography variant="subtitle1">🎨 Nhà thiết kế: {order.designer?.name || 'N/A'}</Typography>
+                <Typography variant="subtitle1">👤 Bệnh nhân: {order.customer?.name || 'N/A'}</Typography>
+                <Typography variant="subtitle1">🩺 Tư vấn viên: {order.designer?.name || 'N/A'}</Typography>
+                <Typography variant="subtitle1">🏥 Chuyên khoa: {order.designer?.specialty || 'N/A'}</Typography>
+                <Typography variant="subtitle1">🎂 Tuổi: {order.customer?.age || 'N/A'}</Typography>
+                <Typography variant="subtitle1">⚤ Giới tính: {order.customer?.gender || 'N/A'}</Typography>
                 <Typography variant="subtitle1">
-                    💰 Tổng giá: {order.orderPrice?.toLocaleString() || 0}đ
+                    💰 Tổng chi phí: {order.orderPrice?.toLocaleString() || 0}đ
                 </Typography>
                 <Typography variant="subtitle1">
                     📌 Trạng thái hiện tại:
@@ -95,33 +115,35 @@ const AdminOrderDetail = ({ orderId }) => {
                         sx={{
                             ml: 1,
                             color: '#fff',
-                            bgcolor:
-                                order.status === 'Pending'
-                                    ? '#9E9E9E'
-                                    : order.status === 'Processing'
-                                        ? '#FF9800'
-                                        : order.status === 'Delivered'
-                                            ? '#347433'
-                                            : order.status === 'Refund'
-                                                ? '#FF6F3C'
-                                                : order.status === 'Cancelled'
-                                                    ? '#B22222'
-                                                    : '#B22222',
+                            bgcolor: getStatusColor(order.status),
                             minWidth: 120,
                             textAlign: 'center'
                         }}
                     />
-
+                </Typography>
+                <Typography variant="subtitle1">
+                    💳 Thanh toán: 
+                    <Chip
+                        label={order.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                        sx={{
+                            ml: 1,
+                            color: '#fff',
+                            bgcolor: order.isPaid ? '#4CAF50' : '#F44336',
+                            minWidth: 120,
+                            textAlign: 'center'
+                        }}
+                    />
                 </Typography>
             </Paper>
 
             <Typography variant="h6" sx={{ mb: 1 }}>
-                🛒 Danh sách sản phẩm
+                🏥 Danh sách dịch vụ y tế
             </Typography>
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Tên sản phẩm</TableCell>
+                        <TableCell>Tên dịch vụ</TableCell>
+                        <TableCell>Mã dịch vụ</TableCell>
                         <TableCell>Giá</TableCell>
                         <TableCell>Số lượng</TableCell>
                         <TableCell>Thành tiền</TableCell>
@@ -131,6 +153,19 @@ const AdminOrderDetail = ({ orderId }) => {
                     {order.orderDetails.map((detail, index) => (
                         <TableRow key={index}>
                             <TableCell>{detail.product?.name || 'N/A'}</TableCell>
+                            <TableCell>
+                                <Typography 
+                                    variant="body2"
+                                    sx={{ 
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                        color: '#1976D2'
+                                    }}
+                                >
+                                    {detail.product?.code || detail.product?.id || `SV${String(index + 1).padStart(3, '0')}`}
+                                </Typography>
+                            </TableCell>
                             <TableCell>{detail.product?.price?.toLocaleString() || 0}đ</TableCell>
                             <TableCell>{detail.quantity || 0}</TableCell>
                             <TableCell>{detail.detailPrice?.toLocaleString() || 0}đ</TableCell>
@@ -142,7 +177,7 @@ const AdminOrderDetail = ({ orderId }) => {
             <Divider sx={{ my: 4 }} />
 
             <Typography variant="h6" sx={{ mb: 1 }}>
-                ⏱️ Lịch sử trạng thái
+                ⏱️ Lịch sử trạng thái điều trị
             </Typography>
             {order.statuses.map((s, index) => (
                 <Box key={index} sx={{ mb: 1 }}>
@@ -151,23 +186,11 @@ const AdminOrderDetail = ({ orderId }) => {
                         sx={{
                             mr: 2,
                             color: '#fff',
-                            bgcolor:
-                                s.name === 'Pending'
-                                    ? '#9E9E9E'
-                                    : s.name === 'Processing'
-                                        ? '#FF9800'
-                                        : s.name === 'Delivered'
-                                            ? '#347433'
-                                            : s.name === 'Refund'
-                                                ? '#FF6F3C'
-                                                : s.name === 'Cancelled'
-                                                    ? '#B22222'
-                                                    : '#B22222',
+                            bgcolor: getStatusColor(s.name),
                             minWidth: 120,
                             textAlign: 'center'
                         }}
                     />
-
                     <Typography component="span">{formatDateTime(s.time)}</Typography>
                 </Box>
             ))}

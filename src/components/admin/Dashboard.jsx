@@ -84,8 +84,7 @@ const Dashboard = () => {
       }));
 
       setDesignerData(transformedData);
-    } catch (err) {
-      console.error("Lỗi khi lấy top nhà thiết kế:", err);
+    } catch (err) {              console.error("Lỗi khi lấy top tư vấn viên:", err);
     }
   };
 
@@ -186,7 +185,7 @@ const Dashboard = () => {
             </Box>
 
             <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
-              Tổng nhà thiết kế
+              Tổng tư vấn viên
             </Typography>
             <Typography variant="h4" fontWeight="bold" mt={1}>{totalDesigners}</Typography>
 
@@ -208,7 +207,7 @@ const Dashboard = () => {
             </Box>
 
             <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
-              Nhà thiết kế chờ duyệt
+              Tư vấn viên chờ duyệt
             </Typography>
             <Typography variant="h4" fontWeight="bold" mt={1}>0</Typography>
 
@@ -279,14 +278,34 @@ const Dashboard = () => {
           <Typography variant="h6" fontWeight="bold">Doanh thu theo ngày trong tháng</Typography>
           <Stack direction="row" spacing={2}>
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select value={selectedMonth} onChange={handleMonthChange}>
+              <Select 
+                value={selectedMonth} 
+                onChange={handleMonthChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  },
+                  disablePortal: true,
+                  keepMounted: false
+                }}
+              >
                 {[...Array(12).keys()].map(i => (
                   <MenuItem key={i + 1} value={i + 1}>{`Tháng ${i + 1}`}</MenuItem>
                 ))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 100 }}>
-              <Select value={selectedYear} onChange={handleYearChange}>
+              <Select 
+                value={selectedYear} 
+                onChange={handleYearChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  },
+                  disablePortal: true,
+                  keepMounted: false
+                }}
+              >
                 {[currentYear - 2, currentYear - 1, currentYear].map(year => (
                   <MenuItem key={year} value={year}>{year}</MenuItem>
                 ))}
@@ -312,10 +331,10 @@ const Dashboard = () => {
 
       {/* Phần biểu đồ ngang gồm 2 biểu đồ BarChart và Donut Chart */}
       <Grid container spacing={2} mt={4}>
-        {/* Bar chart top 5 nhà thiết kế doanh thu cao */}
+        {/* Bar chart top 5 tư vấn viên doanh thu cao */}
         <Grid item xs={12} md={6} sx={{ flex: 1 }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>Top nhà thiết kế doanh thu cao</Typography>
+            <Typography variant="h6" fontWeight="bold" mb={2}>Top tư vấn viên doanh thu cao</Typography>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={designerData} layout="vertical" margin={{ top: 20, right: 20, left: 18, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />

@@ -77,7 +77,7 @@ const UserTable = ({ searchTerm, roleFilter }) => {
                                 <TableCell>{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    {user.role === 1 ? 'Nhà thiết kế' :
+                                    {user.role === 1 ? 'Tư vấn viên' :
                                         user.role === 2 ? 'Khách hàng' : 'Admin'}
                                 </TableCell>
                                 <TableCell align="center">

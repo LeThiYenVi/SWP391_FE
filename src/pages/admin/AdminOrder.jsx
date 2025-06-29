@@ -27,10 +27,10 @@ export default function AdminOrder() {
                     <Header />
                 </Box>
 
-                <Box sx={{ flexGrow: 1, bgcolor: '#f8fafc', p: 2, overflowY: 'auto' }}>
+                <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
-                        <Typography variant='h4' sx={{ fontWeight: 500 }}>
-                            Thanh toán dịch vụ
+                        <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray'  }}>
+                            Đơn hàng
                         </Typography>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -49,7 +49,7 @@ export default function AdminOrder() {
                             >
                                 <SearchIcon sx={{ color: 'gray', mr: 1 }} />
                                 <InputBase
-                                    placeholder="Mã thanh toán"
+                                    placeholder="Mã đơn hàng"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     sx={{
@@ -61,11 +61,6 @@ export default function AdminOrder() {
                                         },
                                         '&:focus-within': {
                                             outline: 'none',
-                                        },
-                                        '& .MuiInputBase-root': {
-                                            '&:before, &:after': {
-                                                display: 'none',
-                                            },
                                         },
                                     }}
                                 />
@@ -99,17 +94,25 @@ export default function AdminOrder() {
                                     }}
                                     SelectProps={{
                                         displayEmpty: true,
+                                        MenuProps: {
+                                            PaperProps: {
+                                                sx: {
+                                                    maxHeight: 200,
+                                                    mt: 1,
+                                                }
+                                            },
+                                            disablePortal: true,
+                                            keepMounted: false
+                                        },
                                         renderValue: (selected) => {
                                             if (!selected) {
                                                 return "Tất cả";
                                             }
                                             switch (selected) {
-                                                case "Chưa thanh toán":
-                                                    return "Chưa thanh toán";
-                                                case "Đã thanh toán":
+                                                case "paid":
                                                     return "Đã thanh toán";
-                                                case "Đã hủy":
-                                                    return "Đã hủy";
+                                                case "unpaid":
+                                                    return "Chưa thanh toán";
                                                 default:
                                                     return "";
                                             }
@@ -117,9 +120,8 @@ export default function AdminOrder() {
                                     }}
                                 >
                                     <MenuItem value="">Tất cả</MenuItem>
-                                    <MenuItem value="Chưa thanh toán">Chưa thanh toán</MenuItem>
-                                    <MenuItem value="Đã thanh toán">Đã thanh toán</MenuItem>
-                                    <MenuItem value="Đã hủy">Đã hủy</MenuItem>
+                                    <MenuItem value="paid">Đã thanh toán</MenuItem>
+                                    <MenuItem value="unpaid">Chưa thanh toán</MenuItem>
                                 </TextField>
                             </Box>
 

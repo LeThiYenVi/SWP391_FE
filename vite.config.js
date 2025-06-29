@@ -22,6 +22,24 @@ export default defineConfig({
     port: 3000,
     host: true,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'https://snaproom-e7asc0ercvbxazb8.southeastasia-01.azurewebsites.net',
+        changeOrigin: true,
+        secure: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        },
+      }
+    }
   },
   build: {
     outDir: 'dist',

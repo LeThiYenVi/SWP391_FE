@@ -5,9 +5,9 @@ import Header from '../../components/admin/AdminHeader';
 import { Box, Typography, InputBase } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import FurnitureTable from '../../components/admin/TestingTable';
+import TestingTable from '../../components/admin/TestingTable';
 
-export default function AdminFurniture() {
+export default function AdminTestingServices() {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function AdminFurniture() {
               p: 2,
               overflowY: 'auto', }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt:2 }}>
-            <Typography variant='h4' sx={{ fontWeight: 500 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500 , color: 'gray' }}>
               Dịch vụ xét nghiệm
             </Typography>
 
@@ -62,7 +62,6 @@ export default function AdminFurniture() {
                     outline: 'none',
                   },
                 }}
-                disableUnderline
               />
             </Box>
           </Box>
@@ -74,7 +73,7 @@ export default function AdminFurniture() {
               overflowY: 'auto',
             }}
           >
-            <FurnitureTable searchTerm={searchTerm}/>
+            <TestingTable searchTerm={searchTerm}/>
           </Box>
 
         </Box>

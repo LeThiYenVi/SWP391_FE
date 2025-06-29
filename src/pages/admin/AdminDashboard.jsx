@@ -30,7 +30,7 @@ const location = useLocation();
           overflowY: 'auto',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
-            <Typography variant='h4' sx={{ fontWeight: 500 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray' }}>
               Thống kê
             </Typography>
           </Box>

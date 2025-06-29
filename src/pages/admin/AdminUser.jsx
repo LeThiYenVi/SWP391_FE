@@ -31,7 +31,7 @@ export default function AdminUser() {
   useEffect(() => {
     if (mode === 'user') {
       fetchAllUsers();
-    } else {
+    } else if (mode === 'verify') {
       fetchVerifyDesigners(1);
     }
   }, [mode]);
@@ -80,7 +80,7 @@ export default function AdminUser() {
   const handleChangePage = (event, value) => {
     if (mode === 'user') {
       setPage(value);
-    } else {
+    } else if (mode === 'verify') {
       fetchVerifyDesigners(value);
     }
   };
@@ -111,7 +111,7 @@ export default function AdminUser() {
 
         <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
-            <Typography variant='h4' sx={{ fontWeight: 500 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500 , color: 'gray' }}>
               {mode === 'user' ? 'Người dùng' : 'Xét duyệt'}
             </Typography>
 
@@ -120,7 +120,7 @@ export default function AdminUser() {
               <Box sx={{ display: 'flex', alignItems: 'center', width: 300, bgcolor: 'white', borderRadius: '999px', px: 2, py: '6px', boxShadow: '0 0 0 1px #ccc' }}>
                 <SearchIcon sx={{ color: 'gray', mr: 1 }} />
                 <InputBase
-                  placeholder={mode === 'user' ? "Tên người dùng..." : "Tên nhà thiết kế..."}
+                  placeholder={mode === 'user' ? "Tên người dùng..." : "Tên tư vấn viên..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   sx={{
@@ -130,7 +130,6 @@ export default function AdminUser() {
                     '& .MuiInputBase-input': { p: 0 },
                     '&:focus-within': { outline: 'none' }
                   }}
-                  disableUnderline
                 />
               </Box>
 
@@ -147,12 +146,19 @@ export default function AdminUser() {
       sx={{ flex: 1, '& .MuiSelect-select': { py: 0 }, fontSize: 16, color: 'gray' }}
       SelectProps={{
         displayEmpty: true,
+        MenuProps: {
+          PaperProps: {
+            sx: { maxHeight: 200 }
+          },
+          disablePortal: true,
+          keepMounted: false
+        },
         renderValue: (selected) => {
           if (!selected) {
             return "Tất cả";
           }
           switch (selected) {
-            case "1": return "Nhà thiết kế";
+            case "1": return "Tư vấn viên";
             case "2": return "Khách hàng";
             case "0": return "Admin";
             default: return "";
@@ -161,7 +167,7 @@ export default function AdminUser() {
       }}
     >
       <MenuItem value="">Tất cả</MenuItem>
-      <MenuItem value="1">Nhà thiết kế</MenuItem>
+      <MenuItem value="1">Tư vấn viên</MenuItem>
       <MenuItem value="2">Khách hàng</MenuItem>
       <MenuItem value="0">Admin</MenuItem>
     </TextField>
@@ -179,6 +185,15 @@ export default function AdminUser() {
                   fullWidth
                   InputProps={{ disableUnderline: true }}
                   sx={{ flex: 1, '& .MuiSelect-select': { py: 0 }, fontSize: 16, color: 'gray' }}
+                  SelectProps={{
+                    MenuProps: {
+                      PaperProps: {
+                        sx: { maxHeight: 200 }
+                      },
+                      disablePortal: true,
+                      keepMounted: false
+                    }
+                  }}
                 >
                   <MenuItem value="user">Tất cả</MenuItem>
                   <MenuItem value="verify">Chưa duyệt</MenuItem>
@@ -196,6 +211,9 @@ export default function AdminUser() {
                     <TableCell sx={{ color: '#f5f5f5' }}>STT</TableCell>
                     <TableCell sx={{ color: '#f5f5f5' }}>Họ tên</TableCell>
                     <TableCell sx={{ color: '#f5f5f5' }}>Email</TableCell>
+                    {mode === 'user' && (
+                      <TableCell sx={{ color: '#f5f5f5' }}>Vai trò</TableCell>
+                    )}
                     <TableCell sx={{ color: '#f5f5f5' }} align="center">Quản lí</TableCell>
                   </TableRow>
                 </TableHead>
@@ -206,6 +224,23 @@ export default function AdminUser() {
                         <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
                         <TableCell>{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: 'white',
+                            backgroundColor: 
+                              user.role === 0 ? '#e74c3c' : 
+                              user.role === 1 ? '#3498db' : 
+                              user.role === 2 ? '#27ae60' : '#95a5a6'
+                          }}>
+                            {user.role === 0 ? 'Admin' :
+                             user.role === 1 ? 'Tư vấn viên' :
+                             user.role === 2 ? 'Khách hàng' : 'Không xác định'}
+                          </span>
+                        </TableCell>
                         <TableCell align="center">
                           <IconButton color="primary" size="small"><EditIcon /></IconButton>
                           <IconButton color="error" size="small"><DeleteIcon /></IconButton>
