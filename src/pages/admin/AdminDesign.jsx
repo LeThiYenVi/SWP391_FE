@@ -30,7 +30,7 @@ export default function AdminDesign() {
             p: 2,
             overflowY: 'auto', }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt:2 }}>
-            <Typography variant='h4' sx={{ fontWeight: 500 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray'  }}>
               Bản thiết kế
             </Typography>
 
@@ -60,11 +60,6 @@ export default function AdminDesign() {
                   },
                   '&:focus-within': {
                     outline: 'none',
-                  },
-                  '& .MuiInputBase-root': {
-                    '&:before, &:after': {
-                      display: 'none',
-                    },
                   },
                 }}
               />

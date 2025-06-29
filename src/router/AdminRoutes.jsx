@@ -1,15 +1,16 @@
 import React from 'react';
 import AdminDashboard from "../pages/admin/AdminDashboard"
 import AdminDesign from "../pages/admin/AdminDesign"
-import AdminTestingServices from "../pages/admin/AdminTestingServices"
 import AdminOrder from "../pages/admin/AdminOrder"
 import AdminOrderDetails from "../pages/admin/AdminOrderDetails"
 import AdminProfile from "../pages/admin/AdminProfile"
 import AdminUser from "../pages/admin/AdminUser"
+import AdminCounselor from "../pages/admin/AdminCounselor"
 import AdminWaiting from "../pages/admin/AdminWaiting"
-import ProtectedRoute from "../components/ProtectedRoute";
+import AdminTestingServices from "../pages/admin/AdminTestingServices"
+// import ProtectedRoute from "../components/ProtectedRoute";
 import { routes } from "../routes";
-import { Route, Routes, useLocation } from "react-router-dom";
+// import { Route, Routes, useLocation } from "react-router-dom";
 
 const AdminRoutes = [
   {
@@ -73,6 +74,14 @@ const AdminRoutes = [
     element: (
     //  <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminUser />
+        // </ProtectedRoute>
+    ),
+  },
+  {
+    path: routes.adminCounselor,
+    element: (
+    //  <ProtectedRoute allowedRoles={["Admin"]}>
+        <AdminCounselor />
         // </ProtectedRoute>
     ),
   },

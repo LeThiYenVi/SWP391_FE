@@ -19,13 +19,14 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import logoGreen from '../../assets/image/logo_green.png';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 const menuItems = [
   { text: 'Thống kê', icon: <DashboardIcon />, route: 'adminDashboard' },
   { text: 'Dịch vụ xét nghiệm', icon: <AssignmentIcon />, route: 'adminTestingServices' },
   { text: 'Thiết kế', icon: <BrushIcon />, route: 'adminDesign' },
   { text: 'Đơn hàng', icon: <ListAltIcon />, route: 'adminOrder' },
-  // { text: 'Tư vấn viên', icon: <PersonOutlineIcon />, route: 'adminConsultant' },
+  { text: 'Tư vấn viên', icon: <PersonOutlineIcon />, route: 'adminCounselor' },
   { text: 'Người dùng', icon: <PeopleIcon />, route: 'adminUser' },
   { text: 'Sản phẩm chờ', icon: <HourglassTopIcon />, route: 'adminWaiting' },
 ];
