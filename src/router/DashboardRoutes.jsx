@@ -20,9 +20,7 @@ const DashboardRoutes = [
     path: '/cycle-tracking',
     element: (
       <ProtectedRoute>
-        <MainLayout title="Theo dõi chu kỳ - Gynexa">
-          <CycleTracking />
-        </MainLayout>
+        <CycleTracking />
       </ProtectedRoute>
     ),
   },
