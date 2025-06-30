@@ -12,9 +12,7 @@ const DashboardRoutes = [
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <MainLayout title="Dashboard - Gynexa">
-          <Dashboard />
-        </MainLayout>
+        <Dashboard />
       </ProtectedRoute>
     ),
   },
@@ -61,4 +59,3 @@ const DashboardRoutes = [
 ];
 
 export default DashboardRoutes;
- 
