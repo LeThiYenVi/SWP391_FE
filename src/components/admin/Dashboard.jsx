@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Card, Typography, Avatar, Stack, MenuItem, Select, FormControl } from '@mui/material';
+import { Box, Card, Typography, Avatar, Stack, MenuItem, Select, FormControl } from '@mui/material';
 import GroupsIcon from '@mui/icons-material/Groups';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -84,8 +84,7 @@ const Dashboard = () => {
       }));
 
       setDesignerData(transformedData);
-    } catch (err) {
-      console.error("Lỗi khi lấy top nhà thiết kế:", err);
+    } catch (err) {              console.error("Lỗi khi lấy top tư vấn viên:", err);
     }
   };
 
@@ -173,10 +172,10 @@ const Dashboard = () => {
   };
 
   return (
-    <Box >
-      <Grid container spacing={2} sx={{ mt: 0 }}>
+    <Box>
+      <Box sx={{ display: 'flex', gap: 2, mt: 0, flexWrap: 'wrap' }}>
         {/* Total User */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             {/* Icon góc phải */}
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
@@ -186,7 +185,7 @@ const Dashboard = () => {
             </Box>
 
             <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
-              Tổng nhà thiết kế
+              Tổng tư vấn viên
             </Typography>
             <Typography variant="h4" fontWeight="bold" mt={1}>{totalDesigners}</Typography>
 
@@ -196,10 +195,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Order */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#FDEBD3', width: 56, height: 56 }}>
@@ -208,7 +207,7 @@ const Dashboard = () => {
             </Box>
 
             <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
-              Nhà thiết kế chờ duyệt
+              Tư vấn viên chờ duyệt
             </Typography>
             <Typography variant="h4" fontWeight="bold" mt={1}>0</Typography>
 
@@ -218,10 +217,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Pending */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#FFEFE3', width: 56, height: 56 }}>
@@ -240,10 +239,10 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Total Sales */}
-        <Grid item xs={12} sm={6} md={3} sx={{ flex: 1 }}>
+        <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
               <Avatar sx={{ bgcolor: '#DDF5EC', width: 56, height: 56 }}>
@@ -269,9 +268,9 @@ const Dashboard = () => {
               <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
-      </Grid>
+      </Box>
 
       {/* Line Chart */}
       <Card sx={{ mt: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>
@@ -279,14 +278,34 @@ const Dashboard = () => {
           <Typography variant="h6" fontWeight="bold">Doanh thu theo ngày trong tháng</Typography>
           <Stack direction="row" spacing={2}>
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select value={selectedMonth} onChange={handleMonthChange}>
+              <Select 
+                value={selectedMonth} 
+                onChange={handleMonthChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  },
+                  disablePortal: true,
+                  keepMounted: false
+                }}
+              >
                 {[...Array(12).keys()].map(i => (
                   <MenuItem key={i + 1} value={i + 1}>{`Tháng ${i + 1}`}</MenuItem>
                 ))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 100 }}>
-              <Select value={selectedYear} onChange={handleYearChange}>
+              <Select 
+                value={selectedYear} 
+                onChange={handleYearChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  },
+                  disablePortal: true,
+                  keepMounted: false
+                }}
+              >
                 {[currentYear - 2, currentYear - 1, currentYear].map(year => (
                   <MenuItem key={year} value={year}>{year}</MenuItem>
                 ))}
@@ -311,11 +330,11 @@ const Dashboard = () => {
       </Card>
 
       {/* Phần biểu đồ ngang gồm 2 biểu đồ BarChart và Donut Chart */}
-      <Grid container spacing={2} mt={4}>
-        {/* Bar chart top 5 nhà thiết kế doanh thu cao */}
-        <Grid item xs={12} md={6} sx={{ flex: 1 }}>
+      <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
+        {/* Bar chart top 5 tư vấn viên doanh thu cao */}
+        <Box sx={{ flex: '1 1 500px', minWidth: '400px' }}>
           <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>Top nhà thiết kế doanh thu cao</Typography>
+            <Typography variant="h6" fontWeight="bold" mb={2}>Top tư vấn viên doanh thu cao</Typography>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={designerData} layout="vertical" margin={{ top: 20, right: 20, left: 18, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -328,8 +347,8 @@ const Dashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Stacked Bar chart đơn hàng toàn hệ thống */}
       <Card sx={{ mt: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>

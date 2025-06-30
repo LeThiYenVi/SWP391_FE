@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 /* ===== CSS VARIABLES ===== */
 :root {
   --primary-gradient: linear-gradient(135deg, #B0B9BC 0%, #568392 100%);
@@ -31,8 +33,6 @@
 * {
   box-sizing: border-box;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 .homepage {
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,

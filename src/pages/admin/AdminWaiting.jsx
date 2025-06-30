@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import Sidebar from '../../components/admin/AdminSidebar';
 import Header from '../../components/admin/AdminHeader';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography,  } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import Dashboard from '../../components/admin/Dashboard';
+import WaitingTable from '../../components/admin/WaitingTable';
 
-export default function AdminDashboard() {
-const location = useLocation();
+export default function AdminWaiting() {
+  const location = useLocation();
   useEffect(() => {
     if (location.state?.toastMessage) {
       toast.success(location.state.toastMessage);
@@ -23,15 +23,13 @@ const location = useLocation();
           <Header />
         </Box>
 
-        <Box sx={{
-          lexGrow: 1,
-          bgcolor: '#f5f5f5',
-          p: 2,
-          overflowY: 'auto',
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
-            <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray' }}>
-              Thống kê
+        <Box sx={{ lexGrow: 1,
+              bgcolor: '#f5f5f5',
+              p: 2,
+              overflowY: 'auto', }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt:2 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500 , color: 'gray' }}>
+              Sản phẩm chờ
             </Typography>
           </Box>
           <Box
@@ -42,7 +40,7 @@ const location = useLocation();
               overflowY: 'auto',
             }}
           >
-            <Dashboard />
+            <WaitingTable />
           </Box>
 
         </Box>

@@ -11,20 +11,20 @@ import {
 } from '@mui/material';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import WeekendIcon from '@mui/icons-material/Weekend';
-import BrushIcon from '@mui/icons-material/Brush';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import logoGreen from '../../assets/image/logo_green.png';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 const menuItems = [
   { text: 'Thống kê', icon: <DashboardIcon />, route: 'adminDashboard' },
-  { text: 'Nội thất', icon: <WeekendIcon />, route: 'adminFurniture' },
-  { text: 'Thiết kế', icon: <BrushIcon />, route: 'adminDesign' },
+  { text: 'Dịch vụ xét nghiệm', icon: <AssignmentIcon />, route: 'adminTestingServices' },
   { text: 'Đơn hàng', icon: <ListAltIcon />, route: 'adminOrder' },
+  { text: 'Tư vấn viên', icon: <PersonOutlineIcon />, route: 'adminCounselor' },
   { text: 'Người dùng', icon: <PeopleIcon />, route: 'adminUser' },
   { text: 'Sản phẩm chờ', icon: <HourglassTopIcon />, route: 'adminWaiting' },
 ];
@@ -94,10 +94,10 @@ const Sidebar = () => {
                 sx={{
                   mb: 1,
                   borderRadius: 1,
-                  bgcolor: isActive ? '#3F5139' : 'transparent',
+                  bgcolor: isActive ? '#3B6774' : 'transparent',
                   color: isActive ? 'white' : '#2e3a25',
                   '&:hover': {
-                    bgcolor: isActive ? '#3F5139' : '#e0e0e0',
+                    bgcolor: isActive ? '#3B6774' : '#e0e0e0',
                   },
                 }}
               >
