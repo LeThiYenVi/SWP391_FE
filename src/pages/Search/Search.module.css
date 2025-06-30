@@ -1,0 +1,293 @@
+/* Search Page Styles */
+.searchPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Header */
+.header {
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #568392;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.backButton:hover {
+  color: #2d5a66;
+}
+
+.searchContainer {
+  flex: 1;
+  position: relative;
+  max-width: 600px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #B0B9BC;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 16px 20px 16px 48px;
+  border: 2px solid #e2e8f0;
+  border-radius: 50px;
+  font-size: 16px;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #568392;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(86, 131, 146, 0.1);
+}
+
+/* Main Content */
+.main {
+  padding: 40px 0;
+}
+
+.resultsHeader {
+  margin-bottom: 32px;
+}
+
+.resultsHeader h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2d5a66;
+  margin-bottom: 16px;
+}
+
+.resultsHeader p {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+.queryText {
+  color: #568392;
+  font-weight: 600;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #568392;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Results */
+.results {
+  display: grid;
+  gap: 20px;
+}
+
+.resultCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.resultCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: #568392;
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.resultIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  color: #568392;
+}
+
+.resultType {
+  background: #f1f5f9;
+  color: #568392;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.resultTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.resultDescription {
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* No Results */
+.noResults {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.noResults svg {
+  margin-bottom: 24px;
+  color: #94a3b8;
+}
+
+.noResults h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.noResults p {
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+  max-width: 500px;
+}
+
+.backToHome {
+  background: #568392;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.backToHome:hover {
+  background: #2d5a66;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .headerContent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .backButton {
+    align-self: flex-start;
+  }
+
+  .resultsHeader h1 {
+    font-size: 2rem;
+  }
+
+  .resultCard {
+    padding: 20px;
+  }
+
+  .resultTitle {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .main {
+    padding: 24px 0;
+  }
+
+  .resultsHeader {
+    margin-bottom: 24px;
+  }
+
+  .resultsHeader h1 {
+    font-size: 1.75rem;
+  }
+
+  .resultCard {
+    padding: 16px;
+  }
+
+  .resultHeader {
+    margin-bottom: 12px;
+  }
+
+  .resultIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .noResults {
+    padding: 60px 20px;
+  }
+} 

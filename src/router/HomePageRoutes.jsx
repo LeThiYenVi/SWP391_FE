@@ -2,6 +2,7 @@ import React from 'react';
 import HomePage from '../pages/HomePage.jsx';
 import LoginPage from '../pages/Login/login.jsx';
 import RegisterPage from '../pages/Register/register.jsx';
+import SearchPage from '../pages/Search/Search.jsx';
 import Consultation from '../pages/User/Consultation/index.jsx';
 import CycleTracking from '../pages/User/CycleTracking/index.jsx';
 import STITesting from '../pages/User/STITesting/index.jsx';
@@ -410,6 +411,10 @@ const HomePageRoutes = [
   {
     path: '/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/search',
+    element: <SearchPage />,
   },
 
   // Service pages with Vietnamese URLs (bọc ProtectedRoute + MainLayout)

@@ -18,6 +18,9 @@ import {
   Send,
   User,
   LogOut,
+  Shield,
+  Users,
+  Award,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer/Footer';
@@ -26,6 +29,7 @@ import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     gender: '',
@@ -50,8 +54,38 @@ const HomePage = () => {
     navigate('/');
   };
 
+  // Hàm kiểm tra authentication và redirect nếu cần
+  const handleAuthAction = targetPath => {
+    if (!isAuthenticated) {
+      // Redirect to login page
+      navigate('/login', { state: { from: targetPath } });
+      return false;
+    }
+    navigate(targetPath);
+    return true;
+  };
+
+  // Hàm xử lý tìm kiếm
+  const handleSearch = e => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Redirect đến trang search với query parameter
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Hàm xử lý thay đổi input search
+  const handleSearchInputChange = e => {
+    setSearchQuery(e.target.value);
+  };
+
   const handleSubmit = e => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để đặt lịch tư vấn!');
+      navigate('/login');
+      return;
+    }
     // Handle form submission - integrate with backend API
     alert('Đặt lịch thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.');
     setFormData({
@@ -70,26 +104,62 @@ const HomePage = () => {
     {
       icon: MessageCircle,
       title: 'Tư vấn trực tuyến',
-      description: 'Tư vấn với chuyên gia qua video call an toàn và bảo mật',
+      description: 'Tư vấn trực tuyến với chuyên gia an toàn và bảo mật',
       link: '/tu-van',
+      requireAuth: true,
     },
     {
       icon: Calendar,
       title: 'Theo dõi chu kỳ',
       description: 'Theo dõi và dự đoán chu kỳ sinh lý một cách thông minh',
       link: '/theo-doi-chu-ky',
+      requireAuth: true,
     },
     {
       icon: TestTube,
       title: 'Xét nghiệm STIs',
       description: 'Đặt lịch và xem kết quả xét nghiệm an toàn, bảo mật',
       link: '/xet-nghiem-sti',
+      requireAuth: true,
     },
     {
       icon: HelpCircle,
       title: 'Hỏi đáp',
       description: 'Đặt câu hỏi và nhận tư vấn từ các chuyên gia',
       link: '/hoi-dap',
+      requireAuth: true,
+    },
+  ];
+
+  // More services cho section More Services
+  const moreServices = [
+    {
+      icon: Heart,
+      title: 'Chăm sóc sức khỏe',
+      description: 'Chương trình chăm sóc sức khỏe toàn diện và cá nhân hóa',
+      link: '/suc-khoe',
+      requireAuth: true,
+    },
+    {
+      icon: Shield,
+      title: 'Bảo mật thông tin',
+      description: 'Cam kết bảo mật tuyệt đối thông tin cá nhân của bạn',
+      link: '/bao-mat',
+      requireAuth: false,
+    },
+    {
+      icon: Users,
+      title: 'Cộng đồng',
+      description: 'Kết nối với cộng đồng phụ nữ quan tâm sức khỏe',
+      link: '/cong-dong',
+      requireAuth: true,
+    },
+    {
+      icon: Award,
+      title: 'Chứng nhận',
+      description: 'Đạt chuẩn quốc tế về chăm sóc sức khỏe sinh sản',
+      link: '/chung-nhan',
+      requireAuth: false,
     },
   ];
 
@@ -104,57 +174,64 @@ const HomePage = () => {
 
   const doctors = [
     {
-      name: 'Dr. Nguyễn Thị Hương',
+      name: 'Dr. Vũ Thị Thu Hiền',
       specialty: 'Sản phụ khoa',
       rating: 4.9,
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
     },
     {
       name: 'Dr. Lê Văn Minh',
       specialty: 'Tâm lý học',
       rating: 4.8,
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://hoanghamobile.com/tin-tuc/wp-content/webp-express/webp-images/uploads/2024/06/anh-bac-si-27.jpg.webp',
     },
     {
-      name: 'Dr. Trần Thị Lan',
+      name: 'Dr. Đỗ Phạm Nguyệt Thanh',
       specialty: 'Nội tiết',
       rating: 4.9,
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://www.hoilhpn.org.vn/documents/20182/3653964/5_May_2022_100351_GMTbs_dophamnguyetthanh.jpg/a744c0f6-07dd-457c-9075-3ec3ff26b384',
     },
   ];
 
   const blogPosts = [
     {
       title: 'Những điều cần biết về chu kỳ kinh nguyệt của phụ nữ',
-      date: 'Monday 05, September 2021',
-      author: 'Dr. Nguyễn Thị Hương',
+      date: 'Thứ Hai, 05/09/2021',
+      author: 'Dr. Vũ Thị Thu Hiền',
       views: '68',
       comments: '86',
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://cdn.tiemchunglongchau.com.vn/chu_ky_kinh_nguyet_nhung_dieu_phu_nu_can_luu_y_1_7a2abf2443.png',
     },
     {
       title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
-      date: 'Tuesday 06, September 2021',
+      date: 'Thứ Ba, 06/09/2021',
       author: 'Dr. Lê Văn Minh',
       views: '52',
       comments: '73',
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/cham_soc_suc_khoe_phu_nu_tuoi_30_4_8b7757f4c0.jpg',
     },
     {
       title: 'Tầm quan trọng của việc xét nghiệm STI định kỳ',
-      date: 'Wednesday 07, September 2021',
-      author: 'Dr. Trần Thị Lan',
+      date: 'Thứ Tư, 07/09/2021',
+      author: 'Dr. Đỗ Phạm Nguyệt Thanh',
       views: '94',
       comments: '121',
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/xet_nghiem_sti_la_gi_nhung_loai_xet_nghiem_sti_pho_bien_hien_nay_1_0f7ae7b22c.jpg',
     },
     {
       title: 'Lời khuyên từ chuyên gia về sức khỏe sinh sản',
-      date: 'Thursday 08, September 2021',
-      author: 'Dr. Nguyễn Thị Hương',
+      date: 'Thứ Năm, 08/09/2021',
+      author: 'Dr. Vũ Thị Thu Hiền',
       views: '76',
       comments: '95',
-      image: '/snapedit_1750865641043.jpeg',
+      image:
+        'https://login.medlatec.vn//ImagePath/images/20220816/20220816_kham-chua-benh-tai-medlatec-2.jpg',
     },
   ];
 
@@ -181,9 +258,9 @@ const HomePage = () => {
               <a href="#doctors" className={styles.navLink}>
                 Đội ngũ
               </a>
-              <a href="#blog" className={styles.navLink}>
+              <Link to="/blog" className={styles.navLink}>
                 Blog
-              </a>
+              </Link>
               <a href="#contact" className={styles.navLink}>
                 Liên hệ
               </a>
@@ -293,7 +370,7 @@ const HomePage = () => {
           <div className={styles.heroContent}>
             <div className={styles.heroTextContent}>
               <div className={styles.heroTag}>
-                <span>Chào mừng bạn đến với Gynexa</span>
+                <span>Chào mừng bạn đến với GYNEXA</span>
               </div>
               <h1 className={styles.heroTitle}>
                 Bắt nhịp cơ thể, hiểu thấu chính mình
@@ -307,25 +384,47 @@ const HomePage = () => {
               </div>
 
               <div className={styles.heroActions}>
-                <Link to="/tu-van" className={styles.btnPrimary}>
+                <button
+                  onClick={() => handleAuthAction('/tu-van')}
+                  className={styles.btnPrimary}
+                >
                   Tư vấn ngay <ArrowRight size={16} />
-                </Link>
-                <Link to="/theo-doi-chu-ky" className={styles.btnOutline}>
+                </button>
+                <button
+                  onClick={() => handleAuthAction('/theo-doi-chu-ky')}
+                  className={styles.btnOutline}
+                >
                   Theo dõi chu kỳ
-                </Link>
+                </button>
               </div>
 
               <div className={styles.searchSection}>
-                <div className={styles.searchContainer}>
+                <form
+                  onSubmit={handleSearch}
+                  className={styles.searchContainer}
+                >
                   <Search className={styles.searchIcon} />
                   <input
                     type="text"
                     placeholder="Tìm kiếm thông tin, dịch vụ..."
                     className={styles.searchInput}
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
                   />
-                  <button className={styles.searchBtn}>Tìm kiếm</button>
-                </div>
+                  <button type="submit" className={styles.searchBtn}>
+                    Tìm kiếm
+                  </button>
+                </form>
               </div>
+            </div>
+
+            {/* Thêm ảnh vào hero section */}
+            <div className={styles.heroImageContainer}>
+              <img
+                src="https://vietmyclinic.com.vn/wp-content/uploads/2019/12/khoa-hinh-anh.jpg"
+                alt="Dịch vụ y tế chuyên nghiệp"
+                className={styles.heroLogo}
+              />
             </div>
           </div>
         </div>
@@ -381,28 +480,51 @@ const HomePage = () => {
 
           <div className={styles.servicesGrid}>
             {services.map((service, index) => (
-              <Link
+              <div
                 key={index}
-                to={service.link}
                 className={styles.serviceCard}
+                onClick={() => {
+                  if (service.requireAuth) {
+                    handleAuthAction(service.link);
+                  } else {
+                    navigate(service.link);
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
               >
                 <div className={styles.serviceIcon}>
                   <service.icon size={32} />
                 </div>
                 <h3>{service.title}</h3>
                 <p>{service.description}</p>
-              </Link>
+              </div>
             ))}
           </div>
 
+          {/* More Services Section - dàn đều thành 1 hàng ngang */}
           <div className={styles.moreServices}>
-            <Link to="/suc-khoe" className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <Heart size={32} />
-              </div>
-              <h3>Chăm sóc sức khỏe</h3>
-              <p>Chương trình chăm sóc sức khỏe toàn diện và cá nhân hóa</p>
-            </Link>
+            <div className={styles.moreServicesGrid}>
+              {moreServices.map((service, index) => (
+                <div
+                  key={index}
+                  className={styles.serviceCard}
+                  onClick={() => {
+                    if (service.requireAuth) {
+                      handleAuthAction(service.link);
+                    } else {
+                      navigate(service.link);
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className={styles.serviceIcon}>
+                    <service.icon size={32} />
+                  </div>
+                  <h3>{service.title}</h3>
+                  <p>{service.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -414,13 +536,21 @@ const HomePage = () => {
             <div className={styles.bookingLeft}>
               <h2>Đặt lịch để được tư vấn miễn phí ngay</h2>
               <p>
-                Chăm sóc sức khỏe giới tính bắt đầu từ sự thấu hiểu. Từ theo dõi
+                Chăm sóc sức khỏe giới tính bắt đầu từ sự thấu hiểu. Từ theo dỗi
                 chu kỳ kinh nguyệt đến đặt lịch tư vấn riêng tư, Gynexa đồng
                 hành cùng bạn trên từng nhịp sống. Trải nghiệm nền tảng y tế
                 thông minh, nơi xét nghiệm STIs được quản lý an toàn, kết quả
                 bảo mật và hỗ trợ chuyên sâu từ đội ngũ tư vấn viên giàu kinh
                 nghiệm.
               </p>
+            </div>
+
+            <div className={styles.bookingImageContainer}>
+              <img
+                src="https://congtyso.com/assets/images/doctors/doctor-image-remove-background.png"
+                alt="Bác sĩ chuyên nghiệp"
+                className={styles.bookingDoctorImage}
+              />
             </div>
 
             <div className={styles.bookingForm}>
