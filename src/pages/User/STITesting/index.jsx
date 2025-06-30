@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TestTube, MapPin, Clock, FileText, Download, Eye } from 'lucide-react';
 import { format, addDays } from 'date-fns';
@@ -9,6 +10,7 @@ const STITesting = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [activeTab, setActiveTab] = useState('booking'); // booking, history, results
+
 
   const availableTests = [
     {
@@ -130,9 +132,11 @@ const STITesting = () => {
     // Mock booking logic
     toast.success('Đặt lịch xét nghiệm thành công!');
     setSelectedTests([]);
+
     setSelectedDate('');
     setSelectedLocation('');
     setShowBookingForm(false);
+
   };
 
   const generateAvailableDates = () => {
