@@ -374,6 +374,116 @@
   }
 }
 
+/* Forgot Password & Reset Password Styles */
+.success-icon {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.email-sent-info {
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--primary-lighter, #e8f4f8);
+  border-radius: var(--border-radius, 8px);
+  border: 1px solid var(--primary-light, #bed2f7);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--primary-dark, #2d7a91);
+  font-size: 14px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.back-to-login {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  color: var(--primary-color, #3a99b7);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 12px;
+  border: 2px solid var(--primary-color, #3a99b7);
+  border-radius: var(--border-radius, 8px);
+  transition: var(--transition, all 0.3s ease);
+}
+
+.back-to-login:hover {
+  background: var(--primary-color, #3a99b7);
+  color: var(--text-white, #ffffff);
+}
+
+.back-link {
+  margin-bottom: 24px;
+}
+
+.back-link a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary, #666666);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition, all 0.3s ease);
+}
+
+.back-link a:hover {
+  color: var(--primary-color, #3a99b7);
+}
+
+.auth-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.auth-links a {
+  color: var(--primary-color, #3a99b7);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition, all 0.3s ease);
+}
+
+.auth-links a:hover {
+  color: var(--primary-dark, #2d7a91);
+  text-decoration: underline;
+}
+
+.password-requirements {
+  margin: 16px 0 24px 0;
+  padding: 16px;
+  background: var(--background-gray, #f8f9fa);
+  border-radius: var(--border-radius, 8px);
+  border-left: 4px solid var(--primary-color, #3a99b7);
+}
+
+.requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--text-secondary, #666666);
+  font-size: 13px;
+}
+
+.requirement-item:last-child {
+  margin-bottom: 0;
+}
+
+.requirement-item svg {
+  color: var(--primary-color, #3a99b7);
+  flex-shrink: 0;
+}
+
 @media (max-width: 480px) {
   .login-left {
     padding: 16px;
@@ -391,5 +501,17 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .auth-links {
+    font-size: 13px;
+  }
+
+  .email-sent-info {
+    padding: 16px;
+  }
+
+  .success-icon {
+    margin-bottom: 20px;
   }
 }
