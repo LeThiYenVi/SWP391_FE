@@ -14,6 +14,14 @@ export const routes = {
     adminCounselor: "/admin/counselor",
     adminWaiting: "/admin/waiting",
 
+    // Consultant routes
+    consultantDashboard: "/consultant/dashboard",
+    consultantAppointments: "/consultant/appointments",
+    consultantMessages: "/consultant/messages",
+    consultantProfile: "/consultant/profile",
+    consultantAnalytics: "/consultant/analytics",
+    consultantSettings: "/consultant/settings",
+
     chat: "/chat",
     partnerDashboard: "/dashboard",
     designList: "/designs",
