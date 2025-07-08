@@ -883,20 +883,40 @@ const Dashboard = () => {
             <div className="profile-summary-card">
               <div className="profile-info">
                 <div className="profile-avatar">
-                  <User size={32} />
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.name || 'Người dùng'}
+                      className="profile-avatar-img"
+                    />
+                  ) : (
+                    <User size={28} />
+                  )}
                 </div>
                 <div className="profile-details">
-                  <h3>{user?.name || 'Người dùng'}</h3>
-                  <p>{user?.email || 'user@gynexa.com'}</p>
-                  <span className="profile-status">Thành viên từ 2024</span>
+                  <h3 className="profile-name">{user?.name || 'Người dùng'}</h3>
+                  <p className="profile-email">
+                    {user?.email ||
+                      (user?.role &&
+                        user.role.replace('ROLE_', '').charAt(0).toUpperCase() +
+                          user.role
+                            .replace('ROLE_', '')
+                            .slice(1)
+                            .toLowerCase() +
+                          '@gynexa.com')}
+                  </p>
+                  <span className="profile-status">
+                    <span className="status-dot"></span>
+                    Thành viên từ 2024
+                  </span>
                 </div>
               </div>
               <div className="profile-actions">
-                <Link to="/profile" className="profile-action-btn">
+                <Link to="/dashboard" className="profile-action-btn">
                   <Edit size={16} />
                   Chỉnh sửa hồ sơ
                 </Link>
-                <Link to="/settings" className="profile-action-btn">
+                <Link to="/dashboard" className="profile-action-btn">
                   <Settings size={16} />
                   Cài đặt
                 </Link>

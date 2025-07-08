@@ -4,7 +4,7 @@ import { routes } from "../routes";
 import { API_BASE_URL } from "../config";
 
 const instance = axios.create({
-  baseURL: `${API_BASE_URL}`,
+  baseURL: "http://localhost:8080",
 });
 
 instance.interceptors.request.use(

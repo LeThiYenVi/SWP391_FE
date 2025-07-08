@@ -2,14 +2,20 @@ import instance from "./customize-axios";
 
 
 // =============Auth============
-const loginDesignerAPI = async (email, password) => {
+const loginAPI = async (username, password) => {
   try {
-    const response = await instance.post('/api/auth/designer/login', {
-      email,
+    const response = await instance.post('/api/auth/login', {
+      username,
       password,
     });
-    console.log('Login success:', response.data);
-    return response.data;
+    console.log('Login success response:', response); // Log trực tiếp response
+    console.log('Response type:', typeof response);
+    console.log('Response keys:', Object.keys(response));
+    console.log('Username from response:', response.username);
+    console.log('Role from response:', response.role);
+    console.log('Email from response:', response.email);
+    console.log('FullName from response:', response.fullName);
+    return response; // Trả về trực tiếp response (vì nó chính là data)
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -32,6 +38,19 @@ const resetPasswordAPI = async (token, newPassword) => {
   }
 };
 
+const loginByGoogleAPI = async code => {
+  try {
+    // The backend is expected to handle this authorization code
+    const response = await instance.post('/api/auth/login-by-google', {
+      code,
+    });
+    console.log('Google Login success:', response);
+    return response;
+  } catch (error) {
+    console.error('Google Login error:', error);
+    throw error;
+  }
+};
 
 const forgetPasswordAPI = async (email, role) => {
   try {
@@ -47,22 +66,23 @@ const forgetPasswordAPI = async (email, role) => {
   }
 };
 
-
-const registerDesignerAPI = async (name, email, password, applicationUrl) => {
+const registerAPI = async (userData) => {
+  console.log('Sending registration data to backend:', userData); // Log dữ liệu gửi đi
   try {
-    const response = await instance.post('/api/auth/designer/register', {
-      name,
-      email,
-      password,
-      applicationUrl: applicationUrl,
+    const response = await instance.post('/api/auth/register', {
+      username: userData.username,
+      password: userData.password,
+      email: userData.email,
+      fullName: userData.fullName,
     });
     console.log('Register success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Register error:', error.response?.data || error.message);
     throw error;
   }
 };
+
 
 const applicationResultAPI = async (email, isApproved) => {
   try {
@@ -514,7 +534,8 @@ export {
   getTopDesignersByRevenueAPI,
   getRevenueByDayAPI,
   getProductByIdAPI,
-  loginDesignerAPI,
+  loginAPI,
+  loginByGoogleAPI,
   getAllFurnituresAPI,
   getAllDesignsAPI,
   getAllDesignsByDesAPI,
@@ -522,7 +543,7 @@ export {
   getAllOrdersByDesAPI,
   getOrdersById,
   getAllOrdersAPI,
-  registerDesignerAPI,
+  registerAPI,
   applicationResultAPI,
   updatePasswordAPI,
   forgetPasswordAPI,

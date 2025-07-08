@@ -12,6 +12,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     username: '',
+    fullName: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false,
@@ -38,6 +39,10 @@ const Register = () => {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       toast.error('Email không hợp lệ');
+      return false;
+    }
+    if (!formData.fullName.trim()) {
+      toast.error('Vui lòng nhập họ và tên');
       return false;
     }
     if (!formData.username.trim()) {
@@ -79,15 +84,16 @@ const Register = () => {
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        fullName: formData.fullName,
       });
       if (result.success) {
         toast.success('Đăng ký thành công! Chào mừng bạn đến với Gynexa!');
         navigate(from, { replace: true });
       } else {
-        toast.error('Có lỗi xảy ra sau khi đăng ký');
+        toast.error(result.error || 'Có lỗi xảy ra sau khi đăng ký');
       }
     } catch (error) {
-      toast.error('Đăng ký thất bại. Vui lòng thử lại sau.');
+      toast.error(error.message || 'Đăng ký thất bại. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -129,6 +135,19 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Nhập email của bạn"
+                disabled={loading}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="fullName">Họ và tên</label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                placeholder="Nhập họ và tên của bạn"
                 disabled={loading}
                 required
               />
