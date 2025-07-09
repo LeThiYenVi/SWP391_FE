@@ -1,20 +1,33 @@
 import React from 'react';
-import Login from '../pages/Login/login.jsx';
-import ForgotPassword from '../pages/Login/ForgotPassword.jsx';
-import ResetPassword from '../pages/Login/ResetPassword.jsx';
+import Login from '../pages/Login/login';
+import ForgotPassword from '../pages/Login/ForgotPassword';
+import ResetPassword from '../pages/Login/ResetPassword';
+import LoginLayout from '../layouts/LoginLayout';
 
 const LoginRouters = [
   {
     path: '/login',
-    element: <Login />,
+    element: (
+      <LoginLayout>
+        <Login />
+      </LoginLayout>
+    ),
   },
   {
     path: '/forgot-password',
-    element: <ForgotPassword />,
+    element: (
+      <LoginLayout>
+        <ForgotPassword />
+      </LoginLayout>
+    ),
   },
   {
     path: '/reset-password',
-    element: <ResetPassword />,
+    element: (
+      <LoginLayout>
+        <ResetPassword />
+      </LoginLayout>
+    ),
   },
 ];
 
