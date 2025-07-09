@@ -29,58 +29,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async credentials => {
-    try {
-      // Mock API call - thay thế bằng API thực tế
-      const userData = {
-        id: 1,
-        name: credentials.username,
-        email: `${credentials.username}@example.com`,
-        role: 'user',
-        avatar: null,
-        cycleData: {
-          lastPeriod: null,
-          cycleLength: 28,
-          periodLength: 5,
-        },
-      };
-      // Giả lập token
-      const fakeToken = 'mocked_token_123456';
-      setUser(userData);
-      setToken(fakeToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', fakeToken);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    // TODO: Gọi API thực tế để đăng nhập
+    return { success: false, error: 'Chưa triển khai API thực tế' };
   };
 
   const register = async registerData => {
-    try {
-      // Mock API call - thay thế bằng API thực tế
-      // Đăng ký thành công thì tự động login
-      const userData = {
-        id: 2,
-        name: registerData.username,
-        email: registerData.email,
-        role: 'user',
-        avatar: null,
-        cycleData: {
-          lastPeriod: null,
-          cycleLength: 28,
-          periodLength: 5,
-        },
-      };
-      // Giả lập token
-      const fakeToken = 'mocked_token_654321';
-      setUser(userData);
-      setToken(fakeToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', fakeToken);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    // TODO: Gọi API thực tế để đăng ký
+    return { success: false, error: 'Chưa triển khai API thực tế' };
   };
 
   const logout = () => {

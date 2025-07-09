@@ -7,12 +7,16 @@ import AdminRoutes from './AdminRoutes';
 import { createBrowserRouter } from 'react-router-dom';
 
 const AppRoutes=[
-    ...HomePageRoutes,
     ...LoginRouters,
     ...RegisterRouters,
     ...DashboardRoutes,
     ...AdminRoutes,
+    ...HomePageRoutes,
 ]
+
+// Debug: In ra tất cả routes
+console.log('All routes:', AppRoutes.map(route => route.path));
+
 const router = createBrowserRouter(AppRoutes);
 export default router
 

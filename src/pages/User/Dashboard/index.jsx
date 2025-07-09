@@ -69,14 +69,6 @@ const Dashboard = () => {
   const daysUntilOvulation = getDaysUntilOvulation();
   const inFertilityWindow = isInFertilityWindow();
 
-  // Mock data cho các chức năng Dashboard
-  const overviewStats = {
-    totalConsultations: 12,
-    totalSTITests: 3,
-    totalQuestions: 8,
-    newNotifications: 4,
-    upcomingAppointments: upcomingAppointments.length,
-  };
 
   const notifications = [
     {
