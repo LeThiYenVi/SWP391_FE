@@ -13,25 +13,25 @@ function App() {
   return (
     <HelmetProvider>
       <ErrorBoundary>
-        <AuthProvider>
-          <CycleProvider>
-            <AppointmentProvider>
-              <RouterProvider router={router} />
-              <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-              />
-            </AppointmentProvider>
-          </CycleProvider>
-        </AuthProvider>
+      <AuthProvider>
+        <CycleProvider>
+          <AppointmentProvider>
+            <RouterProvider router={router} />
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
+          </AppointmentProvider>
+        </CycleProvider>
+      </AuthProvider>
       </ErrorBoundary>
     </HelmetProvider>
   );
