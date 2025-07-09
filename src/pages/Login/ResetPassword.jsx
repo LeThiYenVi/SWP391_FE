@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { resetPasswordAPI } from '../../services/UsersSevices';
@@ -18,17 +18,44 @@ const ResetPassword = () => {
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
-    // Lấy token từ URL parameters
+    // Check verification from OTP flow first
+    if (location.state?.verified && location.state?.email) {
+      // Get token stored in sessionStorage from OTP verification
+      const storedToken = sessionStorage.getItem('resetToken');
+      if (storedToken) {
+        setToken(storedToken);
+        setEmail(location.state.email);
+        console.log('Reset token from OTP verification found');
+      } else {
+        // If we have verified but no token, use the email as token temporarily
+        // Backend might use email + verification status to allow reset
+        setToken(location.state.email);
+        setEmail(location.state.email);
+      }
+      return;
+    }
+    
+    // If no verification from OTP, check URL parameters (old flow)
     const tokenParam = searchParams.get('token');
     if (tokenParam) {
       setToken(tokenParam);
+      console.log('Reset password token found:', tokenParam.substring(0, 10) + '...');
+      
+      // Kiểm tra xem token có phải là một chuỗi hợp lệ
+      if (tokenParam.length < 10) {
+        toast.error('Token reset mật khẩu không hợp lệ');
+        navigate('/login');
+      }
     } else {
-      toast.error('Link reset mật khẩu không hợp lệ');
-      navigate('/login');
+      // No token and no verification - redirect to forgot password
+      toast.error('Vui lòng xác thực OTP trước khi đặt lại mật khẩu');
+      navigate('/forgot-password');
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, location.state]);
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -64,15 +91,39 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      await resetPasswordAPI(token, formData.newPassword);
+      console.log('Submitting new password with token');
+      
+      // If we have an email from OTP flow, include it in the request
+      if (email) {
+        // We might need to update the API to handle email for OTP-verified reset
+        await resetPasswordAPI(token, formData.newPassword, { email });
+      } else {
+        // Regular token-based reset
+        await resetPasswordAPI(token, formData.newPassword);
+      }
+      
+      // Clean up session storage
+      sessionStorage.removeItem('otpEmail');
+      sessionStorage.removeItem('resetToken');
+      
       setSuccess(true);
       toast.success('Reset mật khẩu thành công!');
+      
+      // Thêm timeout để chuyển về trang đăng nhập sau khi reset thành công
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000); // Chuyển hướng sau 3 giây
     } catch (error) {
       console.error('Reset password error:', error);
+      
+      // Xử lý chi tiết các loại lỗi
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else if (error.response?.status === 400) {
-        toast.error('Link reset mật khẩu đã hết hạn hoặc không hợp lệ');
+        toast.error('Yêu cầu đặt lại mật khẩu không hợp lệ');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        toast.error('Token không hợp lệ hoặc đã hết hạn');
+        setTimeout(() => navigate('/forgot-password'), 2000);
       } else {
         toast.error('Có lỗi xảy ra, vui lòng thử lại sau');
       }

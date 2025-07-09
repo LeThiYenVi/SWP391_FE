@@ -22,18 +22,32 @@ const loginAPI = async (username, password) => {
   }
 };
 
-const resetPasswordAPI = async (token, newPassword) => {
+const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
   try {
-    const response = await instance.post('/api/auth/reset-password', null, {
-      params: {
-        token,
-        newPassword,
-      },
-    });
-    console.log('Reset password success:', response.data);
+    console.log('DEBUG - Calling reset password API with token:', token ? `${token.substring(0, 10)}...` : 'invalid token');
+    
+    // Combine token, newPassword and any extra parameters (like email)
+    const requestData = {
+      token: token,
+      newPassword: newPassword,
+      ...extraParams
+    };
+    
+    // Đảm bảo gửi dữ liệu trong body
+    const response = await instance.post('/api/auth/reset-password', requestData);
+    
+    console.log('DEBUG - Reset password success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Reset password error:', error.response?.data || error.message);
+    console.error('DEBUG - Reset password error:', error.response?.data || error.message);
+    // Log HTTP status for debugging
+    if (error.response) {
+      console.error('DEBUG - Status code:', error.response.status);
+      console.error('DEBUG - Response headers:', error.response.headers);
+      console.error('DEBUG - Response data:', error.response.data);
+    } else if (error.request) {
+      console.error('DEBUG - No response received, request sent:', error.request);
+    }
     throw error;
   }
 };
@@ -52,16 +66,60 @@ const loginByGoogleAPI = async code => {
   }
 };
 
-const forgetPasswordAPI = async (email, role) => {
+const forgetPasswordAPI = async (email, verificationUrl = null) => {
   try {
-    const response = await instance.post('/api/auth/forget-password', null, {
-      params: {
-        email,
-        role,
-      },
-    });
+    // Tạo request body với email và URL xác thực OTP (nếu có)
+    const requestBody = { 
+      email: email 
+    };
+    if (verificationUrl) {
+      requestBody.otpVerificationLink = verificationUrl;
+    }
+    
+    const response = await instance.post('/api/auth/forgot-password', requestBody);
     return response.data;
   } catch (error) {
+    console.error('Forget password API error:', error.message);
+    throw error;
+  }
+};
+
+const validateOtpAPI = async (email, otpCode) => {
+  try {
+    console.log('Validating OTP for email:', email, 'OTP:', otpCode);
+    
+    // Sử dụng phương thức POST và gửi email và OTP trong request body
+    const response = await instance.post('/api/auth/validate-otp', {
+      email: email,
+      otpCode: otpCode
+    });
+    
+    console.log('Validate OTP success:', response.data);
+    
+    // Kiểm tra xem response có đúng định dạng không
+    if (!response.data) {
+      throw new Error('Invalid response format from API');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Validate OTP error:', error.message);
+    
+    // Log thêm thông tin để debug
+    if (error.response) {
+      console.error('Error status:', error.response.status);
+      console.error('Error data:', error.response.data);
+      
+      // Tùy chỉnh thông báo lỗi dựa trên mã lỗi HTTP
+      if (error.response.status === 400) {
+        console.error('Invalid OTP or format');
+      } else if (error.response.status === 401) {
+        console.error('OTP expired');
+      } else if (error.response.status === 404) {
+        console.error('OTP request not found');
+      }
+    }
+    
     throw error;
   }
 };
@@ -547,6 +605,7 @@ export {
   applicationResultAPI,
   updatePasswordAPI,
   forgetPasswordAPI,
+  validateOtpAPI,
   resetPasswordAPI,
   getAllAccountsAPI,
   getAwaitingDesignersAPI,
