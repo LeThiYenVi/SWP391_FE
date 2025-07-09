@@ -1,5 +1,5 @@
 import React from 'react';
-import Register from '../pages/Register/register.jsx';
+import Register from '../pages/Register/RegisterImproved.jsx';
 
 const RegisterRouters = [
   {

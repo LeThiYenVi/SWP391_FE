@@ -1,16 +1,18 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const { isAuthenticated, loading, hasPermission } = useAuth();
   const location = useLocation();
 
   // Loading khi chưa xác định được trạng thái đăng nhập
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+        <p className="mt-4 text-gray-600">Đang tải...</p>
       </div>
     );
   }
@@ -20,23 +22,11 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Nếu cần kiểm tra vai trò
-  // if (allowedRoles && allowedRoles.length > 0) {
-  //   const token = localStorage.getItem('token');
-  //   try {
-  //     const decoded = jwtDecode(token);
-  //     const userRole = decoded?.Role;
-
-  //     if (!allowedRoles.includes(userRole)) {
-  //       // Nếu không đúng vai trò, chuyển về trang không có quyền
-  //       return <Navigate to="/unauthorized" replace />;
-  //     }
-  //   } catch (error) {
-  //     console.error('Lỗi decode token:', error);
-  //     localStorage.removeItem('token');
-  //     return <Navigate to="/login" replace />;
-  //   }
-  // }
+  // Kiểm tra quyền (nếu có yêu cầu)
+  if (allowedRoles.length > 0 && !hasPermission(allowedRoles)) {
+    // Nếu không đúng vai trò, chuyển về trang không có quyền
+    return <Navigate to="/unauthorized" replace />;
+  }
 
   // Nếu hợp lệ, render children
   return children;

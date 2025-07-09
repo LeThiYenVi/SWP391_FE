@@ -1,5 +1,5 @@
 import React from 'react';
-import Login from '../pages/Login/login';
+import Login from '../pages/Login/LoginImproved';
 import ForgotPassword from '../pages/Login/ForgotPassword';
 import ResetPassword from '../pages/Login/ResetPassword';
 import LoginLayout from '../layouts/LoginLayout';

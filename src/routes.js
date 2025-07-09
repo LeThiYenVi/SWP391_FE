@@ -1,30 +1,38 @@
 // src/routes.js
 export const routes = {
-   landing: "/",
-    login: "/login",
-    register: "/register",
-    forgotPassword: "/forgot-password",
-    resetPassword: "/reset-password",
-    adminDashboard: "/admin/dashboard",
-    adminTestingServices: "/admin/testing-services",
-    adminOrder: "/admin/order",
-    adminOrderDetail: "/admin/orders/:orderId",
-    adminProfile: "/admin/profile",
-    adminUser: "/admin/user",
-    adminCounselor: "/admin/counselor",
-    adminWaiting: "/admin/waiting",
-
-    chat: "/chat",
-    partnerDashboard: "/dashboard",
-    designList: "/designs",
-    furList: "/furnitures",
-    orderList: "/orders",
-    orderDetail: "/orders/:orderId",
-    profile: "profile",
-    newFurniture: "/furniture/create",
-    newDesign: "/design/create",
-    waitList: "/waiting-list",
-    designDetail: "/design/detail/:id",
-    furnitureDetail: "/furniture/detail/:id"
-
+  // Public routes
+  landing: "/",
+  login: "/login",
+  register: "/register",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
+  search: "/search",
+  
+  // User dashboard routes
+  dashboard: "/dashboard",
+  cycleTracking: "/cycle-tracking",
+  consultation: "/consultation",
+  stiTesting: "/sti-testing",
+  qa: "/qa",
+  profile: "/profile",
+  settings: "/settings",
+  
+  // Vietnamese URL aliases (SEO friendly)
+  tuVan: "/tu-van",
+  theoDoiChuKy: "/theo-doi-chu-ky",
+  xetNghiemSTI: "/xet-nghiem-sti",
+  hoiDap: "/hoi-dap",
+  
+  // Admin routes
+  adminDashboard: "/admin/dashboard",
+  adminTestingServices: "/admin/testing-services",
+  adminOrder: "/admin/order",
+  adminOrderDetail: "/admin/orders/:orderId",
+  adminProfile: "/admin/profile",
+  adminUser: "/admin/user",
+  adminCounselor: "/admin/counselor",
+  adminWaiting: "/admin/waiting",
+  
+  // Catch all
+  notFound: "*"
 };

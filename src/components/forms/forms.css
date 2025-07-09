@@ -1,0 +1,388 @@
+/* 
+ * 表单组件通用样式
+ * 包含输入框、选择框、复选框、文本区域和按钮的样式
+ */
+
+/* ===== 通用样式 ===== */
+.full-width {
+  width: 100%;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+}
+
+.required-mark {
+  color: var(--color-danger, #e53935);
+  margin-left: 0.25rem;
+}
+
+.error-message {
+  color: var(--color-danger, #e53935);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.error-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-danger, #e53935);
+  margin-left: 0.5rem;
+}
+
+/* ===== 输入框样式 ===== */
+.input-field-container {
+  margin-bottom: 1rem;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 0.375rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper.is-focused {
+  border-color: var(--color-primary, #3a99b7);
+  box-shadow: 0 0 0 2px rgba(58, 153, 183, 0.2);
+}
+
+.input-wrapper.has-error {
+  border-color: var(--color-danger, #e53935);
+}
+
+.input-wrapper.is-disabled {
+  background-color: var(--bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+.input-icon {
+  color: var(--text-secondary, #666);
+  margin-left: 0.75rem;
+}
+
+.input-field {
+  flex: 1;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--text-primary, #333);
+  width: 100%;
+}
+
+.input-field:focus {
+  outline: none;
+}
+
+.input-field::placeholder {
+  color: var(--text-placeholder, #aaa);
+}
+
+.input-field:disabled {
+  cursor: not-allowed;
+}
+
+.password-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: 0.75rem;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle:focus {
+  outline: none;
+}
+
+/* ===== 选择框样式 ===== */
+.select-field-container {
+  margin-bottom: 1rem;
+}
+
+.select-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 0.375rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.select-wrapper.has-error {
+  border-color: var(--color-danger, #e53935);
+}
+
+.select-wrapper.is-disabled {
+  background-color: var(--bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+.select-icon {
+  color: var(--text-secondary, #666);
+  margin-left: 0.75rem;
+}
+
+.select-field {
+  flex: 1;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--text-primary, #333);
+  width: 100%;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select-field:focus {
+  outline: none;
+}
+
+.select-field:disabled {
+  cursor: not-allowed;
+}
+
+.select-arrow {
+  color: var(--text-secondary, #666);
+  margin-right: 0.75rem;
+  pointer-events: none;
+}
+
+/* ===== 复选框样式 ===== */
+.checkbox-field-container {
+  margin-bottom: 1rem;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: flex-start;
+}
+
+.checkbox-wrapper.has-error .checkbox-label {
+  color: var(--color-danger, #e53935);
+}
+
+.checkbox-wrapper.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkbox-input {
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.checkbox-label {
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+  cursor: pointer;
+}
+
+/* ===== 文本区域样式 ===== */
+.textarea-field-container {
+  margin-bottom: 1rem;
+}
+
+.textarea-wrapper {
+  position: relative;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 0.375rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.textarea-wrapper.is-focused {
+  border-color: var(--color-primary, #3a99b7);
+  box-shadow: 0 0 0 2px rgba(58, 153, 183, 0.2);
+}
+
+.textarea-wrapper.has-error {
+  border-color: var(--color-danger, #e53935);
+}
+
+.textarea-wrapper.is-disabled {
+  background-color: var(--bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+.textarea-field {
+  width: 100%;
+  border: none;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--text-primary, #333);
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea-field:focus {
+  outline: none;
+}
+
+.textarea-field::placeholder {
+  color: var(--text-placeholder, #aaa);
+}
+
+.textarea-field:disabled {
+  cursor: not-allowed;
+}
+
+.textarea-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.char-counter {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.char-counter.warning {
+  color: var(--color-warning, #f59e0b);
+}
+
+/* ===== 按钮样式 ===== */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.button:focus {
+  outline: none;
+}
+
+/* 按钮大小 */
+.button-small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.button-medium {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+}
+
+.button-large {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* 按钮变体 */
+.button-primary {
+  background-color: var(--color-primary, #3a99b7);
+  color: white;
+}
+
+.button-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark, #2c7a92);
+}
+
+.button-secondary {
+  background-color: var(--color-secondary, #6c757d);
+  color: white;
+}
+
+.button-secondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark, #5a6268);
+}
+
+.button-outline {
+  background-color: transparent;
+  border-color: var(--color-primary, #3a99b7);
+  color: var(--color-primary, #3a99b7);
+}
+
+.button-outline:hover:not(:disabled) {
+  background-color: rgba(58, 153, 183, 0.1);
+}
+
+.button-text {
+  background-color: transparent;
+  color: var(--color-primary, #3a99b7);
+  border-color: transparent;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.button-text:hover:not(:disabled) {
+  background-color: rgba(58, 153, 183, 0.1);
+}
+
+.button-danger {
+  background-color: var(--color-danger, #e53935);
+  color: white;
+}
+
+.button-danger:hover:not(:disabled) {
+  background-color: var(--color-danger-dark, #c62828);
+}
+
+.button-success {
+  background-color: var(--color-success, #4caf50);
+  color: white;
+}
+
+.button-success:hover:not(:disabled) {
+  background-color: var(--color-success-dark, #388e3c);
+}
+
+/* 按钮状态 */
+.button-disabled,
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-full-width {
+  width: 100%;
+}
+
+.button-loading {
+  cursor: wait;
+}
+
+/* 按钮图标 */
+.button-spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+.button-icon-left {
+  margin-right: 0.5rem;
+}
+
+.button-icon-right {
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} 
