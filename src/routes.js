@@ -11,8 +11,9 @@ export const routes = {
     adminOrderDetail: "/admin/orders/:orderId",
     adminProfile: "/admin/profile",
     adminUser: "/admin/user",
-    adminCounselor: "/admin/counselor",
+    adminCounselor: "/admin/consultants",
     adminWaiting: "/admin/waiting",
+    adminContentManagement: "/admin/content-management",
 
     chat: "/chat",
     partnerDashboard: "/dashboard",

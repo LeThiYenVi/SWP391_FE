@@ -116,8 +116,6 @@ const TestingTable = ({ searchTerm }) => {
               <TableCell sx={{ fontWeight: 'bold', minWidth: 250, bgcolor: '#3B6774', color: 'white' }}>Tên dịch vụ</TableCell>
               <TableCell sx={{ fontWeight: 'bold', minWidth: 120, bgcolor: '#3B6774', color: 'white' }}>Giá (VND)</TableCell>
               <TableCell sx={{ fontWeight: 'bold', minWidth: 150, bgcolor: '#3B6774', color: 'white' }}>Danh mục</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 120, bgcolor: '#3B6774', color: 'white' }}>Thời gian</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 150, bgcolor: '#3B6774', color: 'white' }}>Loại mẫu</TableCell>
               <TableCell sx={{ fontWeight: 'bold', minWidth: 200, bgcolor: '#3B6774', color: 'white' }}>Chuẩn bị</TableCell>
               <TableCell sx={{ fontWeight: 'bold', minWidth: 100, bgcolor: '#3B6774', color: 'white' }}>Trạng thái</TableCell>
               <TableCell sx={{ fontWeight: 'bold', minWidth: 120, bgcolor: '#3B6774', color: 'white' }}>Thao tác</TableCell>
@@ -173,12 +171,6 @@ const TestingTable = ({ searchTerm }) => {
                       fontWeight: 'bold'
                     }}
                   />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{service.duration}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{service.sampleType}</Typography>
                 </TableCell>
                 <TableCell>
                   <Tooltip title={service.preparationRequired} arrow placement="top">
