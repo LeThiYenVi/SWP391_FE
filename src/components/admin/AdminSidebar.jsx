@@ -16,9 +16,9 @@ import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import logoGreen from '../../assets/image/logo_green.png';
-import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ArticleIcon from '@mui/icons-material/Article';
 
 const menuItems = [
   { text: 'Thống kê', icon: <DashboardIcon />, route: 'adminDashboard' },
@@ -26,7 +26,7 @@ const menuItems = [
   { text: 'Đơn hàng', icon: <ListAltIcon />, route: 'adminOrder' },
   { text: 'Tư vấn viên', icon: <PersonOutlineIcon />, route: 'adminCounselor' },
   { text: 'Người dùng', icon: <PeopleIcon />, route: 'adminUser' },
-  { text: 'Sản phẩm chờ', icon: <HourglassTopIcon />, route: 'adminWaiting' },
+  { text: 'Quản lý nội dung', icon: <ArticleIcon />, route: 'adminContentManagement' },
 ];
 
 const bottomItems = [
@@ -53,6 +53,8 @@ const Sidebar = () => {
         boxSizing: 'border-box',
         boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
         overflowY: 'auto',
+        minWidth: 240,
+        flexShrink: 0,
       }}
     >
       {/* Logo */}

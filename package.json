@@ -1,14 +1,18 @@
 {
   "name": "gynexa-healthcare-platform",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "Professional healthcare platform for reproductive health management",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "build:clean": "rimraf dist && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext js,jsx --fix"
+    "lint:fix": "eslint src --ext js,jsx --fix",
+    "version:patch": "npm version patch && npm run build",
+    "version:minor": "npm version minor && npm run build",
+    "cache:clear": "rimraf dist && rimraf node_modules/.vite"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

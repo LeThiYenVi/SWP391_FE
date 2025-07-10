@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import Sidebar from '../../components/admin/AdminSidebar';
 import Header from '../../components/admin/AdminHeader';
+import AdminSystemInfo from '../../components/admin/AdminSystemInfo';
 import { Box, Typography } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -34,6 +35,9 @@ const location = useLocation();
               Thống kê
             </Typography>
           </Box>
+          
+          <AdminSystemInfo />
+          
           <Box
             sx={{
               flexGrow: 1,

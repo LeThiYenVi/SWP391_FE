@@ -2,9 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default defineConfig(() => ({
   base: './',
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.0'),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -46,6 +49,22 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
+        // Auto hash cho JS files
+        entryFileNames: '[name].[hash].js',
+        chunkFileNames: '[name].[hash].js',
+        // Auto hash cho CSS và assets
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/\.(css)$/.test(assetInfo.name)) {
+            return `css/[name].[hash].${ext}`;
+          }
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
+            return `img/[name].[hash].${ext}`;
+          }
+          return `assets/[name].[hash].${ext}`;
+        },
+        // Chunk splitting tối ưu
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
@@ -59,4 +78,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
   },
-});
+}));
