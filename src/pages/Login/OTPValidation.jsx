@@ -290,36 +290,34 @@ const OTPValidation = () => {
       const response = await validateOtpAPI(email, otpCode);
       console.log('OTP validation response:', response);
 
-      // Kiểm tra response từ API
-      if (response.success === false) {
-        // API trả về success = false nhưng không throw error
+      // Kiểm tra response từ API - BE trả về {success: true/false, message: "..."}
+      if (response && response.success === false) {
+        // API trả về success = false
         toast.error(response.message || 'Mã OTP không hợp lệ');
         return;
       }
 
-      // Successful validation
-      setVerified(true);
-      toast.success('Xác thực OTP thành công');
+      // Successful validation - BE trả về {success: true, message: "Mã OTP hợp lệ."}
+      if (response && response.success === true) {
+        setVerified(true);
+        toast.success('Xác thực OTP thành công');
 
-      // Store verification token if returned from the API
-      if (response.token) {
-        sessionStorage.setItem('resetToken', response.token);
-      } else if (response.data?.token) {
-        // Một số API có thể đặt token trong trường data
-        sessionStorage.setItem('resetToken', response.data.token);
+        // Lưu thông tin cần thiết cho reset password
+        // BE không trả về token trong validate OTP, chỉ trả về success status
+        sessionStorage.setItem('otpVerified', 'true');
+        sessionStorage.setItem('otpEmail', email);
+        sessionStorage.setItem('otpCode', otpCode);
+
+        // Redirect to reset password sau 1 giây (đủ để người dùng thấy thông báo thành công)
+        setTimeout(() => {
+          navigate('/reset-password', {
+            state: { verified: true, email: email },
+          });
+        }, 1000);
+      } else {
+        // Response không có format đúng
+        toast.error('Có lỗi xảy ra trong quá trình xác thực. Vui lòng thử lại sau');
       }
-
-      // Lưu thêm các thông tin cần thiết khác từ response (nếu có)
-      if (response.expiresAt) {
-        sessionStorage.setItem('tokenExpiresAt', response.expiresAt);
-      }
-
-      // Redirect to reset password sau 1 giây (đủ để người dùng thấy thông báo thành công)
-      setTimeout(() => {
-        navigate('/reset-password', {
-          state: { verified: true, email: email },
-        });
-      }, 1000);
     } catch (error) {
       console.error('OTP validation error:', error);
 

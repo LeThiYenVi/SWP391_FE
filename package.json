@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^5.1.1",
     "@mui/icons-material": "^7.1.2",
     "@mui/material": "^7.1.2",
+    "@react-oauth/google": "^0.12.2",
     "axios": "^1.6.0",
     "d3-shape": "^3.2.0",
     "date-fns": "^3.0.0",

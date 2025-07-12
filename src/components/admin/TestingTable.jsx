@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box,
   Table,
   TableBody,
   TableCell,
@@ -9,15 +8,31 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Pagination,
-  Chip,
   Tooltip,
+  Chip,
+  Box,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  Stack,
+  Divider,
+  Alert,
+  Snackbar
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import { getAllTestingServicesAPI } from '../../services/mockTestingServices';
+import { Edit, Delete, Visibility, Add, Save, Cancel } from '@mui/icons-material';
+import { getAllTestingServicesAPI } from '../../services/UsersSevices';
 
 const TestingTable = ({ searchTerm }) => {
   const [allTestingServices, setAllTestingServices] = useState([]);
@@ -212,7 +227,7 @@ const TestingTable = ({ searchTerm }) => {
                         onClick={() => handleView(service.id)}
                         sx={{ color: 'info.main' }}
                       >
-                        <VisibilityIcon fontSize="small" />
+                        <Visibility fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Chỉnh sửa">
@@ -221,7 +236,7 @@ const TestingTable = ({ searchTerm }) => {
                         onClick={() => handleEdit(service.id)}
                         sx={{ color: 'warning.main' }}
                       >
-                        <EditIcon fontSize="small" />
+                        <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Xóa">
@@ -230,7 +245,7 @@ const TestingTable = ({ searchTerm }) => {
                         onClick={() => handleDelete(service.id)}
                         sx={{ color: 'error.main' }}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <Delete fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </Box>

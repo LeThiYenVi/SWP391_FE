@@ -24,15 +24,18 @@ const ResetPassword = () => {
   useEffect(() => {
     // Check verification from OTP flow first
     if (location.state?.verified && location.state?.email) {
-      // Get token stored in sessionStorage from OTP verification
-      const storedToken = sessionStorage.getItem('resetToken');
-      if (storedToken) {
-        setToken(storedToken);
-        setEmail(location.state.email);
-        console.log('Reset token from OTP verification found');
+      // Get OTP verification info from sessionStorage
+      const otpVerified = sessionStorage.getItem('otpVerified');
+      const otpEmail = sessionStorage.getItem('otpEmail');
+      const otpCode = sessionStorage.getItem('otpCode');
+      
+      if (otpVerified === 'true' && otpEmail && otpCode) {
+        setEmail(otpEmail);
+        // Use OTP code as token for reset password API
+        setToken(otpCode);
+        console.log('OTP verification found, using OTP code for reset');
       } else {
-        // If we have verified but no token, use the email as token temporarily
-        // Backend might use email + verification status to allow reset
+        // If we have verified but no OTP info, use the email as token temporarily
         setToken(location.state.email);
         setEmail(location.state.email);
       }
@@ -91,19 +94,27 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      console.log('Submitting new password with token');
+      console.log('Submitting new password with OTP verification');
       
-      // If we have an email from OTP flow, include it in the request
-      if (email) {
-        // We might need to update the API to handle email for OTP-verified reset
-        await resetPasswordAPI(token, formData.newPassword, { email });
+      // Get OTP info from sessionStorage
+      const otpEmail = sessionStorage.getItem('otpEmail');
+      const otpCode = sessionStorage.getItem('otpCode');
+      
+      if (otpEmail && otpCode) {
+        // Use OTP-based reset password
+        await resetPasswordAPI(otpCode, formData.newPassword, { 
+          email: otpEmail,
+          otpCode: otpCode 
+        });
       } else {
-        // Regular token-based reset
+        // Fallback to token-based reset
         await resetPasswordAPI(token, formData.newPassword);
       }
       
       // Clean up session storage
       sessionStorage.removeItem('otpEmail');
+      sessionStorage.removeItem('otpCode');
+      sessionStorage.removeItem('otpVerified');
       sessionStorage.removeItem('resetToken');
       
       setSuccess(true);

@@ -4,7 +4,7 @@ import { routes } from "../routes";
 import { API_BASE_URL } from "../config";
 
 const instance = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: API_BASE_URL,
 });
 
 instance.interceptors.request.use(
@@ -22,23 +22,25 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
   function (response) {
-    return response.data ? response.data : { statusCode: response.status };
+    // Trả về toàn bộ response object để FE có thể truy cập response.data
+    return response;
   },
   function (error) {
     if (error.response) {
-      if (error.response.status === 401) {
-        // Nếu request là login thì không redirect
-        if (!error.config.url.includes('/api/auth/designer/login')) {
-          localStorage.clear();
-          localStorage.setItem("sessionExpired", "true");
-          window.location.href = routes.login;
-        }
+      if (
+        error.response.status === 401 &&
+        window.location.pathname !== routes.login &&
+        !error.config.url.includes('/api/auth/designer/login')
+      ) {
+        localStorage.clear();
+        localStorage.setItem("sessionExpired", "true");
+        window.location.href = routes.login;
       } else {
         console.error("Response error:", error.response);
       }
     } else if (error.request) {
       console.error("Request error:", error.request);
-      toast.error("Không thể kết nối đến server. Vui lòng thử lại sau");
+      toast.error("Không thể kết nối đến server. Vui lòng thử lại sau");
     } else {
       console.error("Error:", error.message);
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại");

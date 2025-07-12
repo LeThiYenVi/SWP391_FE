@@ -61,30 +61,32 @@ export const AuthProvider = ({ children }) => {
         credentials.password
       );
 
-      // `response` từ loginAPI chính là object data, không cần .data nữa
-      if (response && response.accessToken) {
-        console.log('Raw login response:', response);
-        console.log('Response type:', typeof response);
-        console.log('Response keys:', Object.keys(response));
+      // Lấy data từ response object
+      const data = response.data || response;
 
-        // Lấy dữ liệu từ response với xử lý fallback an toàn
-        const accessToken = response.accessToken || '';
-        const refreshToken = response.refreshToken || '';
+      if (data && data.accessToken) {
+        console.log('Raw login response:', data);
+        console.log('Response type:', typeof data);
+        console.log('Response keys:', Object.keys(data));
+
+        // Lấy dữ liệu từ data với xử lý fallback an toàn
+        const accessToken = data.accessToken || '';
+        const refreshToken = data.refreshToken || '';
 
         // QUAN TRỌNG: In ra từng giá trị để kiểm tra
         console.log('DEBUGGING - accessToken:', accessToken);
         console.log('DEBUGGING - refreshToken:', refreshToken);
-        console.log('DEBUGGING - username:', response.username);
-        console.log('DEBUGGING - role:', response.role);
-        console.log('DEBUGGING - email:', response.email);
+        console.log('DEBUGGING - username:', data.username);
+        console.log('DEBUGGING - role:', data.role);
+        console.log('DEBUGGING - email:', data.email);
 
         // Kiểm tra các trường dữ liệu có thể thiếu
-        let username = response.username;
-        if (!username && response.fullName) username = response.fullName;
-        if (!username && response.name) username = response.name;
+        let username = data.username;
+        if (!username && data.fullName) username = data.fullName;
+        if (!username && data.name) username = data.name;
 
-        const role = response.role || 'USER';
-        const email = response.email || '';
+        const role = data.role || 'USER';
+        const email = data.email || '';
 
         console.log('Extracted username:', username);
         console.log('Extracted role:', role);
@@ -136,7 +138,7 @@ export const AuthProvider = ({ children }) => {
         // Handle cases where login fails (e.g., wrong credentials)
         return {
           success: false,
-          error: response?.message || 'Invalid credentials',
+          error: data?.message || 'Invalid credentials',
         };
       }
     } catch (error) {
@@ -156,11 +158,13 @@ export const AuthProvider = ({ children }) => {
         userData.password
       );
 
-      // `loginResponse` từ loginAPI chính là object data, không cần .data nữa
-      if (loginResponse && loginResponse.accessToken) {
-        const { accessToken, refreshToken, username, role } = loginResponse; // Lấy trực tiếp từ loginResponse
+      // Lấy data từ loginResponse object
+      const data = loginResponse.data || loginResponse;
 
-        console.log('Register+Login response:', loginResponse);
+      if (data && data.accessToken) {
+        const { accessToken, refreshToken, username, role } = data; // Lấy trực tiếp từ data
+
+        console.log('Register+Login response:', data);
         console.log('Username after register:', username);
         console.log('Role after register:', role);
         console.log('Email from form:', userData.email);
