@@ -76,8 +76,11 @@
 }
 
 /* Sidebar */
+/* Sidebar ẩn bên trái, hover mới hiện */
 .consultant-sidebar {
-  width: 300px;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-right: 1px solid var(--glass-border);
@@ -87,11 +90,16 @@
   top: 0;
   left: 0;
   height: 100vh;
-  transform: translateX(-100%);
-  transition: var(--transition-smooth);
+  transform: translateX(0);
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1), max-width 0.3s cubic-bezier(0.4,0,0.2,1);
   z-index: var(--z-modal);
   box-shadow: var(--shadow-xl);
   border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+  overflow-x: hidden;
+}
+
+.consultant-sidebar.open {
+  transform: translateX(0);
 }
 
 .consultant-sidebar.open {
@@ -155,23 +163,28 @@
 .consultant-status {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  gap: 6px;
+  font-size: 0.95em;
   color: #10b981;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 0.25rem 0.75rem;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2px 10px;
   border-radius: 12px;
-  margin-top: 0.5rem;
+  margin-top: 6px;
+  min-width: 0;
+  line-height: 1.2;
 }
 
 .status-indicator {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: linear-gradient(135deg, #10b981, #059669);
   animation: pulse 2s infinite;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
 }
 
 @keyframes pulse {
@@ -452,5 +465,102 @@
 @media (max-width: 480px) {
   .consultant-sidebar {
     width: 100%;
+  }
+}
+
+/* Sidebar ẩn bên trái, hover mới hiện */
+.consultant-sidebar {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  transform: translateX(0);
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1), max-width 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index: var(--z-modal);
+  box-shadow: var(--shadow-xl);
+  border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+  overflow-x: hidden;
+}
+
+.consultant-sidebar:hover,
+.consultant-sidebar:focus-within {
+  width: 300px;
+  max-width: 300px;
+}
+
+.consultant-sidebar .sidebar-header,
+.consultant-sidebar .sidebar-nav,
+.consultant-sidebar .sidebar-footer {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.consultant-sidebar:hover .sidebar-header,
+.consultant-sidebar:hover .sidebar-nav,
+.consultant-sidebar:hover .sidebar-footer,
+.consultant-sidebar:focus-within .sidebar-header,
+.consultant-sidebar:focus-within .sidebar-nav,
+.consultant-sidebar:focus-within .sidebar-footer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Khi sidebar thu nhỏ chỉ hiện icon */
+.consultant-sidebar:not(:hover):not(:focus-within) .sidebar-header,
+.consultant-sidebar:not(:hover):not(:focus-within) .sidebar-nav span,
+.consultant-sidebar:not(:hover):not(:focus-within) .sidebar-footer span {
+  display: none !important;
+}
+
+.consultant-sidebar:not(:hover):not(:focus-within) .nav-item {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.consultant-sidebar:not(:hover):not(:focus-within) .nav-badge {
+  display: none;
+}
+
+.consultant-sidebar:not(:hover):not(:focus-within) .consultant-profile img {
+  width: 36px;
+  height: 36px;
+}
+
+.consultant-main {
+  margin-left: 60px;
+  transition: margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.consultant-sidebar:hover ~ .consultant-main,
+.consultant-sidebar:focus-within ~ .consultant-main {
+  margin-left: 300px;
+}
+
+/* Đảm bảo responsive cho mobile giữ nguyên sidebar */
+@media (max-width: 1023px) {
+  .consultant-sidebar {
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    transform: translateX(-100%);
+  }
+  .consultant-sidebar.open {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    transform: translateX(0);
+  }
+  .consultant-main {
+    margin-left: 0;
   }
 }

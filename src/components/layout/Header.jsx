@@ -319,7 +319,19 @@ export const Header = () => {
                             <User className="w-4 h-4 text-blue-600" />
                           </div>
                           <span className="text-sm font-medium text-gray-700">
-                            Trang cá nhân
+                            Dashboard
+                          </span>
+                        </Link>
+                        <Link
+                          to="/user/profile"
+                          className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-gray-600" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Hồ sơ cá nhân
                           </span>
                         </Link>
                         <Link
@@ -493,13 +505,13 @@ export const Header = () => {
                     </div>
 
                     <Link
-                      to="/dashboard"
+                      to="/user/profile"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <User className="w-5 h-5 text-gray-500" />
                       <span className="text-base text-gray-700">
-                        Trang cá nhân
+                        Hồ sơ cá nhân
                       </span>
                     </Link>
 

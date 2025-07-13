@@ -243,24 +243,15 @@ const getUserRemindersAPI = async () => {
 };
 
 // =============Admin APIs============
-const getAllAccountsAPI = async (role = null, pageNumber = -1, pageSize = -1) => {
+const getAllAccountsAPI = async (role = null, pageNumber = 1, pageSize = 10) => {
   try {
     const params = {};
-
     if (role !== null) {
       params.role = role;
     }
-
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
-    }
-
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
+    params.pageNumber = pageNumber;
+    params.pageSize = pageSize;
     const response = await instance.get('/api/admin/users', { params });
-    console.log('Get all accounts success:', response.data);
     return response.data;
   } catch (error) {
     console.error('Get all accounts error:', error.response?.data || error.message);
@@ -307,18 +298,15 @@ const getRevenueByDayAPI = async (month, year) => {
   }
 };
 
-const getAllOrdersAPI = async (pageNumber = -1, pageSize = -1) => {
+const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
   try {
     const params = {};
-
-    if (pageNumber !== -1) {
+    if (pageNumber > 0) {
       params.pageNumber = pageNumber;
     }
-
-    if (pageSize !== -1) {
+    if (pageSize > 0) {
       params.pageSize = pageSize;
     }
-
     const response = await instance.get('/api/admin/orders', { params });
     console.log('Get all orders success:', response.data);
     return response.data;
@@ -366,7 +354,7 @@ const getCustomerGrowthAPI = async () => {
 };
 
 // =============Product APIs============
-const getNewProductsAPI = async (pageNumber = -1, pageSize = -1) => {
+const getNewProductsAPI = async (pageNumber = 1, pageSize = 10) => {
   try {
     const response = await instance.get('/api/products/new', {
       params: {

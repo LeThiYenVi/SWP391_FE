@@ -27,11 +27,19 @@ instance.interceptors.response.use(
   },
   function (error) {
     if (error.response) {
+      console.log('Interceptor error:', {
+        status: error.response.status,
+        url: error.config.url,
+        currentPath: window.location.pathname,
+        isLoginPage: window.location.pathname === routes.login
+      });
+      
       if (
         error.response.status === 401 &&
         window.location.pathname !== routes.login &&
         !error.config.url.includes('/api/auth/designer/login')
       ) {
+        console.log('Redirecting to login due to 401 error');
         localStorage.clear();
         localStorage.setItem("sessionExpired", "true");
         window.location.href = routes.login;

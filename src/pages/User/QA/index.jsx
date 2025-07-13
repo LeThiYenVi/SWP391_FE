@@ -106,7 +106,7 @@ const QA = () => {
       return;
     }
 
-    // Mock submission
+    // TODO: Replace with actual API call
     toast.success(
       'Câu hỏi đã được gửi thành công! Chúng tôi sẽ phản hồi trong vòng 24h.'
     );

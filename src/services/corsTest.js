@@ -4,12 +4,14 @@ import { API_BASE_URL } from '../config.js';
 export const testCorsConnection = async () => {
   try {
     console.log('🔍 Testing API connection with base URL:', API_BASE_URL);
+    const token = localStorage.getItem('token');
     
     // Test a simple GET request to check if CORS is working
     const response = await fetch(`${API_BASE_URL}/api/services/testing-services`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
       },
     });
     
@@ -45,11 +47,13 @@ export const testAllAPIs = async () => {
   for (const endpoint of testEndpoints) {
     try {
       console.log(`🔍 Testing ${endpoint.name}...`);
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}${endpoint.url}`, {
         method: endpoint.method,
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': 'Bearer ' + token } : {})
         },
       });
       

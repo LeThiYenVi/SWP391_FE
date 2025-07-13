@@ -63,85 +63,29 @@ export default function AdminCounselor() {
 
   const fetchCounselors = async () => {
     try {
-      // Mock data for counselors - replace with actual API call
-      const mockCounselors = [
-        {
-          id: 1,
-          name: 'Nguyễn Thị Lan',
-          email: 'lan.nguyen@gynexa.com',
-          specialization: 'Tư vấn sức khỏe sinh sản',
-          status: 'active',
-          experience: '5 năm',
-          rating: 4.8,
-          consultations: 245
-        },
-        {
-          id: 2,
-          name: 'Trần Văn Minh',
-          email: 'minh.tran@gynexa.com',
-          specialization: 'Tư vấn tâm lý',
-          status: 'inactive',
-          experience: '3 năm',
-          rating: 4.6,
-          consultations: 189
-        },
-        {
-          id: 3,
-          name: 'Lê Thị Hoa',
-          email: 'hoa.le@gynexa.com',
-          specialization: 'Tư vấn HIV/AIDS',
-          status: 'active',
-          experience: '7 năm',
-          rating: 4.9,
-          consultations: 312
-        },
-        {
-          id: 4,
-          name: 'Phạm Đức Thịnh',
-          email: 'thinh.pham@gynexa.com',
-          specialization: 'Tư vấn dinh dưỡng',
-          status: 'active',
-          experience: '4 năm',
-          rating: 4.5,
-          consultations: 156
-        },
-        {
-          id: 5,
-          name: 'Hoàng Thị Mai',
-          email: 'mai.hoang@gynexa.com',
-          specialization: 'Tư vấn kế hoạch hóa gia đình',
-          status: 'active',
-          experience: '6 năm',
-          rating: 4.7,
-          consultations: 203
-        },
-        {
-          id: 6,
-          name: 'Võ Văn Hùng',
-          email: 'hung.vo@gynexa.com',
-          specialization: 'Tư vấn sức khỏe nam giới',
-          status: 'inactive',
-          experience: '4 năm',
-          rating: 4.4,
-          consultations: 127
-        }
-      ];
-      setCounselors(mockCounselors);
-      setTotalPages(Math.ceil(mockCounselors.length / pageSize));
+      // TODO: Replace with actual API call
+      // const response = await consultantService.getAllConsultants();
+      // setCounselors(response.data);
+      // setTotalPages(Math.ceil(response.data.length / pageSize));
+      
+      // Placeholder data
+      const placeholderCounselors = [];
+      setCounselors(placeholderCounselors);
+      setTotalPages(1);
       setPage(1);
       
-      // Initialize mock schedules
-      const mockSchedules = {};
-      mockCounselors.forEach(counselor => {
-        mockSchedules[counselor.id] = generateMockSchedule();
+      // Initialize schedules
+      const schedules = {};
+      placeholderCounselors.forEach(counselor => {
+        schedules[counselor.id] = generatePlaceholderSchedule();
       });
-      setSchedules(mockSchedules);
+      setSchedules(schedules);
     } catch (err) {
       console.error('Error fetching counselors:', err);
     }
   };
 
-  const generateMockSchedule = () => {
+  const generatePlaceholderSchedule = () => {
     const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
     const timeSlots = ['8:00-10:00', '10:00-12:00', '14:00-16:00', '16:00-18:00', '19:00-21:00'];
     const schedule = {};

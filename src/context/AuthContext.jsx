@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       console.log('Parsed user from localStorage:', parsedUser);
+      console.log('User role from localStorage:', parsedUser.role);
       setUser(parsedUser);
     }
     if (savedToken) {
@@ -64,13 +65,13 @@ export const AuthProvider = ({ children }) => {
       // Lấy data từ response object
       const data = response.data || response;
 
-      if (data && data.accessToken) {
+      const accessToken = data.accessToken || data.token || data.jwt || '';
+      if (data && accessToken) {
         console.log('Raw login response:', data);
         console.log('Response type:', typeof data);
         console.log('Response keys:', Object.keys(data));
 
         // Lấy dữ liệu từ data với xử lý fallback an toàn
-        const accessToken = data.accessToken || '';
         const refreshToken = data.refreshToken || '';
 
         // QUAN TRỌNG: In ra từng giá trị để kiểm tra
@@ -119,6 +120,7 @@ export const AuthProvider = ({ children }) => {
 
         console.log('Final userData being saved:', userData);
         console.log('Username that will be shown:', displayName);
+        console.log('Role being saved:', role);
 
         // Cập nhật state với đối tượng đã tạo
         setUser(userData);
@@ -161,8 +163,11 @@ export const AuthProvider = ({ children }) => {
       // Lấy data từ loginResponse object
       const data = loginResponse.data || loginResponse;
 
-      if (data && data.accessToken) {
-        const { accessToken, refreshToken, username, role } = data; // Lấy trực tiếp từ data
+      const accessToken = data.accessToken || data.token || data.jwt || '';
+      if (data && accessToken) {
+        const refreshToken = data.refreshToken || '';
+        const username = data.username;
+        const role = data.role;
 
         console.log('Register+Login response:', data);
         console.log('Username after register:', username);

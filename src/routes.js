@@ -5,6 +5,7 @@ export const routes = {
     register: "/register",
     forgotPassword: "/forgot-password",
     resetPassword: "/reset-password",
+    unauthorized: "/unauthorized",
     adminDashboard: "/admin/dashboard",
     adminTestingServices: "/admin/testing-services",
     adminOrder: "/admin/order",

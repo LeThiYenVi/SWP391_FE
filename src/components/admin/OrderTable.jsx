@@ -3,8 +3,7 @@ import {
     Box, Table, TableBody, TableCell, TableContainer, TableHead,
     TableRow, Paper, Pagination,
 } from '@mui/material';
-// import { getAllOrdersAPI } from '../../services/UsersSevices';
-import { mockGetAllOrdersAPI } from '../../services/mockOrderTest';
+import { getAllOrdersAPI } from '../../services/UsersSevices';
 import { useNavigate } from 'react-router-dom';
 import { routes } from '../../routes';
 
@@ -18,9 +17,7 @@ const OrderTable = ({ searchTerm, statusFilter }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Use mock API for testing - switch to getAllOrdersAPI for production
-                const res = await mockGetAllOrdersAPI(page, pageSize);
-                // const res = await getAllOrdersAPI(page, pageSize);
+                const res = await getAllOrdersAPI(page, pageSize);
                 setOrders(res.items || []);
                 setTotalPages(res.totalPages || 1);
             } catch (err) {
@@ -59,17 +56,16 @@ const OrderTable = ({ searchTerm, statusFilter }) => {
 
     // Function to determine payment status
     const getPaymentStatus = (order) => {
-        // If the order has isPaid field, use it (from mock API)
+        // Check if order has isPaid field
         if (Object.prototype.hasOwnProperty.call(order, 'isPaid')) {
             return order.isPaid;
         }
         
         // Otherwise, determine based on status
-        // Usually delivered orders are paid, and cancelled/refunded might be unpaid
         if (order.status === 'Delivered') {
             return true;
         } else if (order.status === 'Cancelled') {
-            return false; // Chưa thanh toán
+            return false;
         }
         
         return false; // Default to unpaid

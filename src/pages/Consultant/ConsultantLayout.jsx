@@ -14,12 +14,15 @@ import {
   MessageCircle,
   Settings,
   LogOut,
+  Heart,
 } from 'lucide-react';
 import './ConsultantLayout.css';
+import { useAuth } from '../../context/AuthContext';
 
 const ConsultantLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { logout } = useAuth();
 
   const consultantData = {
     name: 'Dr. Nguyễn Thị Hương',
@@ -57,8 +60,8 @@ const ConsultantLayout = () => {
   ];
 
   const handleLogout = () => {
-    // Handle logout logic here
-    console.log('Logging out...');
+    logout();
+    window.location.href = '/login';
   };
 
   const toggleSidebar = () => {
@@ -71,6 +74,29 @@ const ConsultantLayout = () => {
 
   return (
     <div className="consultant-layout">
+      {/* Navbar consultant */}
+      <nav style={{width:'100%',position:'fixed',top:0,left:0,zIndex:300,background:'#fff',borderBottom:'1px solid #e5e7eb',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 32px',boxShadow:'0 2px 8px rgba(0,0,0,0.03)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <Link to="/" style={{display:'flex',alignItems:'center',gap:8,textDecoration:'none'}}>
+            <span style={{background:'#3a99b7',borderRadius:8,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <Heart size={22} color="#fff" />
+            </span>
+            <span style={{fontWeight:700,fontSize:'1.2rem',background:'linear-gradient(to right,#3a99b7,#2d7a91)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Gynexa</span>
+          </Link>
+          <Link to="/consultant/dashboard" style={{marginLeft:24,color:'#334155',fontWeight:600,textDecoration:'none'}}>Dashboard</Link>
+          <Link to="/consultant/appointments" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Lịch hẹn</Link>
+          <Link to="/consultant/messages" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Tin nhắn</Link>
+          <Link to="/consultant/profile" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Hồ sơ</Link>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <img src={consultantData.avatar} alt={consultantData.name} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:'2px solid #e0e7ef'}} />
+          <span style={{fontWeight:600,color:'#334155',fontSize:'1rem'}}>{consultantData.name}</span>
+          <button className="logout-btn" onClick={handleLogout} style={{display:'flex',alignItems:'center',gap:8,background:'none',border:'none',color:'#dc2626',fontWeight:600,cursor:'pointer',fontSize:'1rem',padding:'6px 16px',borderRadius:8,transition:'background 0.2s'}}>
+            <LogOut size={18} /> Đăng xuất
+          </button>
+        </div>
+      </nav>
+
       {/* Mobile Header */}
       <div className="mobile-header">
         <div className="mobile-header-content">
@@ -86,53 +112,6 @@ const ConsultantLayout = () => {
           </div>
         </div>
       </div>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={toggleSidebar}></div>
-      )}
-
-      {/* Sidebar */}
-      <aside className={`consultant-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-close-btn" onClick={toggleSidebar}>
-            <X size={20} />
-          </button>
-          <div className="consultant-profile">
-            <img src={consultantData.avatar} alt={consultantData.name} />
-            <div className="consultant-info">
-              <h3>{consultantData.name}</h3>
-              <p>{consultantData.specialty}</p>
-              <div className="consultant-status">
-                <div className="status-indicator"></div>
-                <span>Đang trực tuyến</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          {navigationItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`nav-item ${isActiveRoute(item.path) ? 'active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.icon size={20} />
-              <span>{item.label}</span>
-              {item.badge && <span className="nav-badge">{item.badge}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <button className="logout-btn" onClick={handleLogout}>
-            <LogOut size={20} />
-            <span>Đăng xuất</span>
-          </button>
-        </div>
-      </aside>
 
       {/* Main Content */}
       <main className="consultant-main">

@@ -1,3 +1,15 @@
+
+import { Buffer } from 'buffer';
+
+// Polyfill cho SockJS và WebSocket
+if (typeof global === 'undefined') {
+  window.global = window;
+}
+
+if (typeof window.Buffer === 'undefined') {
+  window.Buffer = Buffer;
+}
+
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles/globals.css';

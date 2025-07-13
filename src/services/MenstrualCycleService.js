@@ -1,129 +1,106 @@
-import instance from "./customize-axios";
+import axios from 'axios';
 
-// =============Enhanced Menstrual Cycle APIs============
-const logEnhancedMenstrualDataAPI = async (logData) => {
-  try {
-    const response = await instance.post('/api/menstrual-cycle/log-enhanced', logData);
-    console.log('Log enhanced menstrual data success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Log enhanced menstrual data error:', error.response?.data || error.message);
-    throw error;
+const API_BASE = '/api/menstrual-cycle';
+const USER_API_BASE = '/api/user/menstrual-cycle';
+
+// Tạo instance axios với interceptor để tự động thêm token
+const cycleApi = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+const userCycleApi = axios.create({
+  baseURL: USER_API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor để tự động thêm token vào header
+const addTokenInterceptor = (config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
 };
 
-const getUserMenstrualLogsAPI = async (userId) => {
-  try {
-    const response = await instance.get(`/api/menstrual-cycle/consultant/view/${userId}`);
-    console.log('Get user menstrual logs success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get user menstrual logs error:', error.response?.data || error.message);
-    throw error;
-  }
+cycleApi.interceptors.request.use(addTokenInterceptor, (error) => Promise.reject(error));
+userCycleApi.interceptors.request.use(addTokenInterceptor, (error) => Promise.reject(error));
+
+// API calls cho tracking chu kỳ
+export const cycleService = {
+  // === Enhanced APIs (from /api/menstrual-cycle) ===
+  
+  // Lấy dashboard tổng quan
+  getDashboard: () => cycleApi.get('/dashboard'),
+  
+  // Lấy lịch sử logs
+  getLogs: (params = {}) => cycleApi.get('/logs', { params }),
+  
+  // Tạo log enhanced (chi tiết hơn)
+  createEnhancedLog: (data) => cycleApi.post('/log-enhanced', data),
+  
+  // Lấy dự đoán chu kỳ
+  getPrediction: () => cycleApi.get('/prediction'),
+  
+  // Lấy cửa sổ thụ thai
+  getFertilityWindow: () => cycleApi.get('/fertility-window'),
+  
+  // Lấy thống kê analytics
+  getAnalytics: () => cycleApi.get('/analytics'),
+  
+  // Lấy mẫu triệu chứng
+  getSymptomPatterns: () => cycleApi.get('/symptom-patterns'),
+  
+  // Lấy gợi ý sức khỏe
+  getHealthInsights: () => cycleApi.get('/health-insights'),
+  
+  // === Basic APIs (from /api/user/menstrual-cycle) ===
+  
+  // Thêm hoặc cập nhật thông tin chu kỳ
+  addOrUpdateCycle: (cycleData) => userCycleApi.post('/', cycleData),
+  
+  // Ghi nhận kỳ kinh
+  logMenstrualPeriod: (logData) => userCycleApi.post('/log', logData),
+  
+  // Lấy thông tin tracker
+  getCycleTracker: () => userCycleApi.get('/tracker'),
+  
+  // === Legacy APIs (for backward compatibility) ===
+  
+  // Tạo log mới
+  createLog: (data) => cycleApi.post('/log', data),
+  
+  // Lấy chu kỳ hiện tại
+  getCurrentCycle: () => cycleApi.get('/current'),
+  
+  // Cập nhật thông tin chu kỳ
+  updateCycle: (data) => cycleApi.put('/update', data),
+  
+  // Xóa log
+  deleteLog: (logId) => cycleApi.delete(`/log/${logId}`),
+  
+  // Lấy logs theo tháng
+  getLogsByMonth: (year, month) => cycleApi.get(`/logs/${year}/${month}`),
+  
+  // Lấy thống kê theo khoảng thời gian
+  getStatsByDateRange: (startDate, endDate) => 
+    cycleApi.get('/stats', { params: { startDate, endDate } }),
 };
 
-const updateMenstrualLogAPI = async (logId, logData) => {
-  try {
-    const response = await instance.put(`/api/menstrual-cycle/consultant/log/${logId}`, logData);
-    console.log('Update menstrual log success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Update menstrual log error:', error.response?.data || error.message);
-    throw error;
-  }
+// Helper functions
+export const formatDateForAPI = (date) => {
+  return date.toISOString().split('T')[0];
 };
 
-const getMenstrualCyclePredictionAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/prediction');
-    console.log('Get menstrual cycle prediction success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get menstrual cycle prediction error:', error.response?.data || error.message);
-    throw error;
+export const parseAPIResponse = (response) => {
+  if (response.data && response.data.content) {
+    return response.data.content;
   }
+  return response.data;
 };
 
-const getFertilityWindowAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/fertility-window');
-    console.log('Get fertility window success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get fertility window error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getMenstrualCycleAnalyticsAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/analytics');
-    console.log('Get menstrual cycle analytics success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get menstrual cycle analytics error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getSymptomPatternsAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/symptom-patterns');
-    console.log('Get symptom patterns success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get symptom patterns error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getHealthInsightsAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/health-insights');
-    console.log('Get health insights success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get health insights error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getMenstrualLogsAPI = async (startDate = null, endDate = null) => {
-  try {
-    const params = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
-    
-    const response = await instance.get('/api/menstrual-cycle/logs', { params });
-    console.log('Get menstrual logs success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get menstrual logs error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getMenstrualCycleDashboardAPI = async () => {
-  try {
-    const response = await instance.get('/api/menstrual-cycle/dashboard');
-    console.log('Get menstrual cycle dashboard success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get menstrual cycle dashboard error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export {
-  logEnhancedMenstrualDataAPI,
-  getUserMenstrualLogsAPI,
-  updateMenstrualLogAPI,
-  getMenstrualCyclePredictionAPI,
-  getFertilityWindowAPI,
-  getMenstrualCycleAnalyticsAPI,
-  getSymptomPatternsAPI,
-  getHealthInsightsAPI,
-  getMenstrualLogsAPI,
-  getMenstrualCycleDashboardAPI
-}; 
+export default cycleService; 

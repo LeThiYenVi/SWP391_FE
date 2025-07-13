@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -22,6 +22,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import './ConsultantAppointments.css';
+import { getConsultationBookingsAPI } from '../../services/ConsultantService';
+import instance from '../../services/customize-axios';
 
 const ConsultantAppointments = () => {
   const navigate = useNavigate();
@@ -30,90 +32,58 @@ const ConsultantAppointments = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('upcoming');
 
-  // Mock appointments data
-  const appointments = [
-    {
-      id: 1,
-      patientName: 'Nguyễn Thị Mai',
-      patientPhone: '0901234567',
-      patientEmail: 'mai.nguyen@email.com',
-      date: '2024-01-15',
-      time: '10:00',
-      duration: 30,
-      type: 'video',
-      status: 'confirmed',
-      reason: 'Tư vấn chu kỳ kinh nguyệt',
-      notes: 'Bệnh nhân cần tư vấn về chu kỳ không đều',
-      avatar: '/images/patient1.jpg',
-      isFirstTime: false,
-      paymentStatus: 'paid',
-    },
-    {
-      id: 2,
-      patientName: 'Trần Thị Lan',
-      patientPhone: '0901234568',
-      patientEmail: 'lan.tran@email.com',
-      date: '2024-01-15',
-      time: '11:30',
-      duration: 45,
-      type: 'chat',
-      status: 'pending',
-      reason: 'Tư vấn kế hoạch hóa gia đình',
-      notes: 'Bệnh nhân mới, cần tư vấn về biện pháp tránh thai',
-      avatar: '/images/patient2.jpg',
-      isFirstTime: true,
-      paymentStatus: 'pending',
-    },
-    {
-      id: 3,
-      patientName: 'Lê Thị Hoa',
-      patientPhone: '0901234569',
-      patientEmail: 'hoa.le@email.com',
-      date: '2024-01-15',
-      time: '14:00',
-      duration: 30,
-      type: 'phone',
-      status: 'confirmed',
-      reason: 'Tư vấn sức khỏe sinh sản',
-      notes: 'Theo dõi sau điều trị',
-      avatar: '/images/patient3.jpg',
-      isFirstTime: false,
-      paymentStatus: 'paid',
-    },
-    {
-      id: 4,
-      patientName: 'Phạm Thị Ngọc',
-      patientPhone: '0901234570',
-      patientEmail: 'ngoc.pham@email.com',
-      date: '2024-01-15',
-      time: '15:30',
-      duration: 30,
-      type: 'video',
-      status: 'completed',
-      reason: 'Tư vấn thai sản',
-      notes: 'Đã hoàn thành buổi tư vấn',
-      avatar: '/images/patient4.jpg',
-      isFirstTime: false,
-      paymentStatus: 'paid',
-    },
-    {
-      id: 5,
-      patientName: 'Vũ Thị Trang',
-      patientPhone: '0901234571',
-      patientEmail: 'trang.vu@email.com',
-      date: '2024-01-15',
-      time: '16:00',
-      duration: 30,
-      type: 'chat',
-      status: 'cancelled',
-      reason: 'Tư vấn dinh dưỡng',
-      notes: 'Bệnh nhân hủy lịch',
-      avatar: '/images/patient5.jpg',
-      isFirstTime: false,
-      paymentStatus: 'refunded',
-    },
-  ];
+  // Appointments data - sẽ được thay thế bằng API calls
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [selectedConsultationId, setSelectedConsultationId] = useState(null);
+  const [consultationDetail, setConsultationDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getConsultationBookingsAPI();
+        if (Array.isArray(data)) {
+          setAppointments(data);
+        } else {
+          setAppointments([]);
+        }
+      } catch (err) {
+        setError('Không thể tải danh sách cuộc hẹn');
+        setAppointments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConsultations();
+  }, []);
+
+  // Mapping lại dữ liệu từ API
+  const mappedAppointments = appointments.map(item => ({
+    id: item.id,
+    patientName: item.userName,
+    patientId: item.userId,
+    consultantName: item.consultantName,
+    consultantId: item.consultantId,
+    startTime: item.startTime,
+    endTime: item.endTime,
+    status: item.status?.toLowerCase(),
+    type: item.consultationType?.toLowerCase(),
+    notes: item.notes,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    // FE có thể bổ sung avatar nếu backend trả về
+    avatar: '',
+    // FE có thể bổ sung các trường khác nếu backend trả về
+  }));
 
   const getStatusColor = status => {
     switch (status) {
@@ -140,6 +110,8 @@ const ConsultantAppointments = () => {
         return 'Hoàn thành';
       case 'cancelled':
         return 'Đã hủy';
+      case 'scheduled':
+        return 'Đã lên lịch'; // hoặc 'Sắp tới'
       default:
         return 'Không xác định';
     }
@@ -191,54 +163,55 @@ const ConsultantAppointments = () => {
     }
   };
 
-  const handleViewDetails = appointmentId => {
-    navigate(`/consultant/appointment-details/${appointmentId}`);
+  const handleViewDetails = async (appointmentId) => {
+    setSelectedConsultationId(appointmentId);
+    setShowDetailModal(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    setConsultationDetail(null);
+    try {
+      const res = await instance.get(`/api/consultation/${appointmentId}`);
+      setConsultationDetail(res.data);
+    } catch (err) {
+      setDetailError('Không thể tải chi tiết cuộc hẹn');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const filteredAppointments = appointments.filter(appointment => {
+  const filteredAppointments = mappedAppointments.filter(appointment => {
     const matchesSearch =
-      appointment.patientName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      appointment.reason.toLowerCase().includes(searchQuery.toLowerCase());
+      appointment.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appointment.notes?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === 'all' || appointment.status === statusFilter;
     const matchesType = typeFilter === 'all' || appointment.type === typeFilter;
-
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  // Tách danh sách theo trạng thái
   const upcomingAppointments = filteredAppointments.filter(
-    apt => apt.status === 'confirmed' || apt.status === 'pending'
+    apt => apt.status === 'scheduled' || apt.status === 'confirmed' || apt.status === 'pending'
   );
-
   const completedAppointments = filteredAppointments.filter(
     apt => apt.status === 'completed'
   );
-
   const cancelledAppointments = filteredAppointments.filter(
     apt => apt.status === 'cancelled'
   );
 
   const renderAppointmentCard = appointment => {
     const TypeIcon = getTypeIcon(appointment.type);
-
     return (
       <div key={appointment.id} className="appointment-card">
         <div className="appointment-header">
           <div className="patient-info">
             <div className="patient-avatar">
-              <img src={appointment.avatar} alt={appointment.patientName} />
-              {appointment.isFirstTime && (
-                <span className="first-time-badge">Lần đầu</span>
-              )}
+              <img src={appointment.avatar || 'https://i.pravatar.cc/100?u=' + appointment.patientId} alt={appointment.patientName} />
             </div>
             <div className="patient-details">
               <h4>{appointment.patientName}</h4>
-              <p className="patient-contact">
-                {appointment.patientPhone} • {appointment.patientEmail}
-              </p>
-              <p className="appointment-reason">{appointment.reason}</p>
+              <p className="appointment-reason">{appointment.notes || 'Không có ghi chú'}</p>
             </div>
           </div>
           <div className="appointment-actions">
@@ -253,12 +226,11 @@ const ConsultantAppointments = () => {
             </button>
           </div>
         </div>
-
         <div className="appointment-meta">
           <div className="meta-item">
             <Clock size={16} />
             <span>
-              {appointment.time} - {appointment.duration} phút
+              {appointment.startTime ? new Date(appointment.startTime).toLocaleString('vi-VN') : '--'}
             </span>
           </div>
           <div className="meta-item">
@@ -274,15 +246,13 @@ const ConsultantAppointments = () => {
             </div>
           </div>
         </div>
-
         {appointment.notes && (
           <div className="appointment-notes">
             <p>{appointment.notes}</p>
           </div>
         )}
-
-        <div className="appointment-footer">
-          {appointment.status === 'pending' && (
+        {/* Footer actions giữ nguyên */}
+        {appointment.status === 'pending' && (
             <div className="appointment-actions-footer">
               <button
                 className="btn btn-outline"
@@ -320,10 +290,15 @@ const ConsultantAppointments = () => {
               </button>
             </div>
           )}
-        </div>
       </div>
     );
   };
+
+  // Render danh sách theo tab
+  let currentList = [];
+  if (activeTab === 'upcoming') currentList = upcomingAppointments;
+  if (activeTab === 'completed') currentList = completedAppointments;
+  if (activeTab === 'cancelled') currentList = cancelledAppointments;
 
   return (
     <div className="consultant-appointments">
@@ -386,33 +361,69 @@ const ConsultantAppointments = () => {
         </div>
       )}
 
-      <div className="appointments-content">
-        <div className="appointments-tabs">
-          <div className="tab active">
-            <span>Sắp tới</span>
-            <span className="tab-count">{upcomingAppointments.length}</span>
-          </div>
-          <div className="tab">
-            <span>Hoàn thành</span>
-            <span className="tab-count">{completedAppointments.length}</span>
-          </div>
-          <div className="tab">
-            <span>Đã hủy</span>
-            <span className="tab-count">{cancelledAppointments.length}</span>
-          </div>
+      {loading ? (
+        <div style={{textAlign:'center',padding:'2rem'}}>
+          <span>Đang tải dữ liệu...</span>
         </div>
-
-        <div className="appointments-grid">
-          {upcomingAppointments.map(renderAppointmentCard)}
-          {upcomingAppointments.length === 0 && (
-            <div className="empty-state">
-              <Calendar size={48} />
-              <h3>Không có cuộc hẹn nào</h3>
-              <p>Bạn chưa có cuộc hẹn nào được lên lịch</p>
+      ) : error ? (
+        <div style={{textAlign:'center',padding:'2rem',color:'#ef4444'}}>{error}</div>
+      ) : (
+        <div className="appointments-content">
+          <div className="appointments-tabs">
+            <div className={`tab${activeTab==='upcoming'?' active':''}`} onClick={()=>setActiveTab('upcoming')}>
+              <span>Sắp tới</span>
+              <span className="tab-count">{upcomingAppointments.length}</span>
             </div>
-          )}
+            <div className={`tab${activeTab==='completed'?' active':''}`} onClick={()=>setActiveTab('completed')}>
+              <span>Hoàn thành</span>
+              <span className="tab-count">{completedAppointments.length}</span>
+            </div>
+            <div className={`tab${activeTab==='cancelled'?' active':''}`} onClick={()=>setActiveTab('cancelled')}>
+              <span>Đã hủy</span>
+              <span className="tab-count">{cancelledAppointments.length}</span>
+            </div>
+          </div>
+          <div className="appointments-grid">
+            {currentList.map(renderAppointmentCard)}
+            {currentList.length === 0 && (
+              <div className="empty-state">
+                <Calendar size={48} />
+                <h3>Không có cuộc hẹn nào</h3>
+                <p>Bạn chưa có cuộc hẹn nào ở mục này</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Modal chi tiết consultation */}
+      {showDetailModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{minWidth:400,maxWidth:600,background:'#fff',borderRadius:12,padding:24,boxShadow:'0 2px 16px rgba(0,0,0,0.12)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <h2 style={{fontSize:'1.2rem',fontWeight:700}}>Chi tiết cuộc hẹn</h2>
+              <button onClick={()=>setShowDetailModal(false)} style={{background:'none',border:'none',fontSize:20,cursor:'pointer'}}>&times;</button>
+            </div>
+            {detailLoading ? (
+              <div style={{textAlign:'center',padding:'2rem'}}>Đang tải chi tiết...</div>
+            ) : detailError ? (
+              <div style={{color:'#ef4444',textAlign:'center'}}>{detailError}</div>
+            ) : consultationDetail ? (
+              <div style={{lineHeight:1.7}}>
+                <div><b>Bệnh nhân:</b> {consultationDetail.userName}</div>
+                <div><b>Bác sĩ:</b> {consultationDetail.consultantName}</div>
+                <div><b>Thời gian:</b> {consultationDetail.timeSlot && consultationDetail.timeSlot.slotDate ? new Date(consultationDetail.timeSlot.slotDate).toLocaleDateString('vi-VN') : '--'}</div>
+                <div><b>Trạng thái:</b> {getStatusText(consultationDetail.status?.toLowerCase())}</div>
+                <div><b>Loại tư vấn:</b> {consultationDetail.timeSlot && consultationDetail.timeSlot.slotType ? (consultationDetail.timeSlot.slotType === 'FACILITY' ? 'Xét nghiệm' : (consultationDetail.timeSlot.slotType === 'CONSULTATION' ? 'Tư vấn' : consultationDetail.timeSlot.slotType)) : '--'}</div>
+                <div><b>Meeting link:</b> {consultationDetail.meetingLink ? <a href={consultationDetail.meetingLink} target="_blank" rel="noopener noreferrer">{consultationDetail.meetingLink}</a> : '--'}</div>
+                <div><b>Ghi chú:</b> {consultationDetail.notes || '--'}</div>
+                <div><b>Ngày tạo:</b> {consultationDetail.createdAt ? new Date(consultationDetail.createdAt).toLocaleString('vi-VN') : '--'}</div>
+              </div>
+            ) : null}
+          </div>
+          <div className="modal-backdrop" onClick={()=>setShowDetailModal(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.15)',zIndex:10}}></div>
+        </div>
+      )}
     </div>
   );
 };

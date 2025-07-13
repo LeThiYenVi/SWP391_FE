@@ -14,11 +14,43 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const { login, loginGoogle } = useAuth();
+  const { login, loginGoogle, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/';
+
+  // Redirect user đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('User already logged in, redirecting...', user);
+      let targetPath = '/dashboard'; // Default path
+
+      // Kiểm tra role và chuyển đổi nếu cần
+      let userRole = user.role;
+      if (userRole && userRole.includes('ROLE_')) {
+        userRole = userRole.replace('ROLE_', '').toLowerCase();
+      }
+      
+      console.log('User role for redirect:', userRole);
+      
+      switch (userRole) {
+        case 'admin':
+          targetPath = '/admin/dashboard';
+          break;
+        case 'consultant':
+        case 'counselor':
+          targetPath = '/consultant/dashboard';
+          break;
+        default:
+          targetPath = '/dashboard';
+          break;
+      }
+
+      console.log('Redirecting to:', targetPath);
+      navigate(targetPath, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
 
 
@@ -46,7 +78,17 @@ const Login = () => {
         const { user } = result;
         let targetPath = '/dashboard'; // Default path
 
-        switch (user.role) {
+        // Kiểm tra role và chuyển đổi nếu cần
+        let userRole = user.role;
+        if (userRole && userRole.includes('ROLE_')) {
+          userRole = userRole.replace('ROLE_', '').toLowerCase();
+        }
+        
+        console.log('User role after login:', userRole);
+        console.log('Original user.role:', user.role);
+        console.log('Target path:', targetPath);
+        
+        switch (userRole) {
           case 'admin':
             targetPath = '/admin/dashboard';
             break;
@@ -60,6 +102,7 @@ const Login = () => {
         }
 
         // Navigate and then reload the window to ensure state is updated.
+        console.log('Navigating to:', targetPath);
         navigate(targetPath, { replace: true });
       } else {
         toast.error(result.error || 'Đăng nhập thất bại');
@@ -83,7 +126,17 @@ const Login = () => {
         const { user } = result;
         let targetPath = '/dashboard'; // Default path
 
-        switch (user.role) {
+        // Kiểm tra role và chuyển đổi nếu cần
+        let userRole = user.role;
+        if (userRole && userRole.includes('ROLE_')) {
+          userRole = userRole.replace('ROLE_', '').toLowerCase();
+        }
+        
+        console.log('User role after Google login:', userRole);
+        console.log('Original user.role:', user.role);
+        console.log('Target path:', targetPath);
+        
+        switch (userRole) {
           case 'admin':
             targetPath = '/admin/dashboard';
             break;
@@ -97,6 +150,7 @@ const Login = () => {
         }
 
         // Navigate and then reload the window to ensure state is updated.
+        console.log('Navigating to (Google):', targetPath);
         navigate(targetPath, { replace: true });
       } else {
         toast.error(result.error || 'Đăng nhập bằng Google thất bại.');

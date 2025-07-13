@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import consultantService from '../services/ConsultantService';
 import { toast } from 'react-toastify';
+import { useAuth } from './AuthContext';
 
 const ConsultantContext = createContext();
 
@@ -13,6 +14,7 @@ export const useConsultant = () => {
 };
 
 export const ConsultantProvider = ({ children }) => {
+  const { user } = useAuth();
   const [consultantProfile, setConsultantProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -22,7 +24,7 @@ export const ConsultantProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
 
   // Load consultant profile
-  const loadConsultantProfile = async () => {
+  const loadConsultantProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await consultantService.getConsultantProfile();
@@ -36,10 +38,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Update consultant profile
-  const updateProfile = async profileData => {
+  const updateProfile = useCallback(async profileData => {
     try {
       setLoading(true);
       const response = await consultantService.updateConsultantProfile(
@@ -58,10 +60,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Change password
-  const changePassword = async (oldPassword, newPassword) => {
+  const changePassword = useCallback(async (oldPassword, newPassword) => {
     try {
       setLoading(true);
       const response = await consultantService.changePassword(
@@ -82,10 +84,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Load appointments
-  const loadAppointments = async (filters = {}) => {
+  const loadAppointments = useCallback(async (filters = {}) => {
     try {
       setLoading(true);
       const response = await consultantService.getAppointments(filters);
@@ -98,10 +100,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Update appointment status
-  const updateAppointmentStatus = async (appointmentId, status, notes = '') => {
+  const updateAppointmentStatus = useCallback(async (appointmentId, status, notes = '') => {
     try {
       const response = await consultantService.updateAppointmentStatus(
         appointmentId,
@@ -123,10 +125,10 @@ export const ConsultantProvider = ({ children }) => {
       toast.error('Không thể cập nhật trạng thái cuộc hẹn');
       return false;
     }
-  };
+  }, []);
 
   // Reschedule appointment
-  const rescheduleAppointment = async (appointmentId, newDate, newTime) => {
+  const rescheduleAppointment = useCallback(async (appointmentId, newDate, newTime) => {
     try {
       const response = await consultantService.rescheduleAppointment(
         appointmentId,
@@ -150,10 +152,10 @@ export const ConsultantProvider = ({ children }) => {
       toast.error('Không thể đổi lịch hẹn');
       return false;
     }
-  };
+  }, []);
 
   // Load conversations
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       setLoading(true);
       const response = await consultantService.getConversations();
@@ -166,10 +168,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Send message
-  const sendMessage = async (conversationId, message) => {
+  const sendMessage = useCallback(async (conversationId, message) => {
     try {
       const response = await consultantService.sendMessage(
         conversationId,
@@ -196,10 +198,10 @@ export const ConsultantProvider = ({ children }) => {
       toast.error('Không thể gửi tin nhắn');
       return false;
     }
-  };
+  }, []);
 
   // Load dashboard stats
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     try {
       setLoading(true);
       const response = await consultantService.getDashboardStats();
@@ -212,10 +214,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Load analytics
-  const loadAnalytics = async (period = 'month') => {
+  const loadAnalytics = useCallback(async (period = 'month') => {
     try {
       setLoading(true);
       const response = await consultantService.getAnalytics(period);
@@ -228,10 +230,10 @@ export const ConsultantProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Update online status
-  const updateOnlineStatus = async online => {
+  const updateOnlineStatus = useCallback(async online => {
     try {
       const response = await consultantService.updateOnlineStatus(online);
       if (response.success) {
@@ -246,10 +248,10 @@ export const ConsultantProvider = ({ children }) => {
       toast.error('Không thể cập nhật trạng thái trực tuyến');
       return false;
     }
-  };
+  }, []);
 
   // Update working hours
-  const updateWorkingHours = async workingHours => {
+  const updateWorkingHours = useCallback(async workingHours => {
     try {
       const response = await consultantService.updateWorkingHours(workingHours);
       if (response.success) {
@@ -263,10 +265,10 @@ export const ConsultantProvider = ({ children }) => {
       toast.error('Không thể cập nhật giờ làm việc');
       return false;
     }
-  };
+  }, []);
 
   // Get patient info
-  const getPatientInfo = async patientId => {
+  const getPatientInfo = useCallback(async patientId => {
     try {
       const response = await consultantService.getPatientInfo(patientId);
       if (response.success) {
@@ -277,18 +279,23 @@ export const ConsultantProvider = ({ children }) => {
       console.error('Error getting patient info:', error);
       return null;
     }
-  };
-
-  // Initialize data on mount
-  useEffect(() => {
-    loadConsultantProfile();
-    loadDashboardStats();
-    loadAppointments();
-    loadConversations();
   }, []);
 
+  // Initialize data on mount - chỉ load profile, các data khác sẽ được load từ component cụ thể
+  useEffect(() => {
+    console.log('ConsultantContext useEffect triggered:', {
+      userRole: user?.role,
+      shouldLoadProfile: user?.role === 'ROLE_CONSULTANT'
+    });
+    
+    if (user?.role === 'ROLE_CONSULTANT') {
+      console.log('Loading consultant profile...');
+      loadConsultantProfile();
+    }
+  }, [user?.role]); // Chỉ chạy khi role thay đổi
+
   // Helper functions
-  const getUpcomingAppointments = () => {
+  const getUpcomingAppointments = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -298,20 +305,20 @@ export const ConsultantProvider = ({ children }) => {
         return aptDate >= today && apt.status === 'scheduled';
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-  };
+  }, [appointments]);
 
-  const getTodayAppointments = () => {
+  const getTodayAppointments = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
     return appointments.filter(apt => apt.date === today);
-  };
+  }, [appointments]);
 
-  const getUnreadMessagesCount = () => {
+  const getUnreadMessagesCount = useCallback(() => {
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
-  };
+  }, [conversations]);
 
-  const getActiveConversations = () => {
+  const getActiveConversations = useCallback(() => {
     return conversations.filter(conv => conv.status === 'active');
-  };
+  }, [conversations]);
 
   const value = {
     // State

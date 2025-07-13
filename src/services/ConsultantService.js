@@ -130,6 +130,36 @@ const deleteReminderAPI = async (reminderId) => {
   }
 };
 
+// =============Dashboard APIs============
+// Lấy cuộc hẹn hôm nay
+export const getTodayAppointmentsAPI = async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  return getConsultationBookingsAPI(today, null);
+};
+// Lấy cuộc hẹn đang chờ
+export const getPendingAppointmentsAPI = async () => {
+  return getConsultationBookingsAPI(null, 'pending');
+};
+// Lấy cuộc hẹn sắp tới (status = scheduled hoặc ngày > hôm nay)
+export const getUpcomingAppointmentsAPI = async () => {
+  return getConsultationBookingsAPI(null, 'scheduled');
+};
+// Lấy số tin nhắn chưa đọc (mock nếu chưa có API)
+export const getUnreadMessagesCountAPI = async () => {
+  // Nếu có API thật thì gọi, tạm mock trả về 0
+  return 0;
+};
+// Lấy doanh thu
+export const getRevenueAPI = async (type = 'today') => {
+  // type: 'today', 'month', 'total'
+  let url = '/api/consultant/revenue';
+  if (type === 'today') url += '?date=' + new Date().toISOString().slice(0, 10);
+  else if (type === 'month') url += '?month=' + new Date().toISOString().slice(0, 7);
+  else if (type === 'total') url += '/total';
+  const res = await instance.get(url);
+  return res.data;
+};
+
 // =============Consultant Service Class (Wrapper for backward compatibility)============
 class ConsultantService {
   // Profile management

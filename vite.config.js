@@ -38,6 +38,20 @@ export default defineConfig({
             console.log('✅ Response from BE:', proxyRes.statusCode, req.url);
           });
         },
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('❌ WebSocket Proxy error:', err);
+          });
+          proxy.on('upgrade', (req, socket, head) => {
+            console.log('🔌 WebSocket upgrade:', req.url);
+          });
+        },
       }
     }
   },
@@ -57,6 +71,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: ['react', 'react-dom', 'react-router-dom', 'buffer', 'process'],
+  },
+  define: {
+    global: 'globalThis',
   },
 });

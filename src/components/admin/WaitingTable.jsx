@@ -24,7 +24,8 @@ const WaitingTable = ({ searchTerm }) => {
 
   const fetchData = async () => {
     try {
-      const res = await getNewProductsAPI();
+      // Sửa: truyền pageNumber=1, pageSize=10 để tránh truyền -1
+      const res = await getNewProductsAPI(1, 10);
       const items = res?.items?.map(item => ({
         ...item,
         name: item?.name ?? '',

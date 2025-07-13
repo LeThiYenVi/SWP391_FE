@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Camera,
@@ -20,6 +20,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import './ConsultantProfile.css';
+import { getConsultantProfileAPI } from '../../services/ConsultantService';
 
 const ConsultantProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -28,49 +29,26 @@ const ConsultantProfile = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [profile, setProfile] = useState({
-    name: 'Dr. Nguyễn Thị Hương',
-    email: 'huong.nguyen@gynexa.com',
-    phone: '0901234567',
-    specialty: 'Chuyên khoa Sản Phụ khoa',
-    experience: 10,
-    bio: 'Chuyên gia về sức khỏe sinh sản với hơn 10 năm kinh nghiệm. Tôi cam kết mang lại sự chăm sóc tốt nhất cho bệnh nhân và luôn cập nhật những kiến thức y khoa mới nhất.',
-    avatar:
-      'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
-    address: 'Tp. Hồ Chí Minh, Việt Nam',
-    workingHours: {
-      start: '08:00',
-      end: '17:00',
-    },
-    consultationFee: {
-      video: 300000,
-      phone: 250000,
-      chat: 200000,
-    },
-    languages: ['Tiếng Việt', 'English'],
-    certifications: [
-      'Bằng Tiến sĩ Y khoa - Đại học Y Dược TP.HCM',
-      'Chứng chỉ Chuyên khoa I Sản Phụ khoa',
-      'Chứng chỉ Tư vấn sức khỏe sinh sản',
-    ],
-    education: [
-      {
-        degree: 'Tiến sĩ Y khoa',
-        institution: 'Đại học Y Dược TP.HCM',
-        year: '2010-2014',
-      },
-      {
-        degree: 'Bác sĩ Y khoa',
-        institution: 'Đại học Y Dược TP.HCM',
-        year: '2004-2010',
-      },
-    ],
-    achievements: [
-      'Giải thưởng Bác sĩ xuất sắc năm 2023',
-      'Chứng chỉ đào tạo quốc tế về sức khỏe sinh sản',
-      'Tham gia hội thảo khoa học trong nước và quốc tế',
-    ],
-  });
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getConsultantProfileAPI();
+        setProfile(data);
+      } catch (err) {
+        setError('Không thể tải thông tin hồ sơ');
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const [editedProfile, setEditedProfile] = useState({ ...profile });
   const [passwords, setPasswords] = useState({
@@ -166,7 +144,7 @@ const ConsultantProfile = () => {
     { label: 'Đánh giá trung bình', value: '4.9', icon: Star, color: 'yellow' },
     {
       label: 'Năm kinh nghiệm',
-      value: profile.experience,
+      value: profile?.experienceYears || 0,
       icon: Award,
       color: 'green',
     },
@@ -178,6 +156,30 @@ const ConsultantProfile = () => {
     },
   ];
 
+  // Mapping lại dữ liệu từ API
+  const mappedProfile = profile && {
+    name: profile.fullName,
+    email: profile.email,
+    phone: profile.phoneNumber,
+    specialty: profile.specialization,
+    experience: profile.experienceYears,
+    bio: profile.biography,
+    avatar: profile.avatar || 'https://i.pravatar.cc/100?u=' + profile.id,
+    address: profile.address,
+    gender: profile.gender,
+    // Có thể bổ sung các trường khác nếu backend trả về
+  };
+
+  if (loading) {
+    return <div style={{textAlign:'center',padding:'2rem'}}>Đang tải dữ liệu...</div>;
+  }
+  if (error) {
+    return <div style={{textAlign:'center',padding:'2rem',color:'#ef4444'}}>{error}</div>;
+  }
+  if (!mappedProfile) {
+    return <div style={{textAlign:'center',padding:'2rem'}}>Không có dữ liệu hồ sơ</div>;
+  }
+
   return (
     <div className="consultant-profile">
       <div className="profile-header">
@@ -187,17 +189,17 @@ const ConsultantProfile = () => {
         </div>
         <div className="profile-actions">
           {!isEditing ? (
-            <button className="btn btn-primary" onClick={handleEdit}>
+            <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
               <Edit size={20} />
               Chỉnh sửa
             </button>
           ) : (
             <div className="edit-actions">
-              <button className="btn btn-outline" onClick={handleCancel}>
+              <button className="btn btn-outline" onClick={() => setIsEditing(false)}>
                 <X size={20} />
                 Hủy
               </button>
-              <button className="btn btn-success" onClick={handleSave}>
+              <button className="btn btn-success" onClick={() => setIsEditing(false)}>
                 <Save size={20} />
                 Lưu
               </button>
@@ -232,152 +234,77 @@ const ConsultantProfile = () => {
               <div className="avatar-section">
                 <div className="avatar-container">
                   <img
-                    src={isEditing ? editedProfile.avatar : profile.avatar}
+                    src={mappedProfile.avatar}
                     alt="Avatar"
                     className="profile-avatar"
                   />
-                  {isEditing && (
-                    <label className="avatar-upload">
-                      <Camera size={20} />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        hidden
-                      />
-                    </label>
-                  )}
                 </div>
               </div>
 
               <div className="form-grid">
                 <div className="form-group">
                   <label>Họ và tên</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.name}
-                      onChange={e => handleInputChange('name', e.target.value)}
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <User size={16} />
-                      <span>{profile.name}</span>
-                    </div>
-                  )}
+                  <div className="form-display">
+                    <User size={16} />
+                    <span>{mappedProfile.name}</span>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      value={editedProfile.email}
-                      onChange={e => handleInputChange('email', e.target.value)}
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <Mail size={16} />
-                      <span>{profile.email}</span>
-                    </div>
-                  )}
+                  <div className="form-display">
+                    <Mail size={16} />
+                    <span>{mappedProfile.email}</span>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Số điện thoại</label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      value={editedProfile.phone}
-                      onChange={e => handleInputChange('phone', e.target.value)}
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <Phone size={16} />
-                      <span>{profile.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Địa chỉ</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.address}
-                      onChange={e =>
-                        handleInputChange('address', e.target.value)
-                      }
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <MapPin size={16} />
-                      <span>{profile.address}</span>
-                    </div>
-                  )}
+                  <div className="form-display">
+                    <Phone size={16} />
+                    <span>{mappedProfile.phone}</span>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Chuyên môn</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.specialty}
-                      onChange={e =>
-                        handleInputChange('specialty', e.target.value)
-                      }
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <Award size={16} />
-                      <span>{profile.specialty}</span>
-                    </div>
-                  )}
+                  <div className="form-display">
+                    <Award size={16} />
+                    <span>{mappedProfile.specialty}</span>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Kinh nghiệm (năm)</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={editedProfile.experience}
-                      onChange={e =>
-                        handleInputChange(
-                          'experience',
-                          parseInt(e.target.value)
-                        )
-                      }
-                      className="form-input"
-                    />
-                  ) : (
-                    <div className="form-display">
-                      <Calendar size={16} />
-                      <span>{profile.experience} năm</span>
-                    </div>
-                  )}
+                  <div className="form-display">
+                    <Calendar size={16} />
+                    <span>{mappedProfile.experience} năm</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="form-group full-width">
-                <label>Giới thiệu</label>
-                {isEditing ? (
-                  <textarea
-                    value={editedProfile.bio}
-                    onChange={e => handleInputChange('bio', e.target.value)}
-                    className="form-textarea"
-                    rows="4"
-                  />
-                ) : (
+                <div className="form-group">
+                  <label>Giới thiệu</label>
                   <div className="form-display">
                     <BookOpen size={16} />
-                    <span>{profile.bio}</span>
+                    <span>{mappedProfile.bio}</span>
                   </div>
-                )}
+                </div>
+
+                <div className="form-group">
+                  <label>Địa chỉ</label>
+                  <div className="form-display">
+                    <MapPin size={16} />
+                    <span>{mappedProfile.address}</span>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Giới tính</label>
+                  <div className="form-display">
+                    <User size={16} />
+                    <span>{mappedProfile.gender}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

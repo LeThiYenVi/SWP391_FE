@@ -16,86 +16,61 @@ const SearchPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data cho kết quả tìm kiếm
-  const mockData = [
-    {
-      id: 1,
-      type: 'service',
-      title: 'Tư vấn trực tuyến',
-      description: 'Tư vấn trực tuyến với chuyên gia an toàn và bảo mật',
-      link: '/tu-van',
-      icon: MessageCircle,
-    },
-    {
-      id: 2,
-      type: 'service',
-      title: 'Theo dõi chu kỳ',
-      description: 'Theo dõi và dự đoán chu kỳ sinh lý một cách thông minh',
-      link: '/theo-doi-chu-ky',
-      icon: Calendar,
-    },
-    {
-      id: 3,
-      type: 'service',
-      title: 'Xét nghiệm STIs',
-      description: 'Đặt lịch và xem kết quả xét nghiệm an toàn, bảo mật',
-      link: '/xet-nghiem-sti',
-      icon: TestTube,
-    },
-    {
-      id: 4,
-      type: 'service',
-      title: 'Hỏi đáp',
-      description: 'Đặt câu hỏi và nhận tư vấn từ các chuyên gia',
-      link: '/hoi-dap',
-      icon: HelpCircle,
-    },
-    {
-      id: 5,
-      type: 'article',
-      title: 'Những điều cần biết về chu kỳ kinh nguyệt của phụ nữ',
-      description: 'Hiểu rõ về chu kỳ kinh nguyệt để chăm sóc sức khỏe tốt hơn',
-      link: '/blog/1',
-    },
-    {
-      id: 6,
-      type: 'article',
-      title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
-      description: 'Những lời khuyên từ chuyên gia về chăm sóc sức khỏe',
-      link: '/blog/2',
-    },
-    {
-      id: 7,
-      type: 'doctor',
-      title: 'Dr. Nguyễn Thị Hương',
-      description: 'Chuyên khoa Sản phụ khoa - Rating 4.9/5',
-      link: '/doi-ngu',
-    },
-    {
-      id: 8,
-      type: 'info',
-      title: 'Đặt lịch tư vấn',
-      description: 'Đặt lịch để được tư vấn miễn phí ngay',
-      link: '#booking',
-    },
-  ];
+  // Search data - sẽ được thay thế bằng API call
+  const [searchData, setSearchData] = useState([]);
 
   useEffect(() => {
-    // Simulate API call
+    // TODO: Implement actual search API call
     setIsLoading(true);
     const timer = setTimeout(() => {
+      // Placeholder for actual API call
+      const placeholderData = [
+        {
+          id: 1,
+          type: 'service',
+          title: 'Tư vấn trực tuyến',
+          description: 'Tư vấn trực tuyến với chuyên gia an toàn và bảo mật',
+          link: '/consultation',
+          icon: MessageCircle,
+        },
+        {
+          id: 2,
+          type: 'service',
+          title: 'Theo dõi chu kỳ',
+          description: 'Theo dõi và dự đoán chu kỳ sinh lý một cách thông minh',
+          link: '/cycle-tracking',
+          icon: Calendar,
+        },
+        {
+          id: 3,
+          type: 'service',
+          title: 'Xét nghiệm STIs',
+          description: 'Đặt lịch và xem kết quả xét nghiệm an toàn, bảo mật',
+          link: '/sti-testing',
+          icon: TestTube,
+        },
+        {
+          id: 4,
+          type: 'service',
+          title: 'Hỏi đáp',
+          description: 'Đặt câu hỏi và nhận tư vấn từ các chuyên gia',
+          link: '/qa',
+          icon: HelpCircle,
+        }
+      ];
+
       if (query) {
-        const filtered = mockData.filter(
+        const filtered = placeholderData.filter(
           item =>
             item.title.toLowerCase().includes(query.toLowerCase()) ||
             item.description.toLowerCase().includes(query.toLowerCase())
         );
         setSearchResults(filtered);
       } else {
-        setSearchResults(mockData);
+        setSearchResults(placeholderData);
       }
       setIsLoading(false);
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [query]);

@@ -163,7 +163,8 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const res = await getNewProductsAPI();
+      // Sửa: truyền pageNumber=1, pageSize=10 để tránh truyền -1
+      const res = await getNewProductsAPI(1, 10);
       const total = res?.items?.length || 0;
       setTotalProducts(total);
     } catch (err) {
