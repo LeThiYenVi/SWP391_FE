@@ -13,6 +13,12 @@ import {
   BarChart3,
   Loader2,
 } from 'lucide-react';
+import {
+  CalendarOutlined,
+  MessageOutlined,
+  ClockCircleOutlined,
+  StarOutlined,
+} from '@ant-design/icons';
 import { useConsultant } from '../../context/ConsultantContext';
 import { useAuth } from '../../context/AuthContext';
 import './ConsultantDashboard.css';
@@ -182,7 +188,7 @@ const ConsultantDashboard = () => {
         <div className="consultant-grid">
           <div className="stat-card primary hover-lift">
             <div className="stat-icon primary animate-float">
-              <Calendar />
+              <CalendarOutlined style={{ fontSize: '24px' }} />
             </div>
             <div className="stat-content">
               <div className="stat-number text-gradient-primary">
@@ -192,9 +198,9 @@ const ConsultantDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card success hover-lift">
-            <div className="stat-icon success animate-float">
-              <MessageCircle />
+          <div className="stat-card primary hover-lift">
+            <div className="stat-icon primary animate-float">
+              <MessageOutlined style={{ fontSize: '24px' }} />
             </div>
             <div className="stat-content">
               <div className="stat-number text-gradient-primary">
@@ -204,9 +210,9 @@ const ConsultantDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card warning hover-lift">
-            <div className="stat-icon warning animate-float">
-              <Clock />
+          <div className="stat-card primary hover-lift">
+            <div className="stat-icon primary animate-float">
+              <ClockCircleOutlined style={{ fontSize: '24px' }} />
             </div>
             <div className="stat-content">
               <div className="stat-number text-gradient-primary">
@@ -216,9 +222,9 @@ const ConsultantDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card info hover-lift">
+          <div className="stat-card primary hover-lift">
             <div className="stat-icon primary animate-float">
-              <Star />
+              <StarOutlined style={{ fontSize: '24px' }} />
             </div>
             <div className="stat-content">
               <div className="stat-number text-gradient-primary">
@@ -385,39 +391,39 @@ const ConsultantDashboard = () => {
     );
   };
 
-  // Quick actions dạng card giống user dashboard
+  // Quick actions với theme màu #B3CCD4 mới
   const quickActions = [
     {
       title: 'Lịch hẹn',
       description: 'Xem và quản lý lịch hẹn',
       icon: Calendar,
       onClick: () => navigate('/consultant/appointments'),
-      gradient: 'linear-gradient(135deg, #e0e7ff, #6366f1)',
-      iconColor: '#3730a3',
+      gradient: 'linear-gradient(135deg, #B3CCD4, #D4E6EA, #E8F1F5)',
+      iconColor: '#2c5f6f',
     },
     {
       title: 'Tin nhắn',
       description: 'Trò chuyện với khách hàng',
       icon: MessageCircle,
       onClick: () => navigate('/consultant/messages'),
-      gradient: 'linear-gradient(135deg, #f0fdf4, #22c55e)',
-      iconColor: '#15803d',
+      gradient: 'linear-gradient(135deg, #7FB3C3, #B3CCD4, #D4E6EA)',
+      iconColor: '#2c5f6f',
     },
     {
       title: 'Hồ sơ',
       description: 'Cập nhật thông tin cá nhân',
       icon: Users,
       onClick: () => navigate('/consultant/profile'),
-      gradient: 'linear-gradient(135deg, #f3e8ff, #a855f7)',
-      iconColor: '#7c3aed',
+      gradient: 'linear-gradient(135deg, #D4E6EA, #E8F1F5, #F0F8FF)',
+      iconColor: '#4a6b75',
     },
     {
       title: 'Thống kê',
       description: 'Xem báo cáo, doanh thu',
       icon: BarChart3,
       onClick: () => navigate('/consultant/analytics'),
-      gradient: 'linear-gradient(135deg, #fef9c3, #f59e0b)',
-      iconColor: '#b45309',
+      gradient: 'linear-gradient(135deg, #E8F1F5, #B3CCD4, #7FB3C3)',
+      iconColor: '#2c5f6f',
     },
   ];
 
