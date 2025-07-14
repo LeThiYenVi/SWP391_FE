@@ -51,8 +51,8 @@ import {
 import Footer from '../../../components/Footer/Footer';
 import styles from '../../HomePage.module.css';
 import './index.css';
-import { Card, Row, Col, Typography, Avatar, Button, Badge, Space } from "antd";
-import { UserOutlined, EditOutlined, SettingOutlined } from "@ant-design/icons";
+import { Card, Row, Col, Typography, Avatar, Button, Badge, Space } from 'antd';
+import { UserOutlined, EditOutlined, SettingOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -497,12 +497,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div style={{
-      maxWidth: 1200,
-      margin: '0 auto',
-      padding: '32px 16px',
-      minHeight: '100vh',
-    }}>
+    <div
+      style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '32px 16px',
+        minHeight: '100vh',
+      }}
+    >
       {/* Header - sử dụng lại từ HomePage */}
       <header className={styles.header}>
         <div className={styles.container}>
@@ -619,7 +621,7 @@ const Dashboard = () => {
                         <User size={16} /> Dashboard
                       </Link>
                       <Link
-                        to="/profile"
+                        to="/user/profile"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -730,16 +732,24 @@ const Dashboard = () => {
                 </Col>
                 <Col flex="auto">
                   <Title level={3} style={{ margin: 0 }}>
-                    Chào mừng trở lại, {user?.name || "User"}!
+                    Chào mừng trở lại, {user?.name || 'User'}!
                   </Title>
                   <Text type="secondary">{user?.email}</Text>
                   <div>
-                    <Badge color="blue" text={`Thành viên từ ${user?.joinYear || "2024"}`} />
+                    <Badge
+                      color="blue"
+                      text={`Thành viên từ ${user?.joinYear || '2024'}`}
+                    />
                   </div>
                 </Col>
                 <Col>
                   <Space>
-                    <Button icon={<EditOutlined />} onClick={() => navigate('/user/profile')}>Chỉnh sửa hồ sơ</Button>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => navigate('/user/profile')}
+                    >
+                      Chỉnh sửa hồ sơ
+                    </Button>
                     <Button icon={<SettingOutlined />}>Cài đặt</Button>
                   </Space>
                 </Col>
