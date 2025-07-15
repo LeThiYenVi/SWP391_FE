@@ -242,52 +242,12 @@ const getUserRemindersAPI = async () => {
   }
 };
 
-// =============Admin APIs============
-const getAllAccountsAPI = async (role = null, pageNumber = 1, pageSize = 10) => {
-  try {
-    const params = {};
-    if (role !== null) {
-      params.role = role;
-    }
-    params.pageNumber = pageNumber;
-    params.pageSize = pageSize;
-    const response = await instance.get('/api/admin/users', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Get all accounts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
 
-const getAwaitingDesignersAPI = async () => {
-  try {
-    const response = await instance.get('/api/admin/users/awaiting-designers');
-    console.log('Get awaiting designers success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get awaiting designers error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const applicationResultAPI = async (userId, status) => {
-  try {
-    const response = await instance.post('/api/admin/users/application-result', {
-      userId,
-      status
-    });
-    console.log('Application result success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Application result error:', error.response?.data || error.message);
-    throw error;
-  }
-};
 
 // =============Dashboard APIs============
 const getRevenueByDayAPI = async (month, year) => {
   try {
-    const response = await instance.get('/api/admin/dashboard/revenue-by-day', {
+    const response = await instance.get('/api/admin/reports/dashboard', {
       params: { month, year }
     });
     console.log('Get revenue by day success:', response.data);
@@ -307,7 +267,7 @@ const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
     if (pageSize > 0) {
       params.pageSize = pageSize;
     }
-    const response = await instance.get('/api/admin/orders', { params });
+    const response = await instance.get('/api/admin/reports/overview', { params });
     console.log('Get all orders success:', response.data);
     return response.data;
   } catch (error) {
@@ -318,7 +278,7 @@ const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
 
 const getTopDesignersByRevenueAPI = async (topN = 5) => {
   try {
-    const response = await instance.get('/api/admin/dashboard/top-designers', {
+    const response = await instance.get('/api/admin/reports/bookings', {
       params: { topN }
     });
     console.log('Get top designers by revenue success:', response.data);
@@ -528,23 +488,89 @@ const getAllFursByDesAPI = async (pageNumber = -1, pageSize = -1) => {
 };
 
 // =============Testing Services APIs============
-const getAllTestingServicesAPI = async (pageNumber = -1, pageSize = -1) => {
+const getAllTestingServicesAPI = async (pageNumber = 1, pageSize = 100) => {
   try {
-    const params = {};
-
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
+    const response = await instance.get('/api/admin/testing-services', {
+      params: { pageNumber, pageSize }
+    });
+    console.log('Get all testing services success:', response);
+    
+    // Kiểm tra cấu trúc response
+    if (response.data && response.data.content) {
+      // Nếu response có cấu trúc pagination
+      return response.data.content;
+    } else if (Array.isArray(response.data)) {
+      // Nếu response là array trực tiếp
+      return response.data;
+    } else {
+      // Fallback
+      return response.data || [];
     }
-
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
-    const response = await instance.get('/api/admin/testing-services', { params });
-    console.log('Get all testing services success:', response.data);
-    return response.data;
   } catch (error) {
     console.error('Get all testing services error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const updateTestingServiceAPI = async (serviceId, updateData) => {
+  try {
+    const response = await instance.put(`/api/admin/testing-services/${serviceId}`, updateData);
+    console.log('Update testing service success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update testing service error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const deleteTestingServiceAPI = async (serviceId) => {
+  try {
+    const response = await instance.delete(`/api/admin/testing-services/${serviceId}`);
+    console.log('Delete testing service success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Delete testing service error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Booking APIs============
+const getAllBookingsAPI = async (pageNumber = 1, pageSize = 10) => {
+  try {
+    const response = await instance.get('/api/admin/testing-services/bookings', {
+      params: { pageNumber, pageSize }
+    });
+    console.log('Get all bookings success:', response);
+    
+    // Kiểm tra cấu trúc response
+    if (response.data && response.data.content) {
+      // Nếu response có cấu trúc pagination
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      // Nếu response là array trực tiếp
+      return {
+        content: response.data,
+        pageNumber: 1,
+        pageSize: response.data.length,
+        totalElements: response.data.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false
+      };
+    } else {
+      // Fallback
+      return response.data || {
+        content: [],
+        pageNumber: 1,
+        pageSize: 10,
+        totalElements: 0,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false
+      };
+    }
+  } catch (error) {
+    console.error('Get all bookings error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -572,10 +598,7 @@ export {
   getMenstrualCycleTrackerAPI,
   getUserRemindersAPI,
   
-  // Admin APIs
-  getAllAccountsAPI,
-  getAwaitingDesignersAPI,
-  applicationResultAPI,
+
   
   // Dashboard APIs
   getRevenueByDayAPI,
@@ -608,5 +631,10 @@ export {
   getAllFursByDesAPI,
   
   // Testing Services APIs
-  getAllTestingServicesAPI
+  getAllTestingServicesAPI,
+  updateTestingServiceAPI,
+  deleteTestingServiceAPI,
+  
+  // Booking APIs
+  getAllBookingsAPI
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import ConsultantDashboard from './ConsultantDashboard';
 import ConsultantAppointments from './ConsultantAppointments';
 import ConsultantMessages from './ConsultantMessages';
@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 const ConsultantLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout } = useAuth();
 
   const consultantData = {
@@ -61,7 +62,7 @@ const ConsultantLayout = () => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    navigate('/');
   };
 
   const toggleSidebar = () => {

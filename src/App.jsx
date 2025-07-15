@@ -5,6 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './context/AuthContext';
 import { CycleProvider } from './context/CycleContext';
 import { AppointmentProvider } from './context/AppointmentContext';
+import { ConsultantProvider } from './context/ConsultantContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { checkVersionAndClearCache } from './utils/cacheUtils';
 import router from './router';
@@ -22,19 +23,21 @@ function App() {
       <AuthProvider>
         <CycleProvider>
           <AppointmentProvider>
-            <RouterProvider router={router} />
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
+            <ConsultantProvider>
+              <RouterProvider router={router} />
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
+            </ConsultantProvider>
           </AppointmentProvider>
         </CycleProvider>
       </AuthProvider>

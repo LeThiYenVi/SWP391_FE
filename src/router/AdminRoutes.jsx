@@ -1,13 +1,12 @@
 import React from 'react';
-import AdminDashboard from '../pages/admin/AdminDashboard';
-import AdminOrder from '../pages/admin/AdminOrder';
-import AdminOrderDetails from '../pages/admin/AdminOrderDetails';
-import AdminProfile from '../pages/admin/AdminProfile';
-import AdminUser from '../pages/admin/AdminUser';
-import AdminConsultants from '../pages/admin/AdminConsultants';
-import AdminWaiting from '../pages/admin/AdminWaiting';
-import AdminTestingServices from '../pages/admin/AdminTestingServices';
-import AdminContentManagement from '../pages/admin/AdminContentManagement';
+import AdminDashboard from "../pages/admin/AdminDashboard"
+import AdminOrder from "../pages/admin/AdminOrder"
+import AdminOrderDetails from "../pages/admin/AdminOrderDetails"
+import AdminProfile from "../pages/admin/AdminProfile"
+import AdminUser from "../pages/admin/AdminUser"
+import AdminConsultants from "../pages/admin/AdminConsultants"
+import AdminTestingServices from "../pages/admin/AdminTestingServices"
+import AdminContentManagement from "../pages/admin/AdminContentManagement"
 // import ProtectedRoute from "../components/ProtectedRoute";
 import { routes } from '../routes';
 // import { Route, Routes, useLocation } from "react-router-dom";
@@ -34,14 +33,6 @@ const AdminRoutes = [
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
       <AdminOrder />
-      // </ProtectedRoute>
-    ),
-  },
-  {
-    path: routes.adminWaiting,
-    element: (
-      // <ProtectedRoute allowedRoles={["Admin"]}>
-      <AdminWaiting />
       // </ProtectedRoute>
     ),
   },

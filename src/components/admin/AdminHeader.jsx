@@ -11,9 +11,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [anchorElLang, setAnchorElLang] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [name, setName] = useState('Người dùng');
@@ -27,8 +29,8 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
+    navigate('/');
   };
 
   useEffect(() => {
@@ -51,18 +53,20 @@ const Header = () => {
   return (
     <Box
       sx={{
-        minHeight: 70,
-        bgcolor: '#fff',
+        minHeight: 72,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
+        backdropFilter: 'blur(10px)',
         py: 1,
         px: 3,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0px 2px 0px rgba(0,0,0,0.1)',
-        color: '#2e3a25',
+        boxShadow: '0 4px 20px rgba(179, 204, 212, 0.2)',
+        color: '#354766',
         position: 'sticky',
         top: 0,
         zIndex: 10,
+        borderBottom: '1px solid rgba(179, 204, 212, 0.3)',
       }}
     >
       {/* Search Bar */}
@@ -70,16 +74,32 @@ const Header = () => {
         sx={{
           display: 'flex',
           alignItems: 'center',
-          bgcolor: '#f1f1f1',
+          background: 'rgba(255, 255, 255, 0.6)',
           px: 2,
-          py: 0.5,
+          py: 0.8,
           borderRadius: 2,
           width: 300,
-          '&:hover': { bgcolor: '#e0e0e0' },
+          border: '1px solid rgba(179, 204, 212, 0.3)',
+          boxShadow: '0 2px 8px rgba(179, 204, 212, 0.15)',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            background: 'rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 4px 12px rgba(179, 204, 212, 0.25)',
+          },
         }}
       >
-        <SearchIcon sx={{ mr: 1, color: '#2e3a25' }} />
-        <InputBase placeholder="Tìm kiếm..." fullWidth sx={{ color: '#2e3a25' }} />
+        <SearchIcon sx={{ mr: 1, color: '#354766' }} />
+        <InputBase
+          placeholder="Tìm kiếm..."
+          fullWidth
+          sx={{
+            color: '#354766',
+            '& input': {
+              fontWeight: 500,
+              fontSize: '0.95rem'
+            }
+          }}
+        />
       </Box>
 
       {/* Right Section */}
@@ -122,21 +142,54 @@ const Header = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 1.5,
             cursor: 'pointer',
-            '&:hover': { opacity: 0.8 },
+            background: 'rgba(255, 255, 255, 0.6)',
+            border: '1px solid rgba(179, 204, 212, 0.3)',
+            boxShadow: '0 2px 8px rgba(179, 204, 212, 0.15)',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              background: 'rgba(255, 255, 255, 0.8)',
+              boxShadow: '0 4px 12px rgba(179, 204, 212, 0.25)',
+              transform: 'translateY(-2px)'
+            },
           }}
         >
-          <Avatar alt="User" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" />
+          <Avatar
+            alt="User"
+            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+            sx={{
+              width: 40,
+              height: 40,
+              border: '2px solid #B3CCD4'
+            }}
+          />
           <Box sx={{ textAlign: 'left' }}>
-            <Typography variant="body2" fontWeight="bold">
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                color: '#354766',
+                fontSize: '0.95rem'
+              }}
+            >
               {name}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#B3CCD4',
+                fontWeight: 600,
+                fontSize: '0.75rem'
+              }}
+            >
               {role}
             </Typography>
           </Box>
-          <ArrowDropDownIcon />
+          <ArrowDropDownIcon sx={{ color: '#354766' }} />
         </Box>
 
         <Menu anchorEl={anchorElUser} open={Boolean(anchorElUser)} onClose={handleClose}>
