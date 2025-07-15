@@ -1,0 +1,283 @@
+/* === Staff Layout Modern UI - Healthcare Theme === */
+.staff-sidebar {
+  position: relative;
+  overflow: hidden;
+}
+
+.staff-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(179, 204, 212, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(179, 204, 212, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(179, 204, 212, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.staff-sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Menu Item Animations */
+.staff-menu-item {
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.staff-menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+  z-index: 0;
+}
+
+.staff-menu-item:hover::before {
+  left: 100%;
+}
+
+.staff-menu-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header Styling */
+.staff-header {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.staff-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(179, 204, 212, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(179, 204, 212, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.staff-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Content Area */
+.staff-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.staff-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(179, 204, 212, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(179, 204, 212, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(179, 204, 212, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.staff-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Staff Cards */
+.staff-card {
+  background: linear-gradient(135deg, #B3CCD4 0%, #D4E6EA 50%, #E8F1F5 100%) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 8px 32px rgba(179, 204, 212, 0.25), 0 2px 8px rgba(179, 204, 212, 0.15) !important;
+  padding: 24px !important;
+  border: 1px solid rgba(179, 204, 212, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.staff-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.staff-card:hover::before {
+  left: 100%;
+}
+
+.staff-card:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 16px 48px rgba(179, 204, 212, 0.35), 0 4px 16px rgba(179, 204, 212, 0.25) !important;
+  border-color: rgba(179, 204, 212, 0.5) !important;
+}
+
+/* Staff Buttons */
+.staff-button-primary {
+  background: linear-gradient(135deg, #354766, #4a6b75) !important;
+  color: white !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(53, 71, 102, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.staff-button-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(53, 71, 102, 0.4) !important;
+}
+
+.staff-button-secondary {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #354766 !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  border: 1px solid rgba(179, 204, 212, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(179, 204, 212, 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.staff-button-secondary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(179, 204, 212, 0.3) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Staff Table */
+.staff-table-container {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 8px 32px rgba(179, 204, 212, 0.25), 0 2px 8px rgba(179, 204, 212, 0.15) !important;
+  border: 1px solid rgba(179, 204, 212, 0.3) !important;
+  overflow: hidden !important;
+}
+
+.staff-table-header {
+  background: linear-gradient(135deg, #354766, #4a6b75) !important;
+  color: white !important;
+  font-weight: 700 !important;
+}
+
+/* Staff Form */
+.staff-form-container {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 8px 32px rgba(179, 204, 212, 0.25), 0 2px 8px rgba(179, 204, 212, 0.15) !important;
+  border: 1px solid rgba(179, 204, 212, 0.3) !important;
+  padding: 24px !important;
+}
+
+/* Staff Input */
+.staff-input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(179, 204, 212, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.staff-input:focus {
+  border-color: #354766 !important;
+  box-shadow: 0 0 0 2px rgba(53, 71, 102, 0.2) !important;
+}
+
+/* Loading States */
+.staff-loading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 200px !important;
+  color: #354766 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .staff-sidebar {
+    width: 240px !important;
+  }
+  
+  .staff-card {
+    padding: 16px !important;
+  }
+  
+  .staff-form-container {
+    padding: 16px !important;
+  }
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Scrollbar Styling */
+.staff-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.staff-content::-webkit-scrollbar-track {
+  background: rgba(179, 204, 212, 0.1);
+  border-radius: 4px;
+}
+
+.staff-content::-webkit-scrollbar-thumb {
+  background: rgba(179, 204, 212, 0.5);
+  border-radius: 4px;
+}
+
+.staff-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 204, 212, 0.7);
+}
