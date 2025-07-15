@@ -5,6 +5,7 @@ import Consultation from '../pages/User/Consultation/index.jsx';
 import CycleTracking from '../pages/User/CycleTracking/index.jsx';
 import STITesting from '../pages/User/STITesting/index.jsx';
 import QA from '../pages/User/QA/index.jsx';
+import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
 
@@ -533,6 +534,12 @@ const HomePageRoutes = [
   {
     path: '/chinh-sach-bao-mat',
     element: <PrivacyPage />,
+  },
+
+  // Catch-all route for 404 errors - MUST be last
+  {
+    path: '*',
+    element: <NotFound />,
   },
 ];
 
