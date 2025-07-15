@@ -51,6 +51,9 @@ const Login = () => {
         case 'counselor':
           targetPath = '/consultant/dashboard';
           break;
+        case 'staff':
+          targetPath = '/staff';
+          break;
         default:
           targetPath = '/dashboard';
           break;
@@ -105,6 +108,9 @@ const Login = () => {
           case 'counselor':
             targetPath = '/consultant/dashboard';
             break;
+          case 'staff':
+            targetPath = '/staff';
+            break;
           default:
             targetPath = '/dashboard';
             break;
@@ -152,6 +158,9 @@ const Login = () => {
           case 'consultant':
           case 'counselor':
             targetPath = '/consultant/dashboard';
+            break;
+          case 'staff':
+            targetPath = '/staff';
             break;
           default:
             targetPath = '/dashboard';
