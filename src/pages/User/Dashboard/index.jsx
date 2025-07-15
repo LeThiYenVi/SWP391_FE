@@ -51,10 +51,6 @@ import {
 import Footer from '../../../components/Footer/Footer';
 import styles from '../../HomePage.module.css';
 import './index.css';
-import { Card, Row, Col, Typography, Avatar, Button, Badge, Space } from 'antd';
-import { UserOutlined, EditOutlined, SettingOutlined } from '@ant-design/icons';
-
-const { Title, Text } = Typography;
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -62,6 +58,12 @@ const Dashboard = () => {
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+  const [overviewStats, setOverviewStats] = useState({
+    totalConsultations: 0,
+    totalSTITests: 0,
+    totalQuestions: 0,
+    newNotifications: 0,
+  });
   const { user, logout, isAuthenticated } = useAuth();
   const { getDaysUntilNextPeriod, getDaysUntilOvulation, isInFertilityWindow } =
     useCycle();
@@ -73,25 +75,186 @@ const Dashboard = () => {
   const daysUntilOvulation = getDaysUntilOvulation();
   const inFertilityWindow = isInFertilityWindow();
 
-  // Dashboard data - sẽ được thay thế bằng API calls
-  const [overviewStats, setOverviewStats] = useState({
-    totalConsultations: 0,
-    totalSTITests: 0,
-    totalQuestions: 0,
-    newNotifications: 0,
-    upcomingAppointments: upcomingAppointments.length,
-  });
 
-  const [notifications, setNotifications] = useState([]);
+  const notifications = [
+    {
+      id: 1,
+      type: 'appointment',
+      title: 'Lịch tư vấn sắp tới',
+      message: 'Bạn có lịch tư vấn với Dr. Nguyễn Hoa vào 15:00 ngày mai',
+      time: '2 giờ trước',
+      read: false,
+      icon: MessageCircle,
+      color: '#568392',
+    },
+    {
+      id: 2,
+      type: 'test_result',
+      title: 'Kết quả xét nghiệm',
+      message: 'Kết quả xét nghiệm STI của bạn đã có. Nhấn để xem chi tiết.',
+      time: '5 giờ trước',
+      read: false,
+      icon: TestTube,
+      color: '#22c55e',
+    },
+    {
+      id: 3,
+      type: 'cycle_reminder',
+      title: 'Nhắc nhở chu kỳ',
+      message: 'Hôm nay là ngày dự đoán rụng trứng. Hãy theo dõi cẩn thận!',
+      time: '1 ngày trước',
+      read: true,
+      icon: Heart,
+      color: '#f59e0b',
+    },
+    {
+      id: 4,
+      type: 'qa_response',
+      title: 'Trả lời câu hỏi',
+      message: 'Dr. Lê Minh đã trả lời câu hỏi của bạn về chu kỳ kinh nguyệt',
+      time: '2 ngày trước',
+      read: true,
+      icon: HelpCircle,
+      color: '#a855f7',
+    },
+  ];
 
-  // Placeholder data - sẽ được thay thế bằng API calls
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [cycleHistory, setCycleHistory] = useState([]);
-  const [testHistory, setTestHistory] = useState([]);
-  const [qaHistory, setQaHistory] = useState([]);
+  const recentActivities = [
+    {
+      id: 1,
+      type: 'consultation',
+      title: 'Tư vấn với Dr. Nguyễn Hoa',
+      description: 'Chủ đề: Chu kỳ kinh nguyệt không đều',
+      date: '2024-01-15',
+      status: 'completed',
+      rating: 5,
+    },
+    {
+      id: 2,
+      type: 'test',
+      title: 'Xét nghiệm STI đầy đủ',
+      description: 'Gói xét nghiệm 12 loại STI',
+      date: '2024-01-10',
+      status: 'completed',
+      result: 'Âm tính - Bình thường',
+    },
+    {
+      id: 3,
+      type: 'question',
+      title: 'Câu hỏi về thuốc tránh thai',
+      description: 'Thuốc tránh thai có ảnh hưởng đến chu kỳ không?',
+      date: '2024-01-12',
+      status: 'answered',
+      rating: 4,
+    },
+  ];
 
-  // Chat realtime data - sẽ được thay thế bằng API calls
-  const [activeChats, setActiveChats] = useState([]);
+  const cycleHistory = [
+    {
+      id: 1,
+      startDate: '2024-01-01',
+      endDate: '2024-01-05',
+      cycleLength: 28,
+      period: 5,
+      symptoms: ['Đau bụng', 'Mệt mỏi'],
+    },
+    {
+      id: 2,
+      startDate: '2023-12-04',
+      endDate: '2023-12-08',
+      cycleLength: 28,
+      period: 4,
+      symptoms: ['Đau đầu'],
+    },
+  ];
+
+  const testHistory = [
+    {
+      id: 1,
+      testName: 'Gói xét nghiệm STI đầy đủ',
+      date: '2024-01-10',
+      status: 'completed',
+      result: 'Âm tính - Bình thường',
+      price: '1,200,000 VNĐ',
+      facility: 'Phòng khám Gynexa - Q1',
+    },
+    {
+      id: 2,
+      testName: 'Xét nghiệm HIV/AIDS',
+      date: '2023-12-15',
+      status: 'completed',
+      result: 'Âm tính',
+      price: '200,000 VNĐ',
+      facility: 'Phòng khám Gynexa - Q3',
+    },
+    {
+      id: 3,
+      testName: 'Xét nghiệm Syphilis',
+      date: '2024-01-20',
+      status: 'processing',
+      result: 'Đang xử lý...',
+      price: '150,000 VNĐ',
+      facility: 'Phòng khám Gynexa - Q1',
+    },
+  ];
+
+  const qaHistory = [
+    {
+      id: 1,
+      question: 'Chu kỳ kinh nguyệt của tôi không đều, có sao không?',
+      answer:
+        'Chu kỳ kinh nguyệt có thể bị ảnh hưởng bởi nhiều yếu tố như stress, thay đổi cân nặng, thuốc...',
+      counselor: 'Dr. Nguyễn Hoa',
+      date: '2024-01-12',
+      status: 'answered',
+      category: 'Chu kỳ kinh nguyệt',
+      rating: 5,
+      bookmarked: true,
+    },
+    {
+      id: 2,
+      question: 'Thuốc tránh thai nào an toàn nhất?',
+      answer:
+        'Việc lựa chọn thuốc tránh thai phù hợp cần dựa vào tình trạng sức khỏe cá nhân...',
+      counselor: 'Dr. Lê Minh',
+      date: '2024-01-08',
+      status: 'answered',
+      category: 'Thuốc tránh thai',
+      rating: 4,
+      bookmarked: false,
+    },
+  ];
+
+  // Chat realtime data
+  const [activeChats, setActiveChats] = useState([
+    {
+      id: 1,
+      counselorId: 1,
+      counselorName: 'Dr. Nguyễn Thị Hoa',
+      counselorAvatar:
+        'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
+      isOnline: true,
+      lastMessage:
+        'Tôi sẽ gửi cho bạn một số lời khuyên về chu kỳ kinh nguyệt.',
+      lastMessageTime: '2 phút trước',
+      unreadCount: 2,
+      status: 'active',
+      sessionType: 'consultation',
+    },
+    {
+      id: 2,
+      counselorId: 2,
+      counselorName: 'Dr. Lê Văn Minh',
+      counselorAvatar:
+        'https://hoanghamobile.com/tin-tuc/wp-content/webp-express/webp-images/uploads/2024/06/anh-bac-si-27.jpg.webp',
+      isOnline: false,
+      lastMessage: 'Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.',
+      lastMessageTime: '1 giờ trước',
+      unreadCount: 0,
+      status: 'completed',
+      sessionType: 'qa',
+    },
+  ]);
 
   const [chatMessages, setChatMessages] = useState({
     1: [
@@ -497,14 +660,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div
-      style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: '32px 16px',
-        minHeight: '100vh',
-      }}
-    >
+    <div className={styles.homepage}>
       {/* Header - sử dụng lại từ HomePage */}
       <header className={styles.header}>
         <div className={styles.container}>
@@ -621,7 +777,7 @@ const Dashboard = () => {
                         <User size={16} /> Dashboard
                       </Link>
                       <Link
-                        to="/user/profile"
+                        to="/profile"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -631,10 +787,7 @@ const Dashboard = () => {
                           color: '#222',
                           fontWeight: 500,
                         }}
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          navigate('/user/profile');
-                        }}
+                        onClick={() => setShowUserMenu(false)}
                       >
                         <User size={16} /> Hồ sơ cá nhân
                       </Link>
@@ -725,36 +878,28 @@ const Dashboard = () => {
 
           {/* Profile Summary */}
           <section className="profile-summary-section">
-            <Card style={{ marginBottom: 24 }}>
-              <Row align="middle" gutter={24}>
-                <Col>
-                  <Avatar size={80} icon={<UserOutlined />} />
-                </Col>
-                <Col flex="auto">
-                  <Title level={3} style={{ margin: 0 }}>
-                    Chào mừng trở lại, {user?.name || 'User'}!
-                  </Title>
-                  <Text type="secondary">{user?.email}</Text>
-                  <div>
-                    <Badge
-                      color="blue"
-                      text={`Thành viên từ ${user?.joinYear || '2024'}`}
-                    />
-                  </div>
-                </Col>
-                <Col>
-                  <Space>
-                    <Button
-                      icon={<EditOutlined />}
-                      onClick={() => navigate('/user/profile')}
-                    >
-                      Chỉnh sửa hồ sơ
-                    </Button>
-                    <Button icon={<SettingOutlined />}>Cài đặt</Button>
-                  </Space>
-                </Col>
-              </Row>
-            </Card>
+            <div className="profile-summary-card">
+              <div className="profile-info">
+                <div className="profile-avatar">
+                  <User size={32} />
+                </div>
+                <div className="profile-details">
+                  <h3>{user?.name || 'Người dùng'}</h3>
+                  <p>{user?.email || 'user@gynexa.com'}</p>
+                  <span className="profile-status">Thành viên từ 2024</span>
+                </div>
+              </div>
+              <div className="profile-actions">
+                <Link to="/profile" className="profile-action-btn">
+                  <Edit size={16} />
+                  Chỉnh sửa hồ sơ
+                </Link>
+                <Link to="/settings" className="profile-action-btn">
+                  <Settings size={16} />
+                  Cài đặt
+                </Link>
+              </div>
+            </div>
           </section>
 
           {/* Overview Statistics */}

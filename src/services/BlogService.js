@@ -1,220 +1,187 @@
-import instance from "./customize-axios";
+import axios from 'axios';
+import authAxios from './customize-axios';
+import { API_BASE_URL } from '../config';
 
-// =============Blog Posts APIs============
-const getBlogPostsAPI = async (page = 0, size = 10) => {
-  try {
-    const response = await instance.get('/api/blog/posts', {
-      params: {
-        page,
-        size,
-        sort: 'createdAt,desc'
-      }
-    });
-    console.log('Get blog posts success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get blog posts error:', error.response?.data || error.message);
-    throw error;
+// Create a separate axios instance for public APIs (without auth headers)
+const publicAxios = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+const BlogService = {
+  // Lấy danh sách blog posts với phân trang (PUBLIC API)
+  getAllBlogPosts: async (pageNumber = 1, pageSize = 10) => {
+    try {
+      console.log('Fetching blog posts from:', `${API_BASE_URL}/api/blog/posts`);
+      const response = await publicAxios.get(`/api/blog/posts`, {
+        params: {
+          pageNumber,
+          pageSize
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+      throw error;
+    }
+  },
+
+  // Lấy blog post theo ID (PUBLIC API)
+  getBlogPostById: async (postId) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/posts/${postId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching blog post:', error);
+      throw error;
+    }
+  },
+
+  // Tạo blog post mới (ADMIN API)
+  createBlogPost: async (blogPostData) => {
+    try {
+      const response = await authAxios.post('/api/blog/posts', blogPostData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      throw error;
+    }
+  },
+
+  // Cập nhật blog post (ADMIN API)
+  updateBlogPost: async (postId, blogPostData) => {
+    try {
+      const response = await authAxios.put(`/api/blog/posts/${postId}`, blogPostData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating blog post:', error);
+      throw error;
+    }
+  },
+
+  // Xóa blog post (ADMIN API)
+  deleteBlogPost: async (postId) => {
+    try {
+      const response = await authAxios.delete(`/api/blog/posts/${postId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting blog post:', error);
+      throw error;
+    }
+  },
+
+  // Lấy blog posts theo category (PUBLIC API)
+  getBlogPostsByCategory: async (categoryId, pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/posts/category/${categoryId}?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching blog posts by category:', error);
+      throw error;
+    }
+  },
+
+  // Tìm kiếm blog posts (PUBLIC API)
+  searchBlogPosts: async (keyword, pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/posts/search?keyword=${encodeURIComponent(keyword)}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching blog posts:', error);
+      throw error;
+    }
+  },
+
+  // Lấy featured blog posts (PUBLIC API)
+  getFeaturedBlogPosts: async (pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/posts/featured?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching featured blog posts:', error);
+      throw error;
+    }
+  },
+
+  // Lấy tất cả categories (PUBLIC API)
+  getAllCategories: async () => {
+    try {
+      const response = await publicAxios.get('/api/blog/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+
+  // Lấy category theo ID (PUBLIC API)
+  getCategoryById: async (categoryId) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/categories/${categoryId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      throw error;
+    }
+  },
+
+  // Tạo category mới (ADMIN API)
+  createCategory: async (categoryData) => {
+    try {
+      const response = await authAxios.post('/api/blog/categories', categoryData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      throw error;
+    }
+  },
+
+  // Cập nhật category (ADMIN API)
+  updateCategory: async (categoryId, categoryData) => {
+    try {
+      const response = await authAxios.put(`/api/blog/categories/${categoryId}`, categoryData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  },
+
+  // Xóa category (ADMIN API)
+  deleteCategory: async (categoryId) => {
+    try {
+      const response = await authAxios.delete(`/api/blog/categories/${categoryId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+  },
+
+  // Lấy category với posts (PUBLIC API)
+  getCategoryWithPosts: async (categoryId) => {
+    try {
+      const response = await publicAxios.get(`/api/blog/categories/${categoryId}/with-posts`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching category with posts:', error);
+      throw error;
+    }
+  },
+
+  // Lấy tất cả categories với posts (PUBLIC API)
+  getAllCategoriesWithPosts: async () => {
+    try {
+      const response = await publicAxios.get('/api/blog/categories/with-posts');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories with posts:', error);
+      throw error;
+    }
   }
 };
 
-const getBlogPostByIdAPI = async (postId) => {
-  try {
-    const response = await instance.get(`/api/blog/posts/${postId}`);
-    console.log('Get blog post by ID success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get blog post by ID error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const createBlogPostAPI = async (postData) => {
-  try {
-    const response = await instance.post('/api/blog/posts', postData);
-    console.log('Create blog post success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Create blog post error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const updateBlogPostAPI = async (postId, postData) => {
-  try {
-    const response = await instance.put(`/api/blog/posts/${postId}`, postData);
-    console.log('Update blog post success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Update blog post error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const deleteBlogPostAPI = async (postId) => {
-  try {
-    const response = await instance.delete(`/api/blog/posts/${postId}`);
-    console.log('Delete blog post success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Delete blog post error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getBlogPostsByCategoryAPI = async (categoryId, page = 0, size = 10) => {
-  try {
-    const response = await instance.get(`/api/blog/posts/category/${categoryId}`, {
-      params: {
-        page,
-        size,
-        sort: 'createdAt,desc'
-      }
-    });
-    console.log('Get blog posts by category success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get blog posts by category error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const searchBlogPostsAPI = async (keyword, page = 0, size = 10) => {
-  try {
-    const response = await instance.get('/api/blog/posts/search', {
-      params: {
-        keyword,
-        page,
-        size,
-        sort: 'createdAt,desc'
-      }
-    });
-    console.log('Search blog posts success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Search blog posts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getFeaturedBlogPostsAPI = async (page = 0, size = 10) => {
-  try {
-    const response = await instance.get('/api/blog/posts/featured', {
-      params: {
-        page,
-        size,
-        sort: 'createdAt,desc'
-      }
-    });
-    console.log('Get featured blog posts success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get featured blog posts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// =============Blog Categories APIs============
-const getBlogCategoriesAPI = async (page = 0, size = 20) => {
-  try {
-    const response = await instance.get('/api/blog/categories', {
-      params: {
-        page,
-        size,
-        sort: 'name,asc'
-      }
-    });
-    console.log('Get blog categories success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get blog categories error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getBlogCategoryByIdAPI = async (categoryId) => {
-  try {
-    const response = await instance.get(`/api/blog/categories/${categoryId}`);
-    console.log('Get blog category by ID success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get blog category by ID error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const createBlogCategoryAPI = async (categoryData) => {
-  try {
-    const response = await instance.post('/api/blog/categories', categoryData);
-    console.log('Create blog category success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Create blog category error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const updateBlogCategoryAPI = async (categoryId, categoryData) => {
-  try {
-    const response = await instance.put(`/api/blog/categories/${categoryId}`, categoryData);
-    console.log('Update blog category success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Update blog category error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const deleteBlogCategoryAPI = async (categoryId) => {
-  try {
-    const response = await instance.delete(`/api/blog/categories/${categoryId}`);
-    console.log('Delete blog category success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Delete blog category error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getCategoryWithPostsAPI = async (categoryId) => {
-  try {
-    const response = await instance.get(`/api/blog/categories/${categoryId}/with-posts`);
-    console.log('Get category with posts success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get category with posts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getAllCategoriesWithPostsAPI = async () => {
-  try {
-    const response = await instance.get('/api/blog/categories/with-posts');
-    console.log('Get all categories with posts success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get all categories with posts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export {
-  // Blog Posts APIs
-  getBlogPostsAPI,
-  getBlogPostByIdAPI,
-  createBlogPostAPI,
-  updateBlogPostAPI,
-  deleteBlogPostAPI,
-  getBlogPostsByCategoryAPI,
-  searchBlogPostsAPI,
-  getFeaturedBlogPostsAPI,
-  
-  // Blog Categories APIs
-  getBlogCategoriesAPI,
-  getBlogCategoryByIdAPI,
-  createBlogCategoryAPI,
-  updateBlogCategoryAPI,
-  deleteBlogCategoryAPI,
-  getCategoryWithPostsAPI,
-  getAllCategoriesWithPostsAPI
-}; 
+export default BlogService; 

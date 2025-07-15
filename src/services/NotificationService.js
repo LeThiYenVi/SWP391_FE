@@ -299,6 +299,35 @@ class NotificationService {
 
     this.notify();
   }
+
+  // Gửi email xác nhận đặt lịch (mock)
+  sendBookingConfirmationEmail({ to, counselorName, date, time, type }) {
+    // Giả lập gửi email, thực tế sẽ gọi API backend hoặc EmailJS
+    console.log(
+      `Gửi email xác nhận tới ${to}:\nBạn đã đặt lịch tư vấn với ${counselorName} vào ${date} lúc ${time} (${type})`
+    );
+    // Có thể show toast hoặc notification in-app nếu muốn
+    this.createInAppNotification({
+      type: 'appointment',
+      title: 'Đã gửi email xác nhận',
+      message: `Đã gửi email xác nhận đặt lịch tư vấn tới ${to}`,
+      priority: 'low',
+    });
+  }
+
+  // Gửi email nhắc nhở lịch hẹn (mock)
+  sendAppointmentReminderEmail({ to, counselorName, date, time, type }) {
+    // Giả lập gửi email nhắc nhở, thực tế sẽ gọi API backend hoặc EmailJS
+    console.log(
+      `Gửi email nhắc nhở tới ${to}:\nBạn có lịch tư vấn với ${counselorName} vào ${date} lúc ${time} (${type})`
+    );
+    this.createInAppNotification({
+      type: 'appointment',
+      title: 'Đã gửi email nhắc nhở',
+      message: `Đã gửi email nhắc nhở lịch tư vấn tới ${to}`,
+      priority: 'low',
+    });
+  }
 }
 
 // Singleton instance

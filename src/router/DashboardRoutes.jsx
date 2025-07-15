@@ -31,9 +31,15 @@ const DashboardRoutes = [
     path: '/consultation',
     element: (
       <ProtectedRoute>
-        <MainLayout title="Tư vấn trực tuyến - Gynexa">
-          <Consultation />
-        </MainLayout>
+        <Consultation />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/tu-van',
+    element: (
+      <ProtectedRoute>
+        <Consultation />
       </ProtectedRoute>
     ),
   },

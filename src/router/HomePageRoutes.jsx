@@ -1,12 +1,11 @@
 import React from 'react';
 import HomePage from '../pages/HomePage.jsx';
-import LoginPage from '../pages/Login/login.jsx';
-import RegisterPage from '../pages/Register/register.jsx';
 import SearchPage from '../pages/Search/Search.jsx';
 import Consultation from '../pages/User/Consultation/index.jsx';
 import CycleTracking from '../pages/User/CycleTracking/index.jsx';
 import STITesting from '../pages/User/STITesting/index.jsx';
 import QA from '../pages/User/QA/index.jsx';
+import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
 
@@ -405,14 +404,6 @@ const HomePageRoutes = [
     element: <HomePage />,
   },
   {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
-  {
     path: '/search',
     element: <SearchPage />,
   },
@@ -543,6 +534,12 @@ const HomePageRoutes = [
   {
     path: '/chinh-sach-bao-mat',
     element: <PrivacyPage />,
+  },
+
+  // Catch-all route for 404 errors - MUST be last
+  {
+    path: '*',
+    element: <NotFound />,
   },
 ];
 

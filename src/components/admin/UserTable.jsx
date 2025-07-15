@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getAllAccountsAPI } from '../../services/UsersSevices';
+import { getAllUsersAPI } from '../../services/AdminService';
 
 const UserTable = ({ searchTerm, roleFilter }) => {
     const [allUsers, setAllUsers] = useState([]);
@@ -27,8 +27,8 @@ const UserTable = ({ searchTerm, roleFilter }) => {
 
     const fetchData = async () => {
         try {
-            const response = await getAllAccountsAPI();
-            const items = response.items || [];
+            const response = await getAllUsersAPI();
+            const items = response.content || response.items || [];
             setAllUsers(items);
             setFilteredUsers(items);
         } catch (err) {

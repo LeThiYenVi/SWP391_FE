@@ -20,6 +20,15 @@ const Login = () => {
 
   const from = location.state?.from?.pathname || '/';
 
+  // Kiểm tra session expired
+  useEffect(() => {
+    const sessionExpired = localStorage.getItem('sessionExpired');
+    if (sessionExpired === 'true') {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.removeItem('sessionExpired');
+    }
+  }, []);
+
   // Redirect user đã đăng nhập
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -31,9 +40,9 @@ const Login = () => {
       if (userRole && userRole.includes('ROLE_')) {
         userRole = userRole.replace('ROLE_', '').toLowerCase();
       }
-      
+
       console.log('User role for redirect:', userRole);
-      
+
       switch (userRole) {
         case 'admin':
           targetPath = '/admin/dashboard';
@@ -41,6 +50,9 @@ const Login = () => {
         case 'consultant':
         case 'counselor':
           targetPath = '/consultant/dashboard';
+          break;
+        case 'staff':
+          targetPath = '/staff';
           break;
         default:
           targetPath = '/dashboard';
@@ -96,6 +108,9 @@ const Login = () => {
           case 'counselor':
             targetPath = '/consultant/dashboard';
             break;
+          case 'staff':
+            targetPath = '/staff';
+            break;
           default:
             targetPath = '/dashboard';
             break;
@@ -143,6 +158,9 @@ const Login = () => {
           case 'consultant':
           case 'counselor':
             targetPath = '/consultant/dashboard';
+            break;
+          case 'staff':
+            targetPath = '/staff';
             break;
           default:
             targetPath = '/dashboard';
