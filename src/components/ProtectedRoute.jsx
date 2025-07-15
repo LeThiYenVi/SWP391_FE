@@ -2,8 +2,8 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   // Loading khi chưa xác định được trạng thái đăng nhập
@@ -21,22 +21,37 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // Nếu cần kiểm tra vai trò
-  // if (allowedRoles && allowedRoles.length > 0) {
-  //   const token = localStorage.getItem('token');
-  //   try {
-  //     const decoded = jwtDecode(token);
-  //     const userRole = decoded?.Role;
-
-  //     if (!allowedRoles.includes(userRole)) {
-  //       // Nếu không đúng vai trò, chuyển về trang không có quyền
-  //       return <Navigate to="/unauthorized" replace />;
-  //     }
-  //   } catch (error) {
-  //     console.error('Lỗi decode token:', error);
-  //     localStorage.removeItem('token');
-  //     return <Navigate to="/login" replace />;
-  //   }
-  // }
+  if (allowedRoles && allowedRoles.length > 0) {
+    const userRole = user?.role;
+    console.log('Checking role access:', { userRole, allowedRoles });
+    
+    // Kiểm tra cả role gốc và role đã format
+    let hasAccess = false;
+    if (userRole) {
+      // Kiểm tra role gốc
+      if (allowedRoles.includes(userRole)) {
+        hasAccess = true;
+      }
+      // Kiểm tra role đã format (bỏ ROLE_)
+      const formattedRole = userRole.replace('ROLE_', '').toLowerCase();
+      if (allowedRoles.includes(formattedRole)) {
+        hasAccess = true;
+      }
+      // Kiểm tra role đã format và viết hoa chữ cái đầu
+      const capitalizedRole = formattedRole.charAt(0).toUpperCase() + formattedRole.slice(1);
+      if (allowedRoles.includes(capitalizedRole)) {
+        hasAccess = true;
+      }
+    }
+    
+    if (!hasAccess) {
+      console.log('Access denied: role mismatch. User role:', userRole, 'Allowed roles:', allowedRoles);
+      // Nếu không đúng vai trò, chuyển về trang không có quyền
+      return <Navigate to="/unauthorized" replace />;
+    }
+    
+    console.log('Access granted for role:', userRole);
+  }
 
   // Nếu hợp lệ, render children
   return children;

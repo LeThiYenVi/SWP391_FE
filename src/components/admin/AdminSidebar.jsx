@@ -30,7 +30,7 @@ const menuItems = [
 ];
 
 const bottomItems = [
-  { text: 'Cài đặt', icon: <SettingsIcon />, route: '#' },
+  { text: 'Cài đặt', icon: <SettingsIcon />, route: 'adminProfile' },
   { text: 'Đăng xuất', icon: <LogoutIcon />, route: 'login' },
 ];
 

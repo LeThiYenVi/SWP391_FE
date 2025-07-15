@@ -1,85 +1,111 @@
 import instance from "./customize-axios";
 
-
-// =============Auth============
-const loginDesignerAPI = async (email, password) => {
+// =============Authentication APIs============
+const loginAPI = async (username, password) => {
   try {
-    const response = await instance.post('/api/auth/designer/login', {
-      email,
+    const response = await instance.post('/api/auth/login', {
+      username,
       password,
     });
-    console.log('Login success:', response.data);
-    return response.data;
+    console.log('Login success response:', response);
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     throw error;
   }
 };
 
-const resetPasswordAPI = async (token, newPassword) => {
+const registerAPI = async (userData) => {
+  console.log('Sending registration data to backend:', userData);
   try {
-    const response = await instance.post('/api/auth/reset-password', null, {
-      params: {
-        token,
-        newPassword,
-      },
-    });
-    console.log('Reset password success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Reset password error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-
-const forgetPasswordAPI = async (email, role) => {
-  try {
-    const response = await instance.post('/api/auth/forget-password', null, {
-      params: {
-        email,
-        role,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-
-const registerDesignerAPI = async (name, email, password, applicationUrl) => {
-  try {
-    const response = await instance.post('/api/auth/designer/register', {
-      name,
-      email,
-      password,
-      applicationUrl: applicationUrl,
+    const response = await instance.post('/api/auth/register', {
+      username: userData.username,
+      password: userData.password,
+      email: userData.email,
+      fullName: userData.fullName,
     });
     console.log('Register success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Register error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const applicationResultAPI = async (email, isApproved) => {
+const forgetPasswordAPI = async (email, verificationUrl = null) => {
   try {
-    const response = await instance.post(
-      `/api/auth/application-result`,
-      {}, 
-      {
-        params: {
-          email: email,
-          isApproved: isApproved,
-        },
-      }
-    );
-    console.log('Application result submitted:', response.data);
+    const requestBody = { 
+      email: email 
+    };
+    if (verificationUrl) {
+      requestBody.otpVerificationLink = verificationUrl;
+    }
+    
+    const response = await instance.post('/api/auth/forgot-password', requestBody);
     return response.data;
   } catch (error) {
-    console.error('Application result error:', error.response?.data || error.message);
+    console.error('Forget password API error:', error.message);
+    throw error;
+  }
+};
+
+const validateOtpAPI = async (email, otpCode) => {
+  try {
+    console.log('Validating OTP for email:', email, 'OTP:', otpCode);
+    
+    const response = await instance.post('/api/auth/validate-otp', {
+      email: email,
+      otpCode: otpCode
+    });
+    
+    console.log('Validate OTP full response:', response);
+    console.log('Validate OTP response.data:', response.data);
+    console.log('Validate OTP response.status:', response.status);
+    console.log('Validate OTP response.headers:', response.headers);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Validate OTP error:', error.message);
+    
+    if (error.response) {
+      console.error('Error status:', error.response.status);
+      console.error('Error data:', error.response.data);
+    }
+    
+    throw error;
+  }
+};
+
+const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
+  try {
+    console.log('DEBUG - Calling reset password API with token:', token ? `${token.substring(0, 10)}...` : 'invalid token');
+    
+    // Nếu có email và otpCode từ extraParams, sử dụng format OTP-based reset
+    if (extraParams.email && extraParams.otpCode) {
+      const requestData = {
+        email: extraParams.email,
+        otpCode: extraParams.otpCode,
+        newPassword: newPassword
+      };
+      
+      console.log('DEBUG - Using OTP-based reset with email:', extraParams.email);
+      const response = await instance.post('/api/auth/reset-password', requestData);
+      console.log('DEBUG - Reset password success:', response.data);
+      return response.data;
+    } else {
+      // Fallback to token-based reset (old format)
+      const requestData = {
+        token: token,
+        newPassword: newPassword,
+        ...extraParams
+      };
+      
+      const response = await instance.post('/api/auth/reset-password', requestData);
+      console.log('DEBUG - Reset password success:', response.data);
+      return response.data;
+    }
+  } catch (error) {
+    console.error('DEBUG - Reset password error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -100,234 +126,270 @@ const updatePasswordAPI = async (password, newPassword) => {
   }
 };
 
-
-// =============Furniture============
-
-const updateFurnitureAPI = async (id, formData) => {
+const loginByGoogleAPI = async code => {
   try {
-    const response = await instance.put(`/api/furnitures/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const response = await instance.post('/api/auth/login-by-google', {
+      code,
     });
-    console.log('Update furniture success:', response);
+    console.log('Google Login success:', response);
     return response;
   } catch (error) {
-    console.error('Error updating furniture:', error.response?.data || error.message);
+    console.error('Google Login error:', error);
     throw error;
   }
 };
 
-const getAllFurnituresAPI = async (pageNumber = -1, pageSize = -1) => {
+const logoutAPI = async () => {
   try {
-    const response = await instance.get('/api/furnitures', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get furnitures success:', response);
-    return response;
-  } catch (error) {
-    console.error('Get furnitures error:', error);
-    throw error;
-  }
-};
-
-
-const getAllFursByDesAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/designer/furnitures', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get furnitures success:', response);
-    return response;
-  } catch (error) {
-    console.error('Get furnitures error:', error);
-    throw error;
-  }
-};
-
-const createFurnitureAPI = async (formData) => {
-  try {
-    const response = await instance.post('/api/furnitures', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    console.log('Create furniture success:', response);
-    return response;
-  } catch (error) {
-    console.error('Error creating furniture:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-
-// =============Design============
-const getAllDesignsAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/designs', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get designs success:', response);
-    return response;
-  } catch (error) {
-    console.error('Get designs error:', error);
-    throw error;
-  }
-};
-
-const getAllDesignsByDesAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/designer/designs', {
-      params: {
-        pageNumber,
-        pageSize,
-      },
-    });
-    console.log('Get designs success:', response);
-    return response;
-  } catch (error) {
-    console.error('Get designs error:', error);
-    throw error;
-  }
-};
-
-const createDesignAPI = async (formData) => {
-  try {
-    const response = await instance.post('/api/designs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    console.log('Create design success:', response);
-    return response;
-  } catch (error) {
-    console.error('Error creating design:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const updateDesignAPI = async (id, formData) => {
-  try {
-    const response = await instance.put(`/api/designs/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    console.log('Update design success:', response);
-    return response;
-  } catch (error) {
-    console.error('Error updating design:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-
-// =============Order============
-
-const getAllOrdersByDesAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/designer/orders', {
-      params: { pageNumber, pageSize },
-    });
-    console.log('Get all orders by designer success:', response.data);
+    const response = await instance.post('/api/auth/logout');
+    console.log('Logout success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error getting orders by designer:', error);
+    console.error('Logout error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getOrdersById = async (orderId) => {
+const refreshTokenAPI = async (refreshToken) => {
   try {
-    const response = await instance.get(`/api/orders/${orderId}`);
-    console.log('Get order by ID success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error(`Error getting order with ID ${orderId}:`, error);
-    throw error;
-  }
-};
-
-const getAllOrdersAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/orders', {
-      params: { pageNumber, pageSize },
+    const response = await instance.post('/api/auth/refresh-token', {
+      refreshToken
     });
-    console.log('Get all orders by success:', response.data);
+    console.log('Refresh token success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error getting orders :', error);
+    console.error('Refresh token error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-// =============User============
+// =============User Profile APIs============
+const getUserProfileAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/profile');
+    console.log('Get user profile success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get user profile error:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
-const getAllAccountsAPI = async (role = null, pageNumber = -1, pageSize = -1) => {
+const updateUserProfileAPI = async (profileData) => {
+  try {
+    const response = await instance.put('/api/user/profile', profileData);
+    console.log('Update user profile success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update user profile error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getUserBookingHistoryAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/booking-history');
+    console.log('Get booking history success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get booking history error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============User Menstrual Cycle APIs============
+const addOrUpdateMenstrualCycleAPI = async (cycleData) => {
+  try {
+    const response = await instance.post('/api/user/menstrual-cycle', cycleData);
+    console.log('Add/Update menstrual cycle success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Add/Update menstrual cycle error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const logMenstrualPeriodAPI = async (logData) => {
+  try {
+    const response = await instance.post('/api/user/menstrual-cycle/log', logData);
+    console.log('Log menstrual period success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Log menstrual period error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getMenstrualCycleTrackerAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/menstrual-cycle/tracker');
+    console.log('Get menstrual cycle tracker success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get menstrual cycle tracker error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getUserRemindersAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/reminders');
+    console.log('Get user reminders success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get user reminders error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Admin APIs============
+const getAllAccountsAPI = async (role = null, pageNumber = 1, pageSize = 10) => {
   try {
     const params = {};
-
     if (role !== null) {
       params.role = role;
     }
-
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
-    }
-
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
-    const response = await instance.get('/api/accounts', { params });
-    console.log('Get all accounts success:', response);
+    params.pageNumber = pageNumber;
+    params.pageSize = pageSize;
+    const response = await instance.get('/api/admin/users', { params });
     return response.data;
   } catch (error) {
-    console.error('Error getting accounts:', error.response?.data || error.message);
+    console.error('Get all accounts error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getAwaitingDesignersAPI = async (pageNumber = -1, pageSize = -1) => {
+const getAwaitingDesignersAPI = async () => {
+  try {
+    const response = await instance.get('/api/admin/users/awaiting-designers');
+    console.log('Get awaiting designers success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get awaiting designers error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const applicationResultAPI = async (userId, status) => {
+  try {
+    const response = await instance.post('/api/admin/users/application-result', {
+      userId,
+      status
+    });
+    console.log('Application result success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Application result error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Dashboard APIs============
+const getRevenueByDayAPI = async (month, year) => {
+  try {
+    const response = await instance.get('/api/admin/dashboard/revenue-by-day', {
+      params: { month, year }
+    });
+    console.log('Get revenue by day success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get revenue by day error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
   try {
     const params = {};
-
-    if (pageNumber !== -1) {
+    if (pageNumber > 0) {
       params.pageNumber = pageNumber;
     }
-
-    if (pageSize !== -1) {
+    if (pageSize > 0) {
       params.pageSize = pageSize;
     }
-
-    const response = await instance.get('/api/accounts/awaiting-designers', { params });
-    console.log('Get awaiting designers success:', response);
+    const response = await instance.get('/api/admin/orders', { params });
+    console.log('Get all orders success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error getting awaiting designers:', error.response?.data || error.message);
+    console.error('Get all orders error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-// =============Category============
+const getTopDesignersByRevenueAPI = async (topN = 5) => {
+  try {
+    const response = await instance.get('/api/admin/dashboard/top-designers', {
+      params: { topN }
+    });
+    console.log('Get top designers by revenue success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get top designers by revenue error:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
+const getOrderStatusByMonthAPI = async (month, year) => {
+  try {
+    const response = await instance.get('/api/admin/dashboard/order-status-by-month', {
+      params: { month, year }
+    });
+    console.log('Get order status by month success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get order status by month error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getCustomerGrowthAPI = async () => {
+  try {
+    const response = await instance.get('/api/admin/dashboard/customer-growth');
+    console.log('Get customer growth success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get customer growth error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Product APIs============
+const getNewProductsAPI = async (pageNumber = 1, pageSize = 10) => {
+  try {
+    const response = await instance.get('/api/products/new', {
+      params: {
+        pageNumber,
+        pageSize,
+      },
+    });
+    console.log('Get new products success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get new products error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const createNewProductAPI = async (id) => {
+  try {
+    const response = await instance.post('/api/products/new', null, {
+      params: { id },
+    });
+    console.log('Create new product success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create new product error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Category APIs============
 const getAllCategoriesAPI = async (style = null, pageNumber = -1, pageSize = -1) => {
   try {
     const params = {};
 
     if (style !== null) {
-      // Giữ style là kiểu boolean ngay từ đầu (true hoặc false)
+      // Giữ style là kiểu boolean ngay từ đầu
       params.style = style;
     }
 
@@ -340,200 +402,211 @@ const getAllCategoriesAPI = async (style = null, pageNumber = -1, pageSize = -1)
     }
 
     const response = await instance.get('/api/categories', { params });
-    console.log('Get all categories success:', response);
-    return response.data.items;
+    console.log('Get all categories success:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error getting categories:', error.response?.data || error.message);
+    console.error('Get all categories error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-// =============Product============
-
-const getProductByIdAPI = async (id) => {
+// =============Furniture APIs============
+const createFurnitureAPI = async (formData) => {
   try {
-    const response = await instance.get(`/api/products/${id}`);
-    console.log('Get product by ID success:', response.data);
-    const data = response.data?.data || response.data; 
-    return data;
-  } catch (error) {
-    console.error('Error getting product by ID:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const getNewProductsAPI = async (pageNumber = -1, pageSize = -1) => {
-  try {
-    const response = await instance.get('/api/products/new', {
-      params: {
-        pageNumber,
-        pageSize,
+    const response = await instance.post('/api/furnitures', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
       },
     });
-    console.log('Get new products success:', response.data);
+    console.log('Create furniture success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error getting new products:', error.response?.data || error.message);
+    console.error('Create furniture error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const createNewProductAPI = async (id) => {
+const updateFurnitureAPI = async (id, formData) => {
   try {
-    const response = await instance.post('/api/products/new', null, {
-      params: { id },
+    const response = await instance.put(`/api/furnitures/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
-    console.log('Create new product success:', response);
-    return response;
+    console.log('Update furniture success:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error creating new product:', error.response?.data || error.message);
+    console.error('Update furniture error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-
-// ==================Dashboard==================
-
-const getRevenueByDayAPI = async (month, year) => {
+// =============Design APIs============
+const createDesignAPI = async (formData) => {
   try {
-    const response = await instance.get('/api/dashboard/revenue-by-day', {
-      params: { month, year },
+    const response = await instance.post('/api/designs', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
+    console.log('Create design success:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Create design error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getDesignerRevenueByDayAPI = async (month, year) => {
+const updateDesignAPI = async (id, formData) => {
   try {
-    const response = await instance.get('/api/dashboard/designer/revenue-by-day', {
-      params: { month, year },
+    const response = await instance.put(`/api/designs/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
+    console.log('Update design success:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Update design error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getTopDesignersByRevenueAPI = async (topN = 5) => {
+// =============Order APIs============
+const getOrdersById = async (orderId) => {
   try {
-    const response = await instance.get('/api/dashboard/top-designers-by-revenue', {
-      params: { topN }
+    const response = await instance.get(`/api/orders/${orderId}`);
+    console.log('Get order by ID success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get order by ID error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Designer APIs============
+const registerDesignerAPI = async (name, email, password, applicationUrl) => {
+  try {
+    const response = await instance.post('/api/auth/designer/register', {
+      name,
+      email,
+      password,
+      applicationUrl,
     });
+    console.log('Register designer success:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Register designer error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getOrderStatusByMonthAPI = async () => {
+const getAllOrdersByDesAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/dashboard/orders');
-    return response.data; 
-  } catch (error) {
-    throw error;
-  }
-};
-
-const getCustomerGrowthAPI = async () => {
-  try {
-    const response = await instance.get('/api/dashboard/user-growth');
+    const response = await instance.get('/api/designer/orders', {
+      params: { pageNumber, pageSize },
+    });
+    console.log('Get all orders by designer success:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Get all orders by designer error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getTopProductsAPI = async () => {
+const getAllFursByDesAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/dashboard/top-products');
+    const response = await instance.get('/api/designer/furnitures', {
+      params: { pageNumber, pageSize },
+    });
+    console.log('Get all furnitures by designer success:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Get all furnitures by designer error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getTopProductsWithReviewsAPI = async () => {
+// =============Testing Services APIs============
+const getAllTestingServicesAPI = async (pageNumber = -1, pageSize = -1) => {
   try {
-    const response = await instance.get('/api/dashboard/top-products-reviews');
-    
-    if (Array.isArray(response.data?.data)) {
-      return response.data.data;
+    const params = {};
+
+    if (pageNumber !== -1) {
+      params.pageNumber = pageNumber;
     }
 
-    if (Array.isArray(response.data)) {
-      return response.data;
+    if (pageSize !== -1) {
+      params.pageSize = pageSize;
     }
 
-    if (Array.isArray(response)) {
-      return response;
-    }
-
-    return [];
+    const response = await instance.get('/api/admin/testing-services', { params });
+    console.log('Get all testing services success:', response.data);
+    return response.data;
   } catch (error) {
-    return [];
+    console.error('Get all testing services error:', error.response?.data || error.message);
+    throw error;
   }
 };
-
-// ==================Conversations==================
-
-const getAllConversationsAPI = async () => {
-  try {
-    const response = await instance.get(`/api/conversations`);
-    console.log("Raw conversation API response:", response);
-    if (Array.isArray(response)) return response;
-    if (Array.isArray(response?.data)) return response.data;
-    return [];
-  } catch (error) {
-    console.error("Failed to fetch conversations:", error);
-    return [];
-  }
-};
-
-const getConversationByIdAPI = async (id) => {
-  try {
-    const response = await instance.get(`/api/conversations/${id}`);
-    console.log('Messages in conversation:', response);
-    return response;
-  } catch (error) {
-    console.error('Error getting conversation by ID:', error);
-    return [];
-  }
-};
-
 
 export {
-  getAllConversationsAPI,
-  getConversationByIdAPI,
-  getTopProductsWithReviewsAPI,
-  getTopProductsAPI,
-  getDesignerRevenueByDayAPI,
-  getCustomerGrowthAPI,
-  getOrderStatusByMonthAPI,
-  getTopDesignersByRevenueAPI,
-  getRevenueByDayAPI,
-  getProductByIdAPI,
-  loginDesignerAPI,
-  getAllFurnituresAPI,
-  getAllDesignsAPI,
-  getAllDesignsByDesAPI,
-  getAllFursByDesAPI,
-  getAllOrdersByDesAPI,
-  getOrdersById,
-  getAllOrdersAPI,
-  registerDesignerAPI,
-  applicationResultAPI,
-  updatePasswordAPI,
+  // Authentication APIs
+  loginAPI,
+  registerAPI,
   forgetPasswordAPI,
+  validateOtpAPI,
   resetPasswordAPI,
+  updatePasswordAPI,
+  loginByGoogleAPI,
+  logoutAPI,
+  refreshTokenAPI,
+  
+  // User Profile APIs
+  getUserProfileAPI,
+  updateUserProfileAPI,
+  getUserBookingHistoryAPI,
+  
+  // Menstrual Cycle APIs
+  addOrUpdateMenstrualCycleAPI,
+  logMenstrualPeriodAPI,
+  getMenstrualCycleTrackerAPI,
+  getUserRemindersAPI,
+  
+  // Admin APIs
   getAllAccountsAPI,
   getAwaitingDesignersAPI,
-  createFurnitureAPI,
-  getAllCategoriesAPI,
+  applicationResultAPI,
+  
+  // Dashboard APIs
+  getRevenueByDayAPI,
+  getAllOrdersAPI,
+  getTopDesignersByRevenueAPI,
+  getOrderStatusByMonthAPI,
+  getCustomerGrowthAPI,
+  
+  // Product APIs
   getNewProductsAPI,
   createNewProductAPI,
+  
+  // Category APIs
+  getAllCategoriesAPI,
+  
+  // Furniture APIs
+  createFurnitureAPI,
+  updateFurnitureAPI,
+  
+  // Design APIs
   createDesignAPI,
   updateDesignAPI,
-  updateFurnitureAPI
+  
+  // Order APIs
+  getOrdersById,
+  
+  // Designer APIs
+  registerDesignerAPI,
+  getAllOrdersByDesAPI,
+  getAllFursByDesAPI,
+  
+  // Testing Services APIs
+  getAllTestingServicesAPI
 };

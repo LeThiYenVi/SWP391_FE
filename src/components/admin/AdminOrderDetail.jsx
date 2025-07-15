@@ -11,8 +11,7 @@ import {
     Divider,
     Chip,
 } from '@mui/material';
-// import { getOrdersById } from '../../services/UsersSevices';
-import { mockGetOrderByIdAPI } from '../../services/mockOrderTest';
+import { getOrdersById } from '../../services/UsersSevices';
 
 const AdminOrderDetail = ({ orderId }) => {
     const [order, setOrder] = useState(null);
@@ -29,9 +28,7 @@ const AdminOrderDetail = ({ orderId }) => {
             setLoading(true);
             setError(null);
             try {
-                // Use mock API for testing - switch to getOrdersById for production
-                const data = await mockGetOrderByIdAPI(orderId);
-                // const data = await getOrdersById(orderId);
+                const data = await getOrdersById(orderId);
                 
                 if (!data) {
                     setError('Không tìm thấy dữ liệu đơn hàng');

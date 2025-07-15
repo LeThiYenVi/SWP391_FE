@@ -5,6 +5,7 @@ export const routes = {
     register: "/register",
     forgotPassword: "/forgot-password",
     resetPassword: "/reset-password",
+    unauthorized: "/unauthorized",
     adminDashboard: "/admin/dashboard",
     adminTestingServices: "/admin/testing-services",
     adminOrder: "/admin/order",
@@ -14,6 +15,14 @@ export const routes = {
     adminCounselor: "/admin/consultants",
     adminWaiting: "/admin/waiting",
     adminContentManagement: "/admin/content-management",
+
+    // Consultant routes
+    consultantDashboard: "/consultant/dashboard",
+    consultantAppointments: "/consultant/appointments",
+    consultantMessages: "/consultant/messages",
+    consultantProfile: "/consultant/profile",
+    consultantAnalytics: "/consultant/analytics",
+    consultantSettings: "/consultant/settings",
 
     chat: "/chat",
     partnerDashboard: "/dashboard",

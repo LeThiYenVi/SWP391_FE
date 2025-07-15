@@ -1,67 +1,127 @@
 
-import React, { useState } from 'react';
-import { TestTube, MapPin, Clock, FileText, Download, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TestTube, MapPin, Clock, FileText, Download, Eye, Calendar } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'react-toastify';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getTestingServicesAPI } from '../../../services/TestingService';
+import { getLocationsAPI } from '../../../services/LocationService';
+import TimeSlotService from '../../../services/TimeSlotService';
+import instance from '../../../services/customize-axios';
+import BookingService from '../../../services/BookingService';
+import BookingTrackingService from '../../../services/BookingTrackingService';
 
 const STITesting = () => {
-  const [selectedTests, setSelectedTests] = useState([]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedTest, setSelectedTest] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [activeTab, setActiveTab] = useState('booking'); // booking, history, results
+  const [availableTests, setAvailableTests] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [bookingHistory, setBookingHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [trackingBookingId, setTrackingBookingId] = useState(null);
+  const [trackingStatus, setTrackingStatus] = useState(null);
+  const [trackingOpen, setTrackingOpen] = useState(false);
 
 
-  const availableTests = [
-    {
-      id: 'hiv',
-      name: 'Xét nghiệm HIV',
-      description: 'Phát hiện virus gây suy giảm miễn dịch mắc phải (HIV)',
-      price: 200000,
-      duration: '30 phút',
-      preparation: 'Không cần nhịn ăn',
-    },
-    {
-      id: 'syphilis',
-      name: 'Xét nghiệm Giang mai',
-      description: 'Phát hiện vi khuẩn Treponema pallidum gây bệnh giang mai',
-      price: 150000,
-      duration: '20 phút',
-      preparation: 'Không cần nhịn ăn',
-    },
-    {
-      id: 'gonorrhea',
-      name: 'Xét nghiệm Lậu',
-      description: 'Phát hiện vi khuẩn Neisseria gonorrhoeae',
-      price: 180000,
-      duration: '25 phút',
-      preparation: 'Không quan hệ tình dục 24h trước xét nghiệm',
-    },
-    {
-      id: 'chlamydia',
-      name: 'Xét nghiệm Chlamydia',
-      description: 'Phát hiện vi khuẩn Chlamydia trachomatis',
-      price: 170000,
-      duration: '25 phút',
-      preparation: 'Không quan hệ tình dục 24h trước xét nghiệm',
-    },
-    {
-      id: 'herpes',
-      name: 'Xét nghiệm Herpes',
-      description: 'Phát hiện virus Herpes simplex type 1 và 2',
-      price: 250000,
-      duration: '30 phút',
-      preparation: 'Không cần nhịn ăn',
-    },
-    {
-      id: 'hepatitis',
-      name: 'Xét nghiệm Viêm gan B',
-      description: 'Phát hiện virus viêm gan B (HBV)',
-      price: 220000,
-      duration: '30 phút',
-      preparation: 'Nhịn ăn 8-12 tiếng trước xét nghiệm',
-    },
-  ];
+  useEffect(() => {
+    console.log("STITesting useEffect chạy");
+    getTestingServicesAPI()
+      .then(data => setAvailableTests(data.content || data))
+      .catch(err => {
+        toast.error('Không thể tải danh sách dịch vụ xét nghiệm!');
+      });
+  }, []);
+
+  // Gọi API location khi đã chọn dịch vụ
+  useEffect(() => {
+    if (selectedTest) {
+      getLocationsAPI()
+        .then(data => setLocations(data))
+        .catch(err => {
+          toast.error('Không thể tải danh sách địa điểm!');
+        });
+    } else {
+      setLocations([]);
+    }
+  }, [selectedTest]);
+
+  // Gọi API time slot khi đã chọn dịch vụ, địa điểm
+  useEffect(() => {
+    console.log('selectedTest:', selectedTest, 'selectedLocation:', selectedLocation);
+    if (selectedTest && selectedLocation) {
+      console.log('GỌI API TIMESLOT');
+      // Lấy khoảng ngày hiển thị (ví dụ: 14 ngày tới)
+      const today = new Date();
+      const fromDate = today.toISOString().slice(0, 10);
+      
+      // Gọi API facility time slots
+      TimeSlotService.getAvailableFacilityTimeSlots(fromDate)
+        .then(result => {
+          console.log('Time slot API response:', result);
+          if (result.success) {
+            setTimeSlots(result.data);
+            console.log('Set time slots:', result.data);
+          } else {
+            console.log('Time slot API error:', result);
+            toast.error('Không thể tải danh sách ngày giờ!');
+          }
+        })
+        .catch(err => {
+          console.error('Time slot API error:', err);
+          // Thử trực tiếp với API call
+          instance.get('/api/time-slots/facility', {
+            params: { date: fromDate }
+          })
+          .then(response => {
+            console.log('Direct API response:', response.data);
+            setTimeSlots(response.data);
+          })
+          .catch(directErr => {
+            console.error('Direct API error:', directErr);
+            toast.error('Không thể tải danh sách ngày giờ!');
+          });
+        });
+    } else {
+      setTimeSlots([]);
+    }
+  }, [selectedTest, selectedLocation]);
+
+  useEffect(() => {
+    if (activeTab === 'history' || activeTab === 'results') {
+      setLoadingHistory(true);
+      BookingService.getUserBookings().then(result => {
+        if (result.success) {
+          setBookingHistory(result.data);
+        } else {
+          setBookingHistory([]);
+          toast.error(result.message || 'Không thể tải lịch sử xét nghiệm');
+        }
+        setLoadingHistory(false);
+      });
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (trackingBookingId && trackingOpen) {
+      BookingTrackingService.connect(() => {
+        BookingTrackingService.subscribeBooking(trackingBookingId, (update) => {
+          setTrackingStatus(update);
+        });
+      });
+      return () => {
+        BookingTrackingService.unsubscribeBooking(trackingBookingId);
+        BookingTrackingService.disconnect();
+        setTrackingStatus(null);
+      };
+    }
+  }, [trackingBookingId, trackingOpen]);
 
   const testLocations = [
     {
@@ -108,35 +168,45 @@ const STITesting = () => {
     },
   ];
 
-  const handleTestSelection = testId => {
-    setSelectedTests(prev =>
-      prev.includes(testId)
-        ? prev.filter(id => id !== testId)
-        : [...prev, testId]
-    );
+  const handleTestSelection = (serviceId) => {
+    setSelectedTest(Number(serviceId));
+    console.log('Chọn dịch vụ:', serviceId);
   };
 
+  // Sửa calculateTotal chỉ tính cho 1 dịch vụ
   const calculateTotal = () => {
-    return selectedTests.reduce((total, testId) => {
-      const test = availableTests.find(t => t.id === testId);
-      return total + test.price;
-    }, 0);
+    const test = availableTests.find(t => t.serviceId === selectedTest);
+    return test ? test.price : 0;
   };
 
   const handleBooking = () => {
-    if (selectedTests.length === 0 || !selectedDate || !selectedLocation) {
+    if (!selectedTest || !selectedLocation || !selectedDate || !selectedTimeSlot) {
       toast.error('Vui lòng chọn đầy đủ thông tin');
       return;
     }
 
-    // Mock booking logic
-    toast.success('Đặt lịch xét nghiệm thành công!');
-    setSelectedTests([]);
+    // Lấy thông tin dịch vụ đã chọn
+    const selectedService = availableTests.find(t => t.serviceId === selectedTest);
+    const selectedLocationData = locations.find(l => l.id === selectedLocation);
 
-    setSelectedDate('');
-    setSelectedLocation('');
-    setShowBookingForm(false);
+    // Tạo booking data
+    const bookingData = {
+      serviceId: selectedTest,
+      serviceName: selectedService?.serviceName,
+      serviceDescription: selectedService?.description,
+      price: selectedService?.price,
+      locationId: selectedLocation,
+      locationName: selectedLocationData?.name,
+      locationAddress: selectedLocationData?.address,
+      locationPhone: selectedLocationData?.phone,
+      selectedDate: selectedDate,
+      selectedTimeSlot: selectedTimeSlot,
+    };
 
+    // Chuyển sang trang booking confirmation
+    navigate('/sti-testing/booking-confirmation', { 
+      state: { bookingData } 
+    });
   };
 
   const generateAvailableDates = () => {
@@ -146,8 +216,28 @@ const STITesting = () => {
     });
   };
 
+  // Nếu có hiển thị tên dịch vụ đã chọn
+  const selectedService = availableTests.find(t => t.serviceId === selectedTest);
+  const selectedServiceName = selectedService ? selectedService.serviceName : '';
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <button
+        onClick={() => navigate('/')}
+        style={{
+          margin: '16px 0',
+          padding: '8px 16px',
+          background: '#3a99b7',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontWeight: 'bold',
+          fontSize: '16px',
+        }}
+      >
+        🏠 Về trang chủ
+      </button>
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -195,10 +285,10 @@ const STITesting = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {availableTests.map(test => (
                   <div
-                    key={test.id}
-                    onClick={() => handleTestSelection(test.id)}
+                    key={test.serviceId}
+                    onClick={() => handleTestSelection(test.serviceId)}
                     className={`bg-white rounded-lg p-6 shadow-sm cursor-pointer transition-all ${
-                      selectedTests.includes(test.id)
+                      selectedTest === test.serviceId
                         ? 'ring-2 ring-blue-500 bg-blue-50'
                         : 'hover:shadow-md'
                     }`}
@@ -207,23 +297,23 @@ const STITesting = () => {
                       <div className="flex items-center">
                         <TestTube
                           className={`h-6 w-6 mr-3 ${
-                            selectedTests.includes(test.id)
+                            selectedTest === test.serviceId
                               ? 'text-blue-600'
                               : 'text-gray-600'
                           }`}
                         />
                         <h3 className="font-semibold text-gray-900">
-                          {test.name}
+                          {test.serviceName}
                         </h3>
                       </div>
                       <div
                         className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedTests.includes(test.id)
+                          selectedTest === test.serviceId
                             ? 'bg-blue-600 border-blue-600'
                             : 'border-gray-300'
                         }`}
                       >
-                        {selectedTests.includes(test.id) && (
+                        {selectedTest === test.serviceId && (
                           <div className="w-2 h-2 bg-white rounded-full"></div>
                         )}
                       </div>
@@ -237,34 +327,32 @@ const STITesting = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Giá:</span>
                         <span className="font-semibold text-blue-600">
-                          {test.price.toLocaleString('vi-VN')}đ
+                          {test.price?.toLocaleString('vi-VN')}đ
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Thời gian:</span>
-                        <span className="text-gray-900">{test.duration}</span>
+                        <span className="text-gray-900">{test.durationMinutes ? `${test.durationMinutes} phút` : ''}</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-2">
-                        <strong>Chuẩn bị:</strong> {test.preparation}
-                      </div>
+                      {test.preparation && (
+                        <div className="text-xs text-gray-500 mt-2">
+                          <strong>Chuẩn bị:</strong> {test.preparation}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {selectedTests.length > 0 && (
+              {selectedTest && (
                 <div className="mt-6 bg-blue-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-blue-900">
-                        Đã chọn {selectedTests.length} xét nghiệm
+                        Đã chọn xét nghiệm: {selectedServiceName}
                       </h3>
                       <p className="text-sm text-blue-700">
-                        {selectedTests
-                          .map(
-                            id => availableTests.find(t => t.id === id)?.name
-                          )
-                          .join(', ')}
+                        {selectedServiceName}
                       </p>
                     </div>
                     <div className="text-right">
@@ -278,42 +366,27 @@ const STITesting = () => {
             </div>
 
             {/* Location Selection */}
-            {selectedTests.length > 0 && (
+            {selectedTest && (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Chọn địa điểm
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn địa điểm</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {testLocations.map(location => (
+                  {locations.map(loc => (
                     <div
-                      key={location.id}
-                      onClick={() => setSelectedLocation(location.id)}
+                      key={loc.id}
+                      onClick={() => {
+                        setSelectedLocation(loc.id);
+                        console.log('Chọn địa điểm:', loc.id);
+                      }}
                       className={`bg-white rounded-lg p-6 shadow-sm cursor-pointer transition-all ${
-                        selectedLocation === location.id
+                        selectedLocation === loc.id
                           ? 'ring-2 ring-blue-500 bg-blue-50'
                           : 'hover:shadow-md'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center">
-                          <MapPin
-                            className={`h-6 w-6 mr-3 ${
-                              selectedLocation === location.id
-                                ? 'text-blue-600'
-                                : 'text-gray-600'
-                            }`}
-                          />
-                          <h3 className="font-semibold text-gray-900">
-                            {location.name}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <p className="text-gray-600">{location.address}</p>
-                        <p className="text-gray-600">📞 {location.phone}</p>
-                        <p className="text-gray-600">🕒 {location.hours}</p>
-                      </div>
+                      <div className="font-bold text-lg mb-2">{loc.name}</div>
+                      <div className="mb-1">{loc.address}</div>
+                      <div className="mb-1">📞 {loc.phone}</div>
+                      <div className="mb-1">🕒 {loc.hours}</div>
                     </div>
                   ))}
                 </div>
@@ -321,37 +394,82 @@ const STITesting = () => {
             )}
 
             {/* Date Selection */}
-            {selectedTests.length > 0 && selectedLocation && (
+            {selectedTest && selectedLocation && (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Chọn ngày
-                </h2>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                  {generateAvailableDates().map(date => (
-                    <button
-                      key={date}
-                      onClick={() => setSelectedDate(date)}
-                      className={`p-4 text-center rounded-lg border ${
-                        selectedDate === date
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="text-xs text-gray-500">
-                        {format(new Date(date), 'EEE')}
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn ngày</h2>
+                <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
+                  {Array.from(new Set(timeSlots.map(ts => ts.slotDate))).map(date => {
+                    const d = new Date(date);
+                    const day = d.toLocaleDateString('en-US', { weekday: 'short' });
+                    const dayNum = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                    const isSelected = selectedDate === date;
+                    return (
+                      <div 
+                        key={date} 
+                        onClick={() => setSelectedDate(date)}
+                        className={`bg-white rounded-lg p-4 shadow-sm text-center cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:shadow-md'
+                        }`}
+                      >
+                        <div className="font-semibold">{day}</div>
+                        <div className="text-lg font-bold">{dayNum}</div>
+                        {isSelected && (
+                          <div className="mt-2 text-xs text-blue-600 font-medium">
+                            Đã chọn
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm font-medium">
-                        {format(new Date(date), 'dd/MM')}
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Time Slots for Selected Date */}
+            {selectedTest && selectedLocation && selectedDate && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn giờ</h2>
+                <div className="mb-4 text-sm text-gray-600">
+                  Debug: {timeSlots.length} time slots, selectedDate: {selectedDate}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {timeSlots
+                    .filter(ts => ts.slotDate === selectedDate)
+                    .map(timeSlot => {
+                      const isSelected = selectedTimeSlot?.timeSlotId === timeSlot.timeSlotId;
+                      return (
+                        <div
+                          key={timeSlot.timeSlotId}
+                          onClick={() => setSelectedTimeSlot(timeSlot)}
+                          className={`bg-white rounded-lg p-4 shadow-sm text-center cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'ring-2 ring-blue-500 bg-blue-50' 
+                              : 'hover:shadow-md'
+                          }`}
+                        >
+                          <div className="font-semibold text-gray-900">
+                            {timeSlot.startTime} - {timeSlot.endTime}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Còn {timeSlot.availableSlots} chỗ
+                          </div>
+                          {isSelected && (
+                            <div className="mt-2 text-xs text-blue-600 font-medium">
+                              Đã chọn
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
 
             {/* Booking Button */}
-            {selectedTests.length > 0 && selectedLocation && selectedDate && (
-              <div className="text-center">
+            {selectedTest && selectedLocation && selectedDate && selectedTimeSlot && (
+              <div className="text-center mt-6">
                 <button
                   onClick={handleBooking}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium"
@@ -370,60 +488,110 @@ const STITesting = () => {
               Lịch sử xét nghiệm
             </h2>
             <div className="space-y-4">
-              {testHistory.map(record => (
-                <div
-                  key={record.id}
-                  className="bg-white rounded-lg p-6 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <Calendar className="h-5 w-5 text-gray-500 mr-2" />
-                        <span className="font-semibold text-gray-900">
-                          {format(new Date(record.date), 'dd/MM/yyyy')}
-                        </span>
-                        <span
-                          className={`ml-3 px-2 py-1 text-xs rounded-full ${
-                            record.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
+              {loadingHistory ? (
+                <div>Đang tải...</div>
+              ) : bookingHistory.length === 0 ? (
+                <div>Chưa có lịch sử xét nghiệm</div>
+              ) : (
+                bookingHistory.map(record => (
+                  <div
+                    key={record.bookingId}
+                    className="bg-white rounded-lg p-6 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="h-5 w-5 text-gray-500 mr-2" />
+                          <span className="font-semibold text-gray-900">
+                            {record.bookingDate ? format(new Date(record.bookingDate), 'dd/MM/yyyy') : ''}
+                          </span>
+                          <span
+                            className={`ml-3 px-2 py-1 text-xs rounded-full ${
+                              record.status === 'COMPLETED'
+                                ? 'bg-green-100 text-green-800'
+                                : record.status === 'PENDING'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {record.status === 'COMPLETED'
+                              ? 'Hoàn thành'
+                              : record.status === 'PENDING'
+                              ? 'Đang chờ'
+                              : record.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>
+                            <strong>Xét nghiệm:</strong> {record.serviceName}
+                          </p>
+                          <p>
+                            <strong>Ngày hẹn:</strong> {record.slotDate ? format(new Date(record.slotDate), 'dd/MM/yyyy') : ''}
+                          </p>
+                          <p>
+                            <strong>Giờ:</strong> {record.startTime} - {record.endTime}
+                          </p>
+                          <p>
+                            <strong>Ngày có kết quả:</strong>{' '}
+                            {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : '---'}
+                          </p>
+                          <p>
+                            <strong>Chi phí:</strong>{' '}
+                            {record.servicePrice?.toLocaleString('vi-VN')}đ
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <button
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                          onClick={() => {
+                            navigate(`/sti-testing/tracking/${record.bookingId}`);
+                          }}
                         >
-                          {record.status === 'completed'
-                            ? 'Hoàn thành'
-                            : 'Đang chờ'}
-                        </span>
-                      </div>
-
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>
-                          <strong>Xét nghiệm:</strong> {record.tests.join(', ')}
-                        </p>
-                        <p>
-                          <strong>Địa điểm:</strong> {record.location}
-                        </p>
-                        <p>
-                          <strong>Ngày có kết quả:</strong>{' '}
-                          {format(new Date(record.resultDate), 'dd/MM/yyyy')}
-                        </p>
-                        <p>
-                          <strong>Chi phí:</strong>{' '}
-                          {record.totalCost.toLocaleString('vi-VN')}đ
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="ml-4">
-                      {record.status === 'completed' && (
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
-                          Xem kết quả
+                          Tracking trạng thái
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
+            {/* Modal tracking */}
+            {trackingOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] relative">
+                  <button
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                    onClick={() => setTrackingOpen(false)}
+                  >
+                    Đóng
+                  </button>
+                  <h3 className="text-lg font-bold mb-4">Tracking trạng thái booking #{trackingBookingId}</h3>
+                  {trackingStatus ? (
+                    <div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Trạng thái mới: </span>
+                        <span className="text-blue-700">{trackingStatus.status}</span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Thông báo: </span>
+                        <span>{trackingStatus.message}</span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Thời gian: </span>
+                        <span>{trackingStatus.timestamp && new Date(trackingStatus.timestamp).toLocaleString()}</span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Người cập nhật: </span>
+                        <span>{trackingStatus.updatedBy}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>Đang kết nối tracking...</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

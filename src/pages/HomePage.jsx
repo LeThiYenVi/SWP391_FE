@@ -316,7 +316,7 @@ const HomePage = () => {
                         <User size={16} /> Dashboard
                       </Link>
                       <Link
-                        to="/profile"
+                        to="/user/profile"
                         style={{
                           display: 'flex',
                           alignItems: 'center',

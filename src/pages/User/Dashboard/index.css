@@ -2,9 +2,9 @@
 
 /* CSS Variables - sử dụng từ HomePage */
 :root {
-  --primary-gradient: linear-gradient(135deg, #B0B9BC 0%, #568392 100%);
+  --primary-gradient: linear-gradient(135deg, #b0b9bc 0%, #568392 100%);
   --primary-color: #568392;
-  --primary-light: #B0B9BC;
+  --primary-light: #b0b9bc;
   --primary-dark: #2d5a66;
   --secondary-color: #1f2b6c;
   --accent-color: #ffd700;
@@ -17,9 +17,12 @@
   --background-gray: #f1f5f9;
   --border-color: #e2e8f0;
   --border-light: #f1f5f9;
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --border-radius: 16px;
   --border-radius-lg: 24px;
@@ -34,20 +37,35 @@
   min-height: 100vh;
   padding-top: var(--header-height);
   background: var(--background-light);
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  position: relative;
 }
 
 /* ===== WELCOME SECTION ===== */
 .dashboard-welcome {
-  padding: 60px 0 40px;
-  background: var(--background);
-  border-bottom: 1px solid var(--border-color);
+  padding: 60px 0 70px;
+  background: linear-gradient(135deg, #b0b9bc 0%, #568392 100%);
+  position: relative;
+}
+
+.dashboard-welcome::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background-color: var(--background-light);
+  border-radius: 30px 30px 0 0;
 }
 
 .welcome-content {
   text-align: center;
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-title {
@@ -55,19 +73,17 @@
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 16px;
-  color: var(--text-primary);
-  background: var(--primary-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-white);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .dashboard-subtitle {
   font-size: clamp(16px, 2vw, 20px);
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   line-height: 1.5;
   font-weight: 400;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* ===== HEALTH OVERVIEW SECTION ===== */
@@ -420,7 +436,7 @@
   .dashboard-content-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .health-stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
@@ -593,12 +609,14 @@ html {
 /* ===== PROFILE SUMMARY ===== */
 .profile-summary-section {
   padding: 0 0 40px 0;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .profile-summary-card {
   background: var(--background);
   border-radius: var(--border-radius-lg);
-  padding: 24px;
+  padding: 28px 32px;
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -606,6 +624,10 @@ html {
   justify-content: space-between;
   gap: 24px;
   transition: var(--transition);
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  top: -30px;
 }
 
 .profile-summary-card:hover {
@@ -615,39 +637,62 @@ html {
 .profile-info {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
 }
 
 .profile-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   background: var(--primary-gradient);
   color: var(--text-white);
-  border-radius: var(--border-radius-lg);
+  border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(86, 131, 146, 0.25);
+  border: 2px solid #fff;
+  overflow: hidden;
 }
 
-.profile-details h3 {
-  font-size: 18px;
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
-.profile-details p {
+.profile-email {
   font-size: 14px;
   color: var(--text-secondary);
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
 }
 
 .profile-status {
   font-size: 12px;
+  font-weight: 500;
   color: var(--text-light);
   background: var(--background-light);
-  padding: 4px 8px;
+  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  display: inline-block;
   border-radius: var(--border-radius);
   display: inline-block;
 }
@@ -655,13 +700,14 @@ html {
 .profile-actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .profile-action-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   background: var(--background-light);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
@@ -671,12 +717,25 @@ html {
   text-decoration: none;
   transition: var(--transition);
   white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .profile-action-btn:hover {
   background: var(--primary-color);
   color: var(--text-white);
   border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(86, 131, 146, 0.2);
+}
+
+.profile-action-btn:first-child {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.profile-action-btn:first-child:hover {
+  background-color: var(--primary-dark);
 }
 
 /* ===== ENHANCED STATS WITH TRENDS ===== */
@@ -1163,12 +1222,26 @@ html {
 
   .profile-summary-card {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 24px 20px;
+    top: -20px;
+  }
+
+  .profile-info {
+    flex-direction: column;
     gap: 16px;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
   }
 
   .profile-actions {
     justify-content: center;
+    width: 100%;
   }
 }
 
@@ -1208,17 +1281,37 @@ html {
   text-align: center;
 }
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: 8px; }
-.mb-2 { margin-bottom: 16px; }
-.mb-3 { margin-bottom: 24px; }
-.mb-4 { margin-bottom: 32px; }
+.mb-0 {
+  margin-bottom: 0;
+}
+.mb-1 {
+  margin-bottom: 8px;
+}
+.mb-2 {
+  margin-bottom: 16px;
+}
+.mb-3 {
+  margin-bottom: 24px;
+}
+.mb-4 {
+  margin-bottom: 32px;
+}
 
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: 8px; }
-.mt-2 { margin-top: 16px; }
-.mt-3 { margin-top: 24px; }
-.mt-4 { margin-top: 32px; }
+.mt-0 {
+  margin-top: 0;
+}
+.mt-1 {
+  margin-top: 8px;
+}
+.mt-2 {
+  margin-top: 16px;
+}
+.mt-3 {
+  margin-top: 24px;
+}
+.mt-4 {
+  margin-top: 32px;
+}
 
 /* ===== CHAT REALTIME SECTION ===== */
 .chat-realtime-section {
@@ -1735,4 +1828,4 @@ html {
   .chat-messages {
     max-height: 300px;
   }
-} 
+}

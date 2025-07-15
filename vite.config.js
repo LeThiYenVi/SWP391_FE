@@ -27,18 +27,32 @@ export default defineConfig(() => ({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://snaproom-e7asc0ercvbxazb8.southeastasia-01.azurewebsites.net',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         configure: (proxy) => {
           proxy.on('error', (err) => {
-            console.log('proxy error', err);
+            console.log('❌ Proxy error:', err);
           });
           proxy.on('proxyReq', (proxyReq, req) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
+            console.log('🚀 Sending Request to BE:', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            console.log('✅ Response from BE:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('❌ WebSocket Proxy error:', err);
+          });
+          proxy.on('upgrade', (req, socket, head) => {
+            console.log('🔌 WebSocket upgrade:', req.url);
           });
         },
       }
@@ -76,6 +90,9 @@ export default defineConfig(() => ({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: ['react', 'react-dom', 'react-router-dom', 'buffer', 'process'],
+  },
+  define: {
+    global: 'globalThis',
   },
 }));
