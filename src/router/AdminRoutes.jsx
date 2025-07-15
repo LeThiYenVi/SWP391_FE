@@ -5,7 +5,6 @@ import AdminOrderDetails from "../pages/admin/AdminOrderDetails"
 import AdminProfile from "../pages/admin/AdminProfile"
 import AdminUser from "../pages/admin/AdminUser"
 import AdminConsultants from "../pages/admin/AdminConsultants"
-import AdminWaiting from "../pages/admin/AdminWaiting"
 import AdminTestingServices from "../pages/admin/AdminTestingServices"
 import AdminContentManagement from "../pages/admin/AdminContentManagement"
 // import ProtectedRoute from "../components/ProtectedRoute";
@@ -34,14 +33,6 @@ const AdminRoutes = [
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
         <AdminOrder />
-      // </ProtectedRoute>
-    ),
-  },
-  {
-    path: routes.adminWaiting,
-    element: (
-      // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminWaiting />
       // </ProtectedRoute>
     ),
   },

@@ -9,7 +9,7 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
   function (config) {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,10 +39,10 @@ instance.interceptors.response.use(
         window.location.pathname !== routes.login &&
         !error.config.url.includes('/api/auth/designer/login')
       ) {
-        console.log('Redirecting to login due to 401 error');
+        console.log('Redirecting to home due to 401 error');
         localStorage.clear();
         localStorage.setItem("sessionExpired", "true");
-        window.location.href = routes.login;
+        window.location.href = routes.landing;
       } else {
         console.error("Response error:", error.response);
       }

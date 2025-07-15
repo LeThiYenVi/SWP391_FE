@@ -13,7 +13,6 @@ export const routes = {
     adminProfile: "/admin/profile",
     adminUser: "/admin/user",
     adminCounselor: "/admin/consultants",
-    adminWaiting: "/admin/waiting",
     adminContentManagement: "/admin/content-management",
 
     // Consultant routes

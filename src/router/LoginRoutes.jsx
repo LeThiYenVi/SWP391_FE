@@ -1,7 +1,7 @@
 import React from 'react';
-import Login from '../pages/Login/login';
-import ForgotPassword from '../pages/Login/ForgotPassword';
-import ResetPassword from '../pages/Login/ResetPassword';
+import Login from '../pages/Login/login.jsx';
+import ForgotPassword from '../pages/Login/ForgotPassword.jsx';
+import ResetPassword from '../pages/Login/ResetPassword.jsx';
 import LoginLayout from '../layouts/LoginLayout';
 
 const LoginRouters = [
