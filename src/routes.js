@@ -24,6 +24,13 @@ export const routes = {
     consultantAnalytics: "/consultant/analytics",
     consultantSettings: "/consultant/settings",
 
+    // Staff routes
+    staffDashboard: "/staff",
+    staffAppointments: "/staff/appointments",
+    staffSampleCollection: "/staff/sample-collection",
+    staffUploadResult: "/staff/upload-result",
+    staffServiceInput: "/staff/service-input",
+
     chat: "/chat",
     partnerDashboard: "/dashboard",
     designList: "/designs",

@@ -4,6 +4,7 @@ import LoginRouters from './LoginRoutes';
 import RegisterRouters from './RegisterRoutes';
 import DashboardRoutes from './DashboardRoutes';
 import AdminRoutes from './AdminRoutes';
+import StaffRoutes from './StaffRoutes';
 import { createBrowserRouter } from 'react-router-dom';
 
 const AppRoutes=[
@@ -11,6 +12,7 @@ const AppRoutes=[
     ...RegisterRouters,
     ...DashboardRoutes,
     ...AdminRoutes,
+    ...StaffRoutes,
     ...HomePageRoutes,
 ]
 
