@@ -1,8 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, Clock, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { getAllBookingsForStaffAPI, updateBookingStatusAPI } from '../../services/TestingService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import {
+  Box,
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Card,
+  CardContent,
+  Button,
+  Chip,
+  Grid,
+  InputAdornment,
+  CircularProgress,
+  Alert,
+  Collapse,
+  IconButton,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  CalendarToday as CalendarIcon,
+  AccessTime as ClockIcon,
+  Person as UserIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+} from '@mui/icons-material';
 
 const StaffAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -64,7 +91,7 @@ const StaffAppointments = () => {
     setFilteredAppointments(filtered);
   };
 
-  const handleStatusChange = async (appointmentId, newStatus) => {
+  const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
       await updateBookingStatusAPI(appointmentId, newStatus);
       // Update local state
@@ -75,19 +102,11 @@ const StaffAppointments = () => {
             : appointment
         )
       );
-      // Show success message
+      // Show success message - you can replace this with a toast notification
       alert(`Trạng thái lịch hẹn đã được cập nhật thành ${newStatus}`);
     } catch (err) {
       console.error('Error updating appointment status:', err);
       alert('Không thể cập nhật trạng thái lịch hẹn. Vui lòng thử lại sau.');
-    }
-  };
-
-  const toggleExpand = (appointmentId) => {
-    if (expandedAppointment === appointmentId) {
-      setExpandedAppointment(null);
-    } else {
-      setExpandedAppointment(appointmentId);
     }
   };
 
@@ -110,15 +129,15 @@ const StaffAppointments = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'warning';
       case 'CONFIRMED':
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
       case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
+        return 'error';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'default';
     }
   };
 
@@ -139,199 +158,277 @@ const StaffAppointments = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-      </div>
+      <Box className="staff-loading">
+        <CircularProgress size={60} sx={{ color: '#354766' }} />
+        <Typography variant="h6" sx={{ ml: 2, color: '#354766' }}>
+          Đang tải dữ liệu...
+        </Typography>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong className="font-bold">Lỗi!</strong>
-        <span className="block sm:inline"> {error}</span>
-      </div>
+      <Alert severity="error" sx={{ borderRadius: 3 }}>
+        <Typography variant="h6">Lỗi!</Typography>
+        {error}
+      </Alert>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý lịch xét nghiệm</h1>
+    <Box className="fade-in-up">
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: 800,
+          color: '#354766',
+          mb: 4,
+          textShadow: '0 1px 2px rgba(179, 204, 212, 0.3)',
+        }}
+      >
+        Quản lý lịch xét nghiệm
+      </Typography>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Tìm theo tên hoặc ID..."
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-pink-500 focus:border-pink-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <Box className="staff-form-container" sx={{ mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="Tìm theo tên hoặc ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="staff-input"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#354766' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                },
+              }}
+            />
+          </Grid>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-5 w-5 text-gray-400" />
-            </div>
-            <select
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-pink-500 focus:border-pink-500"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ xác nhận</option>
-              <option value="CONFIRMED">Đã xác nhận</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Đã hủy</option>
-            </select>
-          </div>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Trạng thái"
+                className="staff-input"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <FilterIcon sx={{ color: '#354766' }} />
+                  </InputAdornment>
+                }
+                sx={{
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                }}
+              >
+                <MenuItem value="all">Tất cả trạng thái</MenuItem>
+                <MenuItem value="PENDING">Chờ xác nhận</MenuItem>
+                <MenuItem value="CONFIRMED">Đã xác nhận</MenuItem>
+                <MenuItem value="COMPLETED">Hoàn thành</MenuItem>
+                <MenuItem value="CANCELLED">Đã hủy</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
               type="date"
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-pink-500 focus:border-pink-500"
+              label="Ngày"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
+              className="staff-input"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CalendarIcon sx={{ color: '#354766' }} />
+                  </InputAdornment>
+                ),
+              }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#354766',
+                  },
+                },
+              }}
             />
-          </div>
-        </div>
-      </div>
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Appointments List */}
       {filteredAppointments.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Không tìm thấy lịch hẹn nào phù hợp với bộ lọc.</p>
-        </div>
+        <Box className="staff-card" sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h6" sx={{ color: '#354766' }}>
+            Không tìm thấy lịch hẹn nào phù hợp với bộ lọc.
+          </Typography>
+        </Box>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách hàng
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày hẹn
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dịch vụ
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAppointments.map((appointment) => (
-                <React.Fragment key={appointment.bookingId}>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{appointment.bookingId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {appointment.customerName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(appointment.appointmentDate)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {appointment.serviceName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                        {getStatusText(appointment.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => toggleExpand(appointment.bookingId)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          {expandedAppointment === appointment.bookingId ? (
-                            <ChevronUp className="h-5 w-5" />
-                          ) : (
-                            <ChevronDown className="h-5 w-5" />
+        <Grid container spacing={3}>
+          {filteredAppointments.map((appointment) => (
+            <Grid item xs={12} key={appointment.bookingId}>
+              <Card className="staff-card">
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 700,
+                          color: '#354766',
+                          mb: 1,
+                        }}
+                      >
+                        #{appointment.bookingId} - {appointment.customerName}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <CalendarIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
+                          <Typography variant="body2" sx={{ color: '#4a6b75' }}>
+                            {formatDate(appointment.appointmentDate)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <ClockIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
+                          <Typography variant="body2" sx={{ color: '#4a6b75' }}>
+                            {appointment.appointmentTime}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                        Dịch vụ: {appointment.serviceName}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                      <Chip
+                        label={getStatusText(appointment.status)}
+                        color={getStatusColor(appointment.status)}
+                        size="small"
+                        sx={{
+                          fontWeight: 600,
+                          borderRadius: '12px',
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {appointment.status === 'PENDING' && (
+                          <Button
+                            size="small"
+                            className="staff-button-primary"
+                            onClick={() => handleStatusUpdate(appointment.bookingId, 'CONFIRMED')}
+                          >
+                            Xác nhận
+                          </Button>
+                        )}
+                        {appointment.status === 'CONFIRMED' && (
+                          <Button
+                            size="small"
+                            className="staff-button-primary"
+                            onClick={() => handleStatusUpdate(appointment.bookingId, 'COMPLETED')}
+                          >
+                            Hoàn thành
+                          </Button>
+                        )}
+                        <IconButton
+                          size="small"
+                          onClick={() => setExpandedAppointment(
+                            expandedAppointment === appointment.bookingId ? null : appointment.bookingId
                           )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedAppointment === appointment.bookingId && (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-4 bg-gray-50">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="font-medium text-gray-900">Thông tin chi tiết</h4>
-                            <div className="mt-2 space-y-2">
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <User className="h-4 w-4 mr-2" />
-                                Khách hàng: {appointment.customerName}
-                              </p>
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Ngày hẹn: {formatDate(appointment.appointmentDate)}
-                              </p>
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <Clock className="h-4 w-4 mr-2" />
-                                Giờ hẹn: {formatTime(appointment.appointmentDate)}
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">Cập nhật trạng thái</h4>
-                            <div className="mt-2 space-x-2">
-                              {appointment.status !== 'CONFIRMED' && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.bookingId, 'CONFIRMED')}
-                                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200"
-                                >
-                                  Xác nhận
-                                </button>
-                              )}
-                              {appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.bookingId, 'COMPLETED')}
-                                  className="px-3 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200"
-                                >
-                                  Hoàn thành
-                                </button>
-                              )}
-                              {appointment.status !== 'CANCELLED' && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.bookingId, 'CANCELLED')}
-                                  className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200"
-                                >
-                                  Hủy
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                          sx={{ color: '#354766' }}
+                        >
+                          {expandedAppointment === appointment.bookingId ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Collapse in={expandedAppointment === appointment.bookingId}>
+                    <Box
+                      sx={{
+                        mt: 2,
+                        pt: 2,
+                        borderTop: '1px solid rgba(179, 204, 212, 0.3)',
+                        background: 'rgba(179, 204, 212, 0.1)',
+                        borderRadius: 2,
+                        p: 2,
+                      }}
+                    >
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
+                            Thông tin khách hàng:
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                            Email: {appointment.customerEmail}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                            SĐT: {appointment.customerPhone}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
+                            Chi tiết dịch vụ:
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                            Giá: {appointment.price?.toLocaleString()} VNĐ
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                            Ngày tạo: {formatDate(appointment.createdAt)}
+                          </Typography>
+                        </Grid>
+                        {appointment.notes && (
+                          <Grid item xs={12}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
+                              Ghi chú:
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#4a6b75' }}>
+                              {appointment.notes}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Box>
+                  </Collapse>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 };
 
