@@ -58,6 +58,12 @@ const Dashboard = () => {
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+  const [overviewStats, setOverviewStats] = useState({
+    totalConsultations: 0,
+    totalSTITests: 0,
+    totalQuestions: 0,
+    newNotifications: 0,
+  });
   const { user, logout, isAuthenticated } = useAuth();
   const { getDaysUntilNextPeriod, getDaysUntilOvulation, isInFertilityWindow } =
     useCycle();
