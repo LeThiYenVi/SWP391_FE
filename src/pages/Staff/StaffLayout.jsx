@@ -23,6 +23,7 @@ import {
 import StaffAppointments from './StaffAppointments';
 import StaffSampleCollection from './StaffSampleCollection';
 import StaffUploadResult from './StaffUploadResult';
+import StaffHistory from './StaffHistory';
 import StaffServiceInput from './StaffServiceInput';
 import './StaffLayout.css';
 
@@ -43,6 +44,8 @@ const StaffLayout = () => {
       return <StaffSampleCollection />;
     } else if (path === '/staff/upload-result') {
       return <StaffUploadResult />;
+    } else if (path === '/staff/history') {
+      return <StaffHistory />;
     } else if (path === '/staff/service-input') {
       return <StaffServiceInput />;
     } else {
@@ -66,6 +69,11 @@ const StaffLayout = () => {
       path: '/staff/upload-result',
       name: 'Kết quả xét nghiệm',
       icon: <UploadIcon />,
+    },
+    {
+      path: '/staff/history',
+      name: 'Lịch sử xét nghiệm',
+      icon: <PersonIcon />,
     },
     {
       path: '/staff/service-input',

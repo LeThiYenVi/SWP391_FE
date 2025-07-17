@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginAPI, registerAPI, getUserProfileAPI, logoutAPI, updateUserProfileAPI } from '../services/UsersSevices';
+import { loginAPI, registerAPI, getUserProfileAPI, logoutAPI, updateUserProfileAPI, loginByGoogleAPI } from '../services/UsersSevices';
 
 const AuthContext = createContext();
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Kiểm tra localStorage để duy trì session
     const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
+    const savedToken = localStorage.getItem('authToken');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -64,6 +64,44 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('❌ Login error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const loginGoogle = async (code) => {
+    try {
+      console.log('🔐 Attempting Google login with code:', code?.substring(0, 30) + '...');
+
+      const response = await loginByGoogleAPI(code);
+
+      if (response.data) {
+        const responseData = response.data;
+        console.log('📋 Google login response:', responseData);
+
+        // Tạo đối tượng user từ dữ liệu response
+        const userData = {
+          username: responseData.username,
+          fullName: responseData.fullName || responseData.username || 'User',
+          role: responseData.role,
+          email: responseData.email
+        };
+
+        // Lưu token và user info
+        setToken(responseData.accessToken);
+        setUser(userData);
+        localStorage.setItem('authToken', responseData.accessToken);
+        localStorage.setItem('refreshToken', responseData.refreshToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        console.log('✅ Google login successful:', userData);
+        return { success: true, user: userData };
+      } else {
+        console.error('❌ Google login failed: Invalid response format');
+        return { success: false, error: 'Phản hồi từ server không hợp lệ' };
+      }
+    } catch (error) {
+      console.error('❌ Google login error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Đăng nhập Google thất bại';
       return { success: false, error: errorMessage };
     }
   };
@@ -139,6 +177,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     login,
+    loginGoogle,
     logout,
     register,
     updateUserProfile,

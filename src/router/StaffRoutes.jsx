@@ -4,6 +4,7 @@ import StaffLayout from '../pages/Staff/StaffLayout';
 import StaffAppointments from '../pages/Staff/StaffAppointments';
 import StaffSampleCollection from '../pages/Staff/StaffSampleCollection';
 import StaffUploadResult from '../pages/Staff/StaffUploadResult';
+import StaffHistory from '../pages/Staff/StaffHistory';
 import StaffServiceInput from '../pages/Staff/StaffServiceInput';
 
 const StaffRoutes = [
@@ -33,6 +34,14 @@ const StaffRoutes = [
   },
   {
     path: '/staff/upload-result',
+    element: (
+      <ProtectedRoute allowedRoles={['staff', 'admin']}>
+        <StaffLayout />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/staff/history',
     element: (
       <ProtectedRoute allowedRoles={['staff', 'admin']}>
         <StaffLayout />

@@ -602,54 +602,89 @@ const STITesting = () => {
               Kết quả xét nghiệm
             </h2>
             <div className="space-y-4">
-              {testHistory
-                .filter(record => record.status === 'completed')
-                .map(record => (
-                  <div
-                    key={record.id}
-                    className="bg-white rounded-lg p-6 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          Kết quả ngày{' '}
-                          {format(new Date(record.resultDate), 'dd/MM/yyyy')}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {record.tests.join(', ')}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Xem chi tiết
-                        </button>
-                        <button className="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải về
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {record.tests.map((test, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
+              {loadingHistory ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Đang tải kết quả...</p>
+                </div>
+              ) : bookingHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Chưa có kết quả xét nghiệm nào</p>
+                </div>
+              ) : (
+                bookingHistory
+                  .filter(record => record.status === 'COMPLETED' && record.result)
+                  .map(record => (
+                    <div
+                      key={record.bookingId}
+                      className="bg-white rounded-lg p-6 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            Kết quả ngày{' '}
+                            {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : 'N/A'}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {record.serviceName}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                            onClick={() => {
+                              // Show result details in modal or navigate to detail page
+                              alert(`Kết quả xét nghiệm:\n\n${record.result}`);
+                            }}
                           >
-                            <span className="font-medium text-gray-900">
-                              {test}
-                            </span>
-                            <span className="text-green-600 font-semibold">
-                              Âm tính
-                            </span>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Xem chi tiết
+                          </button>
+                          <button
+                            className="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm"
+                            onClick={() => {
+                              // Download result as PDF or print
+                              toast.info('Tính năng tải về đang được phát triển');
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Tải về
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Kết quả xét nghiệm:</h4>
+                          <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {record.result || 'Chưa có kết quả chi tiết'}
                           </div>
-                        ))}
+                          {record.description && (
+                            <div className="mt-3">
+                              <h5 className="font-medium text-gray-900 mb-1">Ghi chú:</h5>
+                              <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                                {record.description}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+              )}
+
+              {/* Show message if no completed results */}
+              {!loadingHistory && bookingHistory.length > 0 &&
+               bookingHistory.filter(record => record.status === 'COMPLETED' && record.result).length === 0 && (
+                <div className="text-center py-8">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Chưa có kết quả xét nghiệm hoàn thành</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Kết quả sẽ hiển thị sau khi xét nghiệm hoàn thành
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -45,6 +45,17 @@ const cancelBookingAPI = async (bookingId) => {
   }
 };
 
+const updateTestResultAPI = async (bookingId, resultData) => {
+  try {
+    const response = await instance.patch(`/api/bookings/${bookingId}/test-result`, resultData);
+    console.log('Update test result success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update test result error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // =============Booking Service Class============
 class BookingService {
   // Create a new booking
@@ -91,6 +102,17 @@ class BookingService {
       return { success: true, data };
     } catch (error) {
       return { success: false, message: error.message };
+    }
+  }
+
+  // Update test result (for staff/admin)
+  async updateTestResult(bookingId, resultData) {
+    try {
+      const data = await updateTestResultAPI(bookingId, resultData);
+      return { success: true, data };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 }

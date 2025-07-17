@@ -6,12 +6,23 @@ const getAllBookingsAPI = async (status = null, date = null) => {
     const params = {};
     if (status) params.status = status;
     if (date) params.date = date;
-    
+
     const response = await instance.get('/api/bookings/all', { params });
     console.log('Get all bookings success:', response.data);
     return response.data;
   } catch (error) {
     console.error('Get all bookings error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getBookingsByStatusAPI = async (status, pageNumber = 1, pageSize = 100) => {
+  try {
+    const response = await instance.get(`/api/bookings/status/${status}?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+    console.log('Get bookings by status success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get bookings by status error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -41,7 +52,13 @@ const updateBookingStatusAPI = async (bookingId, status) => {
 // =============Staff Sample Collection APIs============
 const markSampleCollectedAPI = async (bookingId, sampleData) => {
   try {
-    const response = await instance.post(`/api/bookings/${bookingId}/sample-collected`, sampleData);
+    const requestData = {
+      status: 'SAMPLE_COLLECTED',
+      description: sampleData.notes || sampleData.sampleNotes,
+      resultDate: sampleData.resultDeliveryDate || sampleData.resultDate
+    };
+
+    const response = await instance.patch(`/api/bookings/${bookingId}/status`, requestData);
     console.log('Mark sample collected success:', response.data);
     return response.data;
   } catch (error) {
@@ -143,6 +160,18 @@ const getBookingsByDateRangeAPI = async (startDate, endDate) => {
   }
 };
 
+// =============Test Result API============
+const updateTestResultAPI = async (bookingId, resultData) => {
+  try {
+    const response = await instance.patch(`/api/bookings/${bookingId}/test-result`, resultData);
+    console.log('Update test result success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update test result error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // StaffService class
 class StaffService {
   // Booking Management
@@ -150,6 +179,15 @@ class StaffService {
     try {
       const response = await getAllBookingsAPI(status, date);
       return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getBookingsByStatus(status, pageNumber = 1, pageSize = 100) {
+    try {
+      const response = await getBookingsByStatusAPI(status, pageNumber, pageSize);
+      return { success: true, data: response };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -257,6 +295,16 @@ class StaffService {
       return { success: false, error: error.message };
     }
   }
+
+  // Update Test Result
+  async updateTestResult(bookingId, resultData) {
+    try {
+      const response = await updateTestResultAPI(bookingId, resultData);
+      return { success: true, data: response };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Export singleton instance
@@ -267,9 +315,10 @@ export default staffService;
 export {
   // Booking Management
   getAllBookingsAPI,
+  getBookingsByStatusAPI,
   getBookingByIdAPI,
   updateBookingStatusAPI,
-  
+
   // Sample Collection
   markSampleCollectedAPI,
   
@@ -285,5 +334,8 @@ export {
   
   // Dashboard
   getStaffDashboardStatsAPI,
-  getBookingsByDateRangeAPI
+  getBookingsByDateRangeAPI,
+
+  // Test Result
+  updateTestResultAPI
 };

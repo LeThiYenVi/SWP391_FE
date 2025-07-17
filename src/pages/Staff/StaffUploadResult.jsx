@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, Upload, FileText, CheckCircle, AlertCircle, Download } from 'lucide-react';
-import { getAllBookingsForStaffAPI, markResultsReadyAPI } from '../../services/TestingService';
+import { Search, Filter, Calendar, Upload, FileText, CheckCircle, AlertCircle, Download, Plus } from 'lucide-react';
+import { getBookingsByStatusAPI } from '../../services/StaffService';
+import BookingService from '../../services/BookingService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import TestResultForm from '../../components/staff/TestResultForm';
+import { toast } from 'react-toastify';
 
 const StaffUploadResult = () => {
   const [bookings, setBookings] = useState([]);
@@ -19,6 +22,7 @@ const StaffUploadResult = () => {
     format(new Date(), 'yyyy-MM-dd\'T\'HH:mm')
   );
   const [uploading, setUploading] = useState(false);
+  const [showNewResultForm, setShowNewResultForm] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -31,12 +35,24 @@ const StaffUploadResult = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await getAllBookingsForStaffAPI();
-      setBookings(response.data || []);
-      setFilteredBookings(response.data || []);
+      // Gọi API để lấy bookings theo status SAMPLE_COLLECTED
+      const response = await getBookingsByStatusAPI('SAMPLE_COLLECTED', 1, 100);
+
+      if (response && response.content) {
+        setBookings(response.content);
+        setFilteredBookings(response.content);
+      } else if (response && Array.isArray(response)) {
+        setBookings(response);
+        setFilteredBookings(response);
+      } else {
+        setBookings([]);
+        setFilteredBookings([]);
+      }
     } catch (err) {
       console.error('Error fetching bookings:', err);
       setError('Không thể tải danh sách đặt lịch. Vui lòng thử lại sau.');
+      setBookings([]);
+      setFilteredBookings([]);
     } finally {
       setLoading(false);
     }
@@ -54,9 +70,11 @@ const StaffUploadResult = () => {
       );
     }
 
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((booking) => booking.status === statusFilter);
+    // Filter by status - load lại data khi thay đổi status
+    if (statusFilter !== 'SAMPLE_COLLECTED') {
+      // Nếu chọn status khác, load lại data với status đó
+      fetchBookingsByStatus(statusFilter);
+      return;
     }
 
     // Filter by date
@@ -68,6 +86,31 @@ const StaffUploadResult = () => {
     }
 
     setFilteredBookings(filtered);
+  };
+
+  const fetchBookingsByStatus = async (status) => {
+    setLoading(true);
+    try {
+      const response = await getBookingsByStatusAPI(status, 1, 100);
+
+      if (response && response.content) {
+        setBookings(response.content);
+        setFilteredBookings(response.content);
+      } else if (response && Array.isArray(response)) {
+        setBookings(response);
+        setFilteredBookings(response);
+      } else {
+        setBookings([]);
+        setFilteredBookings([]);
+      }
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      setError('Không thể tải danh sách đặt lịch. Vui lòng thử lại sau.');
+      setBookings([]);
+      setFilteredBookings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileChange = (event) => {
@@ -91,41 +134,86 @@ const StaffUploadResult = () => {
   };
 
   const handleUploadResult = async () => {
-    if (!selectedBooking || !resultFile) {
-      alert('Vui lòng chọn lịch hẹn và file kết quả');
+    if (!selectedBooking || !resultNotes.trim()) {
+      alert('Vui lòng chọn lịch hẹn và nhập kết quả xét nghiệm');
       return;
     }
 
     setUploading(true);
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('resultFile', resultFile);
-      formData.append('resultDate', resultDate);
-      formData.append('notes', resultNotes);
+      // Prepare result data
+      const resultData = {
+        result: resultNotes.trim(),
+        resultType: 'NORMAL', // hoặc 'ABNORMAL' tùy theo kết quả
+        notes: `Kết quả xét nghiệm được cập nhật bởi staff vào ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+        resultDate: new Date(resultDate).toISOString()
+      };
 
-      await markResultsReadyAPI(selectedBooking.bookingId, formData);
-      
+      // Call API to update test result
+      const result = await BookingService.updateTestResult(selectedBooking.bookingId, resultData);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Không thể cập nhật kết quả xét nghiệm');
+      }
+
       // Update local state
-      const updatedBookings = bookings.map(booking => 
-        booking.bookingId === selectedBooking.bookingId 
-          ? { ...booking, status: 'RESULTS_READY', resultDate, resultNotes, resultFile: resultFile.name } 
+      const updatedBookings = bookings.map(booking =>
+        booking.bookingId === selectedBooking.bookingId
+          ? { ...booking, status: 'COMPLETED', resultDate, result: resultNotes, resultNotes }
           : booking
       );
-      
+
       setBookings(updatedBookings);
       setSelectedBooking(null);
       setResultFile(null);
       setResultNotes('');
-      
-      // Show success message
-      alert('Đã upload kết quả xét nghiệm thành công!');
+
+      // Show success message with notification info
+      toast.success('✅ Đã cập nhật kết quả xét nghiệm thành công!\n📧 Khách hàng sẽ nhận được thông báo qua email và app.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+      // Refresh data
+      fetchBookings();
     } catch (err) {
       console.error('Error uploading result:', err);
-      alert('Không thể upload kết quả xét nghiệm. Vui lòng thử lại sau.');
+      toast.error('❌ Không thể cập nhật kết quả xét nghiệm. Vui lòng thử lại sau.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleNewResultSuccess = (updatedBooking) => {
+    // Update local state
+    const updatedBookings = bookings.map(booking =>
+      booking.bookingId === updatedBooking.bookingId
+        ? { ...booking, ...updatedBooking, status: 'COMPLETED' }
+        : booking
+    );
+
+    setBookings(updatedBookings);
+    setShowNewResultForm(false);
+    setSelectedBooking(null);
+
+    // Refresh the list
+    fetchBookings();
+  };
+
+  const handleSelectBookingForNewResult = (booking) => {
+    setSelectedBooking(booking);
+    setShowNewResultForm(true);
   };
 
   const formatDate = (dateString) => {
@@ -224,9 +312,9 @@ const StaffUploadResult = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="SAMPLE_COLLECTED">Đã lấy mẫu</option>
-              <option value="RESULTS_READY">Kết quả sẵn sàng</option>
+              <option value="SAMPLE_COLLECTED">Đã lấy mẫu - Cần cập nhật kết quả</option>
+              <option value="TESTING">Đang xét nghiệm</option>
+              <option value="COMPLETED">Đã hoàn thành</option>
             </select>
           </div>
 
@@ -306,19 +394,33 @@ const StaffUploadResult = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {booking.status === 'SAMPLE_COLLECTED' ? (
                           <button
-                            onClick={() => setSelectedBooking(booking)}
-                            className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectBookingForNewResult(booking);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 flex items-center bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg transition-colors"
                           >
-                            <Upload className="h-4 w-4 mr-1" />
-                            Nhập kết quả
+                            <FileText className="h-4 w-4 mr-1" />
+                            Cập nhật kết quả
                           </button>
-                        ) : booking.status === 'RESULTS_READY' ? (
-                          <span className="text-green-600 flex items-center">
+                        ) : booking.status === 'TESTING' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectBookingForNewResult(booking);
+                            }}
+                            className="text-orange-600 hover:text-orange-900 flex items-center bg-orange-50 hover:bg-orange-100 px-3 py-1 rounded-lg transition-colors"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Hoàn thành KQ
+                          </button>
+                        ) : booking.status === 'COMPLETED' ? (
+                          <span className="text-green-600 flex items-center px-3 py-1 bg-green-50 rounded-lg">
                             <CheckCircle className="h-4 w-4 mr-1" />
-                            Đã có kết quả
+                            Đã hoàn thành
                           </span>
                         ) : (
-                          <span className="text-gray-400">Chưa sẵn sàng</span>
+                          <span className="text-gray-400 px-3 py-1">Chưa sẵn sàng</span>
                         )}
                       </td>
                     </tr>
@@ -329,13 +431,27 @@ const StaffUploadResult = () => {
           )}
         </div>
 
-        {/* Upload Result Form */}
+        {/* New Result Form */}
+        {showNewResultForm && selectedBooking && (
+          <div className="mb-6">
+            <TestResultForm
+              booking={selectedBooking}
+              onSuccess={handleNewResultSuccess}
+              onCancel={() => {
+                setShowNewResultForm(false);
+                setSelectedBooking(null);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Update Result Form */}
         <div className="bg-gray-50 p-4 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            {selectedBooking ? 'Nhập kết quả xét nghiệm' : 'Chọn lịch hẹn để nhập kết quả'}
+            {selectedBooking && !showNewResultForm ? 'Cập nhật kết quả xét nghiệm' : 'Chọn lịch hẹn để cập nhật kết quả'}
           </h2>
 
-          {selectedBooking ? (
+          {selectedBooking && !showNewResultForm ? (
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-700">
@@ -367,58 +483,25 @@ const StaffUploadResult = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  File kết quả xét nghiệm
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-pink-600 hover:text-pink-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-pink-500">
-                        <span>Chọn file</span>
-                        <input 
-                          id="file-upload" 
-                          name="file-upload" 
-                          type="file" 
-                          className="sr-only"
-                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                          onChange={handleFileChange}
-                        />
-                      </label>
-                      <p className="pl-1">hoặc kéo thả</p>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PDF, DOC, DOCX, JPG, PNG tối đa 10MB
-                    </p>
-                  </div>
-                </div>
-                {resultFile && (
-                  <div className="mt-2 p-2 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-700">
-                      <FileText className="inline h-4 w-4 mr-1" />
-                      {resultFile.name} ({formatFileSize(resultFile.size)})
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ghi chú kết quả
+                  Kết quả xét nghiệm <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  rows="4"
-                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-pink-500 focus:border-pink-500"
-                  placeholder="Nhập ghi chú về kết quả xét nghiệm..."
+                  rows="6"
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Nhập kết quả xét nghiệm chi tiết...&#10;Ví dụ:&#10;- HIV: Âm tính&#10;- Syphilis: Âm tính&#10;- Hepatitis B: Âm tính&#10;- Chỉ số khác: Bình thường"
                   value={resultNotes}
                   onChange={(e) => setResultNotes(e.target.value)}
                 ></textarea>
+                <p className="text-xs text-gray-500 mt-1">
+                  Nhập kết quả chi tiết để khách hàng có thể xem và hiểu rõ tình trạng sức khỏe
+                </p>
               </div>
 
               <div className="flex space-x-2">
                 <button
                   onClick={handleUploadResult}
-                  disabled={uploading || !resultFile}
-                  className="flex-1 bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={uploading || !resultNotes.trim()}
+                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   <div className="flex items-center justify-center">
                     {uploading ? (
@@ -426,7 +509,7 @@ const StaffUploadResult = () => {
                     ) : (
                       <CheckCircle className="h-5 w-5 mr-2" />
                     )}
-                    {uploading ? 'Đang upload...' : 'Xác nhận kết quả'}
+                    {uploading ? 'Đang cập nhật...' : 'Cập nhật kết quả'}
                   </div>
                 </button>
                 <button
@@ -434,17 +517,24 @@ const StaffUploadResult = () => {
                     setSelectedBooking(null);
                     setResultFile(null);
                     setResultNotes('');
+                    setShowNewResultForm(false);
                   }}
-                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-medium"
                 >
                   Hủy
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8">
-              <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
-              <p className="text-gray-500 text-center">Vui lòng chọn một lịch hẹn từ danh sách để nhập kết quả xét nghiệm</p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-16 w-16 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-center text-lg mb-2">
+                Chọn lịch hẹn để cập nhật kết quả xét nghiệm
+              </p>
+              <div className="text-sm text-gray-400 text-center">
+                <p>• Chọn booking có trạng thái "Đã lấy mẫu" để cập nhật kết quả</p>
+                <p>• Kết quả sẽ được gửi thông báo tự động đến khách hàng</p>
+              </div>
             </div>
           )}
         </div>

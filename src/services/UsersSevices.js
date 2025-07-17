@@ -128,13 +128,19 @@ const updatePasswordAPI = async (password, newPassword) => {
 
 const loginByGoogleAPI = async code => {
   try {
+    console.log('🔍 loginByGoogleAPI called with code:', code?.substring(0, 30) + '...');
+    console.log('🔍 Sending POST to /api/auth/login-by-google with body:', { code: code?.substring(0, 30) + '...' });
+
     const response = await instance.post('/api/auth/login-by-google', {
       code,
     });
-    console.log('Google Login success:', response);
+
+    console.log('✅ Google Login API success:', response);
     return response;
   } catch (error) {
-    console.error('Google Login error:', error);
+    console.error('❌ Google Login API error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     throw error;
   }
 };
