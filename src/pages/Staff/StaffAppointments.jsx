@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getAllBookingsForStaffAPI, updateBookingStatusAPI } from '../../services/TestingService';
+import { getAllBookingsForStaffAPI } from '../../services/TestingService';
+import { updateBookingStatusAPI } from '../../services/StaffService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import {
@@ -20,6 +21,8 @@ import {
   Alert,
   Collapse,
   IconButton,
+  Pagination,
+  Stack,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -29,7 +32,9 @@ import {
   Person as UserIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import instance from '../../services/customize-axios';
 
 const StaffAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -37,24 +42,48 @@ const StaffAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+
   const [dateFilter, setDateFilter] = useState('');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [bookingStats, setBookingStats] = useState({
+    totalBookings: 0,
+    pendingBookings: 0,
+    completedBookings: 0,
+    cancelledBookings: 0
+  });
+
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     filterAppointments();
-  }, [searchTerm, statusFilter, dateFilter, appointments]);
+  }, [searchTerm, dateFilter, appointments]);
 
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      const response = await getAllBookingsForStaffAPI();
-      setAppointments(response.data || []);
-      setFilteredAppointments(response.data || []);
+      // Lấy appointments theo status PENDING
+      const response = await instance.get(`/api/bookings/status/PENDING?pageNumber=${currentPage}&pageSize=${pageSize}`);
+
+      if (response.data && response.data.content) {
+        setAppointments(response.data.content);
+        setFilteredAppointments(response.data.content);
+        setTotalPages(response.data.totalPages);
+        setTotalElements(response.data.totalElements);
+        setBookingStats({
+          totalBookings: response.data.totalBookings || 0,
+          pendingBookings: response.data.pendingBookings || 0,
+          completedBookings: response.data.completedBookings || 0,
+          cancelledBookings: response.data.cancelledBookings || 0
+        });
+      }
     } catch (err) {
       console.error('Error fetching appointments:', err);
       setError('Không thể tải danh sách lịch hẹn. Vui lòng thử lại sau.');
@@ -70,20 +99,19 @@ const StaffAppointments = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (appointment) =>
-          appointment.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          appointment.bookingId?.toString().includes(searchTerm)
+          appointment.customerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          appointment.bookingId?.toString().includes(searchTerm) ||
+          appointment.customerEmailAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          appointment.customerPhone?.includes(searchTerm)
       );
     }
 
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((appointment) => appointment.status === statusFilter);
-    }
+
 
     // Filter by date
     if (dateFilter) {
       filtered = filtered.filter((appointment) => {
-        const appointmentDate = new Date(appointment.appointmentDate).toISOString().split('T')[0];
+        const appointmentDate = new Date(appointment.bookingDate).toISOString().split('T')[0];
         return appointmentDate === dateFilter;
       });
     }
@@ -94,19 +122,24 @@ const StaffAppointments = () => {
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
       await updateBookingStatusAPI(appointmentId, newStatus);
-      // Update local state
-      setAppointments(
-        appointments.map((appointment) =>
-          appointment.bookingId === appointmentId
-            ? { ...appointment, status: newStatus }
-            : appointment
-        )
-      );
+      // Refresh data to get updated statistics
+      await fetchAppointments();
       // Show success message - you can replace this with a toast notification
       alert(`Trạng thái lịch hẹn đã được cập nhật thành ${newStatus}`);
     } catch (err) {
       console.error('Error updating appointment status:', err);
       alert('Không thể cập nhật trạng thái lịch hẹn. Vui lòng thử lại sau.');
+    }
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await fetchAppointments();
+    } catch (err) {
+      console.error('Error refreshing appointments:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,8 +163,10 @@ const StaffAppointments = () => {
     switch (status) {
       case 'PENDING':
         return 'warning';
-      case 'CONFIRMED':
+      case 'SAMPLE_COLLECTED':
         return 'info';
+      case 'TESTING':
+        return 'secondary';
       case 'COMPLETED':
         return 'success';
       case 'CANCELLED':
@@ -147,6 +182,10 @@ const StaffAppointments = () => {
         return 'Chờ xác nhận';
       case 'CONFIRMED':
         return 'Đã xác nhận';
+      case 'SAMPLE_COLLECTED':
+        return 'Đã lấy mẫu';
+      case 'TESTING':
+        return 'Đang xét nghiệm';
       case 'COMPLETED':
         return 'Hoàn thành';
       case 'CANCELLED':
@@ -158,63 +197,207 @@ const StaffAppointments = () => {
 
   if (loading) {
     return (
-      <Box className="staff-loading">
-        <CircularProgress size={60} sx={{ color: '#354766' }} />
-        <Typography variant="h6" sx={{ ml: 2, color: '#354766' }}>
-          Đang tải dữ liệu...
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <CircularProgress size={40} sx={{ color: '#354766' }} />
+          <Typography variant="h6" sx={{ color: '#354766', fontWeight: 600 }}>
+            Đang tải dữ liệu...
+          </Typography>
+        </Box>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ borderRadius: 3 }}>
-        <Typography variant="h6">Lỗi!</Typography>
-        {error}
-      </Alert>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+        <Box sx={{
+          p: 3,
+          backgroundColor: '#f8d7da',
+          borderRadius: '12px',
+          border: '1px solid #f5c6cb',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          maxWidth: '400px'
+        }}>
+          <Typography variant="h6" sx={{ color: '#721c24', fontWeight: 600 }}>
+            Có lỗi xảy ra!
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#721c24', textAlign: 'center' }}>
+            {error}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => window.location.reload()}
+            sx={{
+              backgroundColor: '#f44336',
+              color: 'white',
+              borderRadius: '8px',
+              fontWeight: 500,
+              px: 3,
+              py: 1,
+              '&:hover': {
+                backgroundColor: '#d32f2f',
+              }
+            }}
+          >
+            Thử lại
+          </Button>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <Box className="fade-in-up">
+    <Box>
       <Typography
-        variant="h4"
+        variant="h5"
         sx={{
-          fontWeight: 800,
+          fontWeight: 700,
           color: '#354766',
-          mb: 4,
-          textShadow: '0 1px 2px rgba(179, 204, 212, 0.3)',
+          mb: 3,
         }}
       >
-        Quản lý lịch xét nghiệm
+        Lịch xét nghiệm chờ xác nhận
       </Typography>
 
+      {/* Statistics Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={6} sm={3}>
+          <Card sx={{
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(179, 204, 212, 0.3)',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(53, 71, 102, 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 16px rgba(53, 71, 102, 0.15)',
+            }
+          }}>
+            <CardContent sx={{ textAlign: 'center', p: 2 }}>
+              <Box sx={{ fontSize: '24px', mb: 1 }}>📊</Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#354766', mb: 0.5 }}>
+                {bookingStats.totalBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#B3CCD4', fontWeight: 600, fontSize: '12px' }}>
+                Tổng số lịch hẹn
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Card sx={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(255, 193, 7, 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 16px rgba(255, 193, 7, 0.2)',
+            }
+          }}>
+            <CardContent sx={{ textAlign: 'center', p: 2 }}>
+              <Box sx={{ fontSize: '24px', mb: 1 }}>⏳</Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#ff9800', mb: 0.5 }}>
+                {bookingStats.pendingBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#856404', fontWeight: 600, fontSize: '12px' }}>
+                Chờ xác nhận
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Card sx={{
+            backgroundColor: '#d4edda',
+            border: '1px solid #c3e6cb',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(76, 175, 80, 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 16px rgba(76, 175, 80, 0.2)',
+            }
+          }}>
+            <CardContent sx={{ textAlign: 'center', p: 2 }}>
+              <Box sx={{ fontSize: '24px', mb: 1 }}>🎉</Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#4caf50', mb: 0.5 }}>
+                {bookingStats.completedBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#155724', fontWeight: 600, fontSize: '12px' }}>
+                Đã hoàn thành
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Card sx={{
+            backgroundColor: '#f8d7da',
+            border: '1px solid #f5c6cb',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(244, 67, 54, 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 16px rgba(244, 67, 54, 0.2)',
+            }
+          }}>
+            <CardContent sx={{ textAlign: 'center', p: 2 }}>
+              <Box sx={{ fontSize: '24px', mb: 1 }}>❌</Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#f44336', mb: 0.5 }}>
+                {bookingStats.cancelledBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#721c24', fontWeight: 600, fontSize: '12px' }}>
+                Đã hủy
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       {/* Filters */}
-      <Box className="staff-form-container" sx={{ mb: 4 }}>
-        <Grid container spacing={3}>
+      <Box
+        sx={{
+          mb: 3,
+          p: 2,
+          backgroundColor: 'rgba(179, 204, 212, 0.1)',
+          borderRadius: '12px',
+          border: '1px solid rgba(179, 204, 212, 0.3)',
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#354766', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔍 Tìm kiếm và lọc
+        </Typography>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <TextField
+              size="small"
               fullWidth
-              placeholder="Tìm theo tên hoặc ID..."
+              placeholder="Tìm theo tên, email, SĐT..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="staff-input"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#354766' }} />
+                    <SearchIcon sx={{ color: '#B3CCD4', fontSize: '1.1rem' }} />
                   </InputAdornment>
                 ),
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderRadius: '8px',
+                  backgroundColor: 'white',
+                  '& fieldset': {
+                    borderColor: '#B3CCD4',
+                  },
+                  '&:hover fieldset': {
                     borderColor: '#354766',
                   },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  '&.Mui-focused fieldset': {
                     borderColor: '#354766',
                   },
                 },
@@ -222,156 +405,209 @@ const StaffAppointments = () => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Trạng thái</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Trạng thái"
-                className="staff-input"
-                startAdornment={
-                  <InputAdornment position="start">
-                    <FilterIcon sx={{ color: '#354766' }} />
-                  </InputAdornment>
-                }
+
+
+          <Grid item xs={12} md={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CalendarIcon sx={{ color: '#354766', fontSize: '1.1rem' }} />
+              <Typography
+                variant="body2"
                 sx={{
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#354766',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#354766',
-                  },
+                  color: '#354766',
+                  fontWeight: 500,
+                  minWidth: 'fit-content',
                 }}
               >
-                <MenuItem value="all">Tất cả trạng thái</MenuItem>
-                <MenuItem value="PENDING">Chờ xác nhận</MenuItem>
-                <MenuItem value="CONFIRMED">Đã xác nhận</MenuItem>
-                <MenuItem value="COMPLETED">Hoàn thành</MenuItem>
-                <MenuItem value="CANCELLED">Đã hủy</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Ngày"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="staff-input"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CalendarIcon sx={{ color: '#354766' }} />
-                  </InputAdornment>
-                ),
-              }}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#354766',
+                Ngày lịch hẹn
+              </Typography>
+              <TextField
+                size="small"
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                sx={{
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#B3CCD4',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#354766',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#354766',
+                    },
                   },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#354766',
-                  },
-                },
-              }}
-            />
+                }}
+              />
+            </Box>
           </Grid>
         </Grid>
       </Box>
 
       {/* Appointments List */}
       {filteredAppointments.length === 0 ? (
-        <Box className="staff-card" sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" sx={{ color: '#354766' }}>
-            Không tìm thấy lịch hẹn nào phù hợp với bộ lọc.
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 4,
+            backgroundColor: 'rgba(179, 204, 212, 0.1)',
+            border: '1px dashed rgba(179, 204, 212, 0.4)',
+            borderRadius: '12px',
+          }}
+        >
+          <Box sx={{ fontSize: '32px', mb: 1 }}>📅</Box>
+          <Typography variant="h6" sx={{ color: '#354766', fontWeight: 600, mb: 0.5 }}>
+            Không có lịch hẹn chờ xác nhận
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#B3CCD4' }}>
+            Hiện tại không có lịch hẹn nào đang chờ xác nhận.
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3}>
-          {filteredAppointments.map((appointment) => (
-            <Grid item xs={12} key={appointment.bookingId}>
-              <Card className="staff-card">
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box>
-                      <Typography
-                        variant="h6"
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {filteredAppointments.map((appointment, index) => (
+            <Card
+              key={appointment.bookingId}
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                border: '1px solid rgba(179, 204, 212, 0.3)',
+                borderRadius: index === 0 ? '12px 12px 0 0' : index === filteredAppointments.length - 1 ? '0 0 12px 12px' : '0',
+                borderTop: index === 0 ? '1px solid rgba(179, 204, 212, 0.3)' : 'none',
+                boxShadow: 'none',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(179, 204, 212, 0.05)',
+                  borderColor: 'rgba(53, 71, 102, 0.3)',
+                }
+              }}
+            >
+                <CardContent sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                      <Box
                         sx={{
-                          fontWeight: 700,
-                          color: '#354766',
-                          mb: 1,
+                          width: 36,
+                          height: 36,
+                          borderRadius: '8px',
+                          backgroundColor: '#354766',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: 600,
+                          fontSize: '12px',
                         }}
                       >
-                        #{appointment.bookingId} - {appointment.customerName}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <CalendarIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
-                          <Typography variant="body2" sx={{ color: '#4a6b75' }}>
-                            {formatDate(appointment.appointmentDate)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <ClockIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
-                          <Typography variant="body2" sx={{ color: '#4a6b75' }}>
-                            {appointment.appointmentTime}
+                        #{appointment.bookingId}
+                      </Box>
+
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#354766', fontSize: '16px', mb: 0.5 }}>
+                          {appointment.customerFullName}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <CalendarIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
+                            <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
+                              {formatDate(appointment.bookingDate)}
+                            </Typography>
+                          </Box>
+                          {appointment.startTime && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <ClockIcon sx={{ fontSize: 16, color: '#B3CCD4' }} />
+                              <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
+                                {appointment.startTime} - {appointment.endTime}
+                              </Typography>
+                            </Box>
+                          )}
+                          <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
+                            {appointment.serviceName}
                           </Typography>
                         </Box>
                       </Box>
-                      <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
-                        Dịch vụ: {appointment.serviceName}
-                      </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip
                         label={getStatusText(appointment.status)}
-                        color={getStatusColor(appointment.status)}
                         size="small"
                         sx={{
                           fontWeight: 600,
-                          borderRadius: '12px',
+                          fontSize: '11px',
+                          height: '24px',
+                          ...(appointment.status === 'PENDING' && {
+                            backgroundColor: '#fff3cd',
+                            color: '#856404',
+                          }),
+                          ...(appointment.status === 'CONFIRMED' && {
+                            backgroundColor: '#cce5ff',
+                            color: '#004085',
+                          }),
+                          ...(appointment.status === 'SAMPLE_COLLECTED' && {
+                            backgroundColor: '#d1ecf1',
+                            color: '#0c5460',
+                          }),
+                          ...(appointment.status === 'TESTING' && {
+                            backgroundColor: '#e2e3f1',
+                            color: '#383d3d',
+                          }),
+                          ...(appointment.status === 'COMPLETED' && {
+                            backgroundColor: '#d4edda',
+                            color: '#155724',
+                          }),
+                          ...(appointment.status === 'CANCELLED' && {
+                            backgroundColor: '#f8d7da',
+                            color: '#721c24',
+                          })
                         }}
                       />
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        {appointment.status === 'PENDING' && (
-                          <Button
-                            size="small"
-                            className="staff-button-primary"
-                            onClick={() => handleStatusUpdate(appointment.bookingId, 'CONFIRMED')}
-                          >
-                            Xác nhận
-                          </Button>
-                        )}
-                        {appointment.status === 'CONFIRMED' && (
-                          <Button
-                            size="small"
-                            className="staff-button-primary"
-                            onClick={() => handleStatusUpdate(appointment.bookingId, 'COMPLETED')}
-                          >
-                            Hoàn thành
-                          </Button>
-                        )}
-                        <IconButton
+
+                      {appointment.status === 'PENDING' && (
+                        <Button
                           size="small"
-                          onClick={() => setExpandedAppointment(
-                            expandedAppointment === appointment.bookingId ? null : appointment.bookingId
-                          )}
-                          sx={{ color: '#354766' }}
+                          onClick={() => handleStatusUpdate(appointment.bookingId, 'CONFIRMED')}
+                          sx={{
+                            backgroundColor: '#354766',
+                            color: 'white',
+                            borderRadius: '6px',
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            px: 2,
+                            py: 0.5,
+                            fontSize: '12px',
+                            minWidth: 'auto',
+                            '&:hover': {
+                              backgroundColor: '#2a3a52',
+                            },
+                          }}
                         >
-                          {expandedAppointment === appointment.bookingId ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                        </IconButton>
-                      </Box>
+                          Xác nhận
+                        </Button>
+                      )}
+
+                      <Button
+                        size="small"
+                        onClick={() => setExpandedAppointment(
+                          expandedAppointment === appointment.bookingId ? null : appointment.bookingId
+                        )}
+                        sx={{
+                          color: '#354766',
+                          borderRadius: '6px',
+                          fontWeight: 500,
+                          textTransform: 'none',
+                          px: 1,
+                          py: 0.5,
+                          fontSize: '12px',
+                          minWidth: 'auto',
+                          '&:hover': {
+                            backgroundColor: 'rgba(179, 204, 212, 0.2)',
+                          },
+                        }}
+                      >
+                        {expandedAppointment === appointment.bookingId ? '▲' : '▼'}
+                      </Button>
                     </Box>
                   </Box>
 
@@ -381,40 +617,45 @@ const StaffAppointments = () => {
                         mt: 2,
                         pt: 2,
                         borderTop: '1px solid rgba(179, 204, 212, 0.3)',
-                        background: 'rgba(179, 204, 212, 0.1)',
-                        borderRadius: 2,
+                        backgroundColor: 'rgba(179, 204, 212, 0.05)',
+                        borderRadius: '8px',
                         p: 2,
                       }}
                     >
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 1 }}>
                             Thông tin khách hàng:
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
-                            Email: {appointment.customerEmail}
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 0.5, fontSize: '13px' }}>
+                            Email: {appointment.customerEmailAddress}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
                             SĐT: {appointment.customerPhone}
                           </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 1 }}>
                             Chi tiết dịch vụ:
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
-                            Giá: {appointment.price?.toLocaleString()} VNĐ
+                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 0.5, fontSize: '13px' }}>
+                            Giá: {appointment.servicePrice?.toLocaleString()} VNĐ
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#4a6b75', mb: 1 }}>
+                          <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
                             Ngày tạo: {formatDate(appointment.createdAt)}
                           </Typography>
+                          {appointment.serviceDescription && (
+                            <Typography variant="body2" sx={{ color: '#4a6b75', mt: 0.5, fontSize: '13px' }}>
+                              Mô tả: {appointment.serviceDescription}
+                            </Typography>
+                          )}
                         </Grid>
                         {appointment.notes && (
                           <Grid item xs={12}>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#354766', mb: 0.5 }}>
                               Ghi chú:
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#4a6b75' }}>
+                            <Typography variant="body2" sx={{ color: '#4a6b75', fontSize: '13px' }}>
                               {appointment.notes}
                             </Typography>
                           </Grid>
@@ -424,10 +665,71 @@ const StaffAppointments = () => {
                   </Collapse>
                 </CardContent>
               </Card>
-            </Grid>
           ))}
-        </Grid>
+        </Box>
       )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Stack spacing={2} alignItems="center">
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={(event, value) => setCurrentPage(value)}
+              color="primary"
+              size="medium"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: '#354766',
+                  fontWeight: 500,
+                  '&.Mui-selected': {
+                    backgroundColor: '#354766',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#2a3a52',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(53, 71, 102, 0.1)',
+                  },
+                },
+              }}
+            />
+            <Typography variant="body2" sx={{ textAlign: 'center', color: '#B3CCD4' }}>
+              Hiển thị {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalElements)} trong tổng số {totalElements} lịch hẹn
+            </Typography>
+          </Stack>
+        </Box>
+      )}
+
+      {/* Reload Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={handleRefresh}
+          disabled={loading}
+          startIcon={<RefreshIcon />}
+          sx={{
+            borderColor: '#B3CCD4',
+            color: '#354766',
+            fontWeight: 600,
+            borderRadius: '12px',
+            px: 4,
+            py: 1.5,
+            '&:hover': {
+              borderColor: '#354766',
+              backgroundColor: 'rgba(179, 204, 212, 0.1)',
+            },
+            '&:disabled': {
+              borderColor: '#B3CCD4',
+              color: '#B3CCD4',
+            },
+          }}
+        >
+          {loading ? 'Đang tải...' : 'Làm mới danh sách'}
+        </Button>
+      </Box>
     </Box>
   );
 };

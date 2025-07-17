@@ -11,8 +11,16 @@ import {
   Paper,
   Pagination,
   CircularProgress,
-  Chip
+  Chip,
+  InputBase,
+  TextField,
+  MenuItem,
+  Button,
+  Tooltip
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import Sidebar from '../../components/admin/AdminSidebar';
 import Header from '../../components/admin/AdminHeader';
 import BlogService from '../../services/BlogService';
@@ -26,6 +34,9 @@ const AdminContentManagement = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Load blog posts from API
   const loadBlogPosts = async (pageNumber = 1) => {
@@ -96,11 +107,22 @@ const AdminContentManagement = () => {
   useEffect(() => {
     loadCategories();
     loadBlogPosts(page);
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle page change
   const handlePageChange = (_, newPage) => {
     setPage(newPage);
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    toast.success('Đã làm mới dữ liệu!');
+  };
+
+  // Handle add new
+  const handleAddNew = () => {
+    toast.info('Tính năng thêm bài viết mới sẽ được phát triển!');
   };
 
   // Format date helper
@@ -120,6 +142,22 @@ const AdminContentManagement = () => {
     );
   };
 
+  // Filter blog posts based on search term and status
+  const filteredBlogPosts = blogPosts.filter(post => {
+    const matchSearch = post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       post.authorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       post.id?.toString().includes(searchTerm);
+
+    let matchStatus = true;
+    if (statusFilter === 'published') {
+      matchStatus = post.isPublished === true;
+    } else if (statusFilter === 'draft') {
+      matchStatus = post.isPublished === false;
+    }
+
+    return matchSearch && matchStatus;
+  });
+
 
 
   return (
@@ -130,75 +168,202 @@ const AdminContentManagement = () => {
           <Header />
         </Box>
 
-        <Box sx={{
-          flexGrow: 1,
-          background: 'linear-gradient(135deg, #B3CCD4 0%, #E8F1F5 50%, #F0F8FF 100%)',
-          p: 3,
-          overflowY: 'auto',
-          position: 'relative',
-          minHeight: 'calc(100vh - 72px)',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `
-              radial-gradient(circle at 20% 20%, rgba(179, 204, 212, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(179, 204, 212, 0.2) 0%, transparent 50%),
-              radial-gradient(circle at 40% 60%, rgba(179, 204, 212, 0.1) 0%, transparent 50%)
-            `,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }
-        }}>
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Typography variant='h3' sx={{
-              fontWeight: 800,
-              color: '#354766',
-              fontSize: '2.2rem',
-              textShadow: '0 1px 2px rgba(179, 204, 212, 0.3)',
-              mb: 3
-            }}>
+        <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
+            <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray' }}>
               Quản lý nội dung
             </Typography>
 
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Search box */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: 300,
+                  bgcolor: 'white',
+                  borderRadius: '999px',
+                  px: 2,
+                  py: '6px',
+                  boxShadow: '0 0 0 1px #ccc',
+                }}
+              >
+                <SearchIcon sx={{ color: 'gray', mr: 1 }} />
+                <InputBase
+                  placeholder="Tìm kiếm bài viết..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{
+                    flex: 1,
+                    color: 'gray',
+                    fontSize: 16,
+                    '& .MuiInputBase-input': {
+                      p: 0,
+                    },
+                    '&:focus-within': {
+                      outline: 'none',
+                    },
+                  }}
+                />
+              </Box>
+
+              {/* Dropdown status filter */}
+              <Box
+                sx={{
+                  width: 200,
+                  bgcolor: 'white',
+                  borderRadius: '999px',
+                  px: 2,
+                  py: '6px',
+                  boxShadow: '0 0 0 1px #ccc',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <TextField
+                  select
+                  variant="standard"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  fullWidth
+                  InputProps={{ disableUnderline: true }}
+                  sx={{
+                    flex: 1,
+                    '& .MuiSelect-select': { py: 0 },
+                    fontSize: 16,
+                    color: 'gray',
+                  }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 200,
+                          mt: 1,
+                        }
+                      },
+                      disablePortal: true,
+                      keepMounted: false
+                    },
+                    renderValue: (selected) => {
+                      if (!selected) {
+                        return "Tất cả";
+                      }
+                      switch (selected) {
+                        case "published":
+                          return "Đã xuất bản";
+                        case "draft":
+                          return "Bản nháp";
+                        default:
+                          return "";
+                      }
+                    }
+                  }}
+                >
+                  <MenuItem value="">Tất cả</MenuItem>
+                  <MenuItem value="published">Đã xuất bản</MenuItem>
+                  <MenuItem value="draft">Bản nháp</MenuItem>
+                </TextField>
+              </Box>
+
+              {/* Action Buttons */}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Tooltip title="Thêm bài viết mới">
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddNew}
+                    sx={{
+                      bgcolor: '#4CAF50',
+                      color: 'white',
+                      borderRadius: '20px',
+                      px: 3,
+                      py: 1,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
+                      '&:hover': {
+                        bgcolor: '#45a049',
+                        boxShadow: '0 4px 12px rgba(76, 175, 80, 0.4)',
+                      }
+                    }}
+                  >
+                    Thêm mới
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title="Làm mới dữ liệu">
+                  <Button
+                    variant="outlined"
+                    startIcon={<RefreshIcon />}
+                    onClick={handleRefresh}
+                    sx={{
+                      borderColor: '#2196F3',
+                      color: '#2196F3',
+                      borderRadius: '20px',
+                      px: 3,
+                      py: 1,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      '&:hover': {
+                        borderColor: '#1976D2',
+                        bgcolor: 'rgba(33, 150, 243, 0.04)',
+                      }
+                    }}
+                  >
+                    Làm mới
+                  </Button>
+                </Tooltip>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress />
               </Box>
             ) : (
               <>
-                <TableContainer component={Paper} sx={{ mb: 3, boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   <Table>
-                    <TableHead>
-                      <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                        <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Tiêu đề</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Tác giả</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Danh mục</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Ngày tạo</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Lượt xem</TableCell>
+                    <TableHead sx={{ backgroundColor: '#3B6774' }}>
+                      <TableRow>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>ID</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Tiêu đề</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Tác giả</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Danh mục</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Trạng thái</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Ngày tạo</TableCell>
+                        <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Lượt xem</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {blogPosts.map((post) => (
-                        <TableRow key={post.id} hover>
-                          <TableCell>{post.id}</TableCell>
-                          <TableCell sx={{ maxWidth: 200 }}>
-                            <Typography variant="body2" noWrap>
-                              {post.title}
+                      {filteredBlogPosts.length > 0 ? (
+                        filteredBlogPosts.map((post) => (
+                          <TableRow key={post.id} hover>
+                            <TableCell>{post.id}</TableCell>
+                            <TableCell sx={{ maxWidth: 200 }}>
+                              <Typography variant="body2" noWrap>
+                                {post.title}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>{post.authorName || 'N/A'}</TableCell>
+                            <TableCell>{getCategoryName(post.categoryIds)}</TableCell>
+                            <TableCell>{getStatusChip(post.isPublished || false)}</TableCell>
+                            <TableCell>{formatDate(post.createdAt)}</TableCell>
+                            <TableCell>{post.viewCount || 0}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
+                            <Typography variant="body1" color="text.secondary">
+                              {searchTerm || statusFilter ? 'Không tìm thấy bài viết nào phù hợp' : 'Chưa có bài viết nào'}
                             </Typography>
                           </TableCell>
-                          <TableCell>{post.authorName || 'N/A'}</TableCell>
-                          <TableCell>{getCategoryName(post.categoryIds)}</TableCell>
-                          <TableCell>{getStatusChip(true)}</TableCell>
-                          <TableCell>{formatDate(post.createdAt)}</TableCell>
-                          <TableCell>0</TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>

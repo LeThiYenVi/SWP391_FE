@@ -12,6 +12,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from '../NotificationBell';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -135,6 +136,9 @@ const Header = () => {
             English
           </MenuItem>
         </Menu>
+
+        {/* Notification Bell */}
+        <NotificationBell />
 
         {/* User Info */}
         <Box

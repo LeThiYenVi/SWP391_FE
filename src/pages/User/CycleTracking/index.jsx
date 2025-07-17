@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Badge, Row, Col, List, Progress, Tooltip, Spin, DatePicker, Button, message, InputNumber, Form, Input, Select, Checkbox, Modal } from "antd";
-import { CalendarOutlined, HeartOutlined, SmileOutlined, WarningOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { CalendarOutlined, HeartOutlined, SmileOutlined, WarningOutlined, CheckCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "../../../services/customize-axios";
 import dayjs from "dayjs";
 
@@ -66,6 +66,8 @@ const CycleTrackingPage = () => {
   const [symptoms, setSymptoms] = useState([]);
   const [showSymptomModal, setShowSymptomModal] = useState(false);
   const [symptomForm] = Form.useForm();
+  const [showCreateCycleModal, setShowCreateCycleModal] = useState(false);
+  const [createCycleForm] = Form.useForm();
 
   useEffect(() => {
     axios.get("/api/menstrual-cycle/dashboard")
@@ -137,13 +139,63 @@ const CycleTrackingPage = () => {
     setSymptoms(symptoms.filter((_, i) => i !== idx));
   };
 
-  if (loading) return <Spin size="large" style={{ display: "block", margin: "80px auto" }} />;
-  if (!data) return <div>Không có dữ liệu</div>;
+  // Tạo chu kỳ mới
+  const handleCreateNewCycle = (values) => {
+    setSaving(true);
+    const payload = {
+      startDate: values.startDate,
+      cycleLength: values.cycleLength || 28,
+      periodDuration: values.periodDuration || 5,
+      isRegular: values.isRegular !== false
+    };
 
-  // Thêm fallback cho các field
+    axios.post("/api/user/menstrual-cycle", payload)
+      .then(() => {
+        message.success("Đã tạo chu kỳ mới thành công!");
+        setShowCreateCycleModal(false);
+        createCycleForm.resetFields();
+        setLoading(true);
+        return axios.get("/api/menstrual-cycle/dashboard");
+      })
+      .then((res) => setData(res.data))
+      .catch((error) => {
+        console.error("Error creating cycle:", error);
+        message.error("Có lỗi xảy ra khi tạo chu kỳ mới");
+      })
+      .finally(() => {
+        setSaving(false);
+        setLoading(false);
+      });
+  };
+
+  if (loading) return <Spin size="large" style={{ display: "block", margin: "80px auto" }} />;
+
+  // Kiểm tra nếu không có dữ liệu hoặc dữ liệu không đầy đủ
   const { periodPrediction = {}, fertilityWindow = {}, cycleAnalytics = {} } = data || {};
-  if (!periodPrediction.nextPeriodDate || !fertilityWindow.ovulationDate || !cycleAnalytics.averageCycleLength) {
-    return <div>Không có dữ liệu chu kỳ</div>;
+  const hasValidData = data && periodPrediction.nextPeriodDate && fertilityWindow.ovulationDate && cycleAnalytics.averageCycleLength;
+
+  if (!hasValidData) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <Card>
+          <div style={{ padding: '40px 20px' }}>
+            <CalendarOutlined style={{ fontSize: 64, color: '#1890ff', marginBottom: 16 }} />
+            <h2>Chưa có dữ liệu chu kỳ kinh nguyệt</h2>
+            <p style={{ color: '#666', marginBottom: 24 }}>
+              Để bắt đầu theo dõi chu kỳ kinh nguyệt, bạn cần tạo chu kỳ đầu tiên với thông tin cơ bản.
+            </p>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={() => setShowCreateCycleModal(true)}
+            >
+              Tạo chu kỳ mới
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -337,6 +389,67 @@ const CycleTrackingPage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal tạo chu kỳ mới */}
+      <Modal
+        open={showCreateCycleModal}
+        onCancel={() => setShowCreateCycleModal(false)}
+        onOk={() => createCycleForm.submit()}
+        title="Tạo chu kỳ kinh nguyệt mới"
+        okText="Tạo chu kỳ"
+        cancelText="Hủy"
+        confirmLoading={saving}
+      >
+        <Form form={createCycleForm} layout="vertical" onFinish={handleCreateNewCycle}>
+          <Form.Item
+            label="Ngày bắt đầu kỳ kinh gần nhất"
+            name="startDate"
+            rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu kỳ kinh' }]}
+          >
+            <DatePicker
+              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
+              placeholder="Chọn ngày bắt đầu kỳ kinh"
+              disabledDate={(current) => current && current > dayjs().endOf('day')}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Độ dài chu kỳ (ngày)"
+            name="cycleLength"
+            initialValue={28}
+          >
+            <InputNumber
+              min={21}
+              max={35}
+              style={{ width: '100%' }}
+              placeholder="Nhập độ dài chu kỳ (21-35 ngày)"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Số ngày hành kinh"
+            name="periodDuration"
+            initialValue={5}
+          >
+            <InputNumber
+              min={3}
+              max={10}
+              style={{ width: '100%' }}
+              placeholder="Nhập số ngày hành kinh (3-10 ngày)"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Chu kỳ đều đặn"
+            name="isRegular"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Checkbox>Chu kỳ của tôi thường đều đặn</Checkbox>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

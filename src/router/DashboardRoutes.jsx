@@ -89,6 +89,14 @@ const DashboardRoutes = [
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    ),
+  },
 ];
 
 export default DashboardRoutes;

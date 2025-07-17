@@ -406,6 +406,20 @@ const HomePage = () => {
                 >
                   Theo dõi chu kỳ
                 </button>
+                {isAuthenticated && (
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className={styles.btnOutline}
+                    style={{
+                      backgroundColor: '#B3CCD4',
+                      color: 'white',
+                      borderColor: '#B3CCD4'
+                    }}
+                  >
+                    <User size={16} style={{ marginRight: 4 }} />
+                    Hồ sơ cá nhân
+                  </button>
+                )}
               </div>
 
               <div className={styles.searchSection}>
