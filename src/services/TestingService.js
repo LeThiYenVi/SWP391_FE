@@ -160,6 +160,18 @@ const getBookingTrackingStatusAPI = async (bookingId) => {
   }
 };
 
+// =============Admin Testing Service APIs============
+const createTestingServiceAPI = async (serviceData) => {
+  try {
+    const response = await instance.post('/api/admin/testing-services', serviceData);
+    console.log('Create testing service success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create testing service error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export {
   // Testing Services APIs
   getTestingServicesAPI,
@@ -181,5 +193,6 @@ export {
   markSampleCollectedAPI,
   markResultsReadyAPI,
   markBookingCompletedAPI,
-  getBookingTrackingStatusAPI
+  getBookingTrackingStatusAPI,
+  createTestingServiceAPI // Thêm export hàm mới
 }; 

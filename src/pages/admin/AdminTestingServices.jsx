@@ -8,11 +8,13 @@ import { Box, Typography, InputBase, Button, Tooltip } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import TestingTable from '../../components/admin/TestingTable';
+import AddTestingServiceModal from '../../components/admin/AddTestingServiceModal';
 
 export default function AdminTestingServices() {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     if (location.state?.toastMessage) {
@@ -27,7 +29,11 @@ export default function AdminTestingServices() {
   };
 
   const handleAddNew = () => {
-    toast.info('Tính năng thêm dịch vụ mới sẽ được phát triển!');
+    setShowAddModal(true);
+  };
+
+  const handleAddSuccess = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -140,6 +146,7 @@ export default function AdminTestingServices() {
             <TestingTable searchTerm={searchTerm} refreshKey={refreshKey} />
           </Box>
 
+          <AddTestingServiceModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
         </Box>
       </Box>
     </Box>

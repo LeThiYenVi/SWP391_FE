@@ -46,7 +46,8 @@ import {
   getUserByIdAPI,
   updateUserAPI,
   deleteUserAPI,
-  setUserToConsultantAPI
+  setUserToConsultantAPI,
+  registerUserAPI
 } from '../../services/AdminService';
 
 export default function AdminUser() {
@@ -59,6 +60,8 @@ export default function AdminUser() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   
   // Modal states
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -69,6 +72,32 @@ export default function AdminUser() {
   const [editForm, setEditForm] = useState({});
   const [actionLoading, setActionLoading] = useState(false);
   const [newRole, setNewRole] = useState('');
+  const [openAdd, setOpenAdd] = useState(false);
+  const [addData, setAddData] = useState({
+    username: '',
+    password: '',
+    email: '',
+    fullName: '',
+    phoneNumber: '',
+    address: '',
+    gender: '',
+    dateOfBirth: '',
+    roleName: '',
+  });
+
+  const handleOpenAdd = () => setOpenAdd(true);
+  const handleCloseAdd = () => setOpenAdd(false);
+  const handleAddChange = (e) => setAddData({ ...addData, [e.target.name]: e.target.value });
+  const handleAddSubmit = async () => {
+    try {
+      await registerUserAPI(addData);
+      toast.success('Thêm người dùng mới thành công!');
+      handleCloseAdd();
+      fetchUsers();
+    } catch (err) {
+      toast.error('Thêm người dùng mới thất bại!');
+    }
+  };
 
   useEffect(() => {
     if (location.state?.toastMessage) {
@@ -78,21 +107,20 @@ export default function AdminUser() {
   }, [location.state]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [refreshKey]);
+    fetchUsers(page);
+  }, [refreshKey, page]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (pageNum = page) => {
     try {
       setLoading(true);
-      const response = await getAllUsersAPI(page, pageSize);
-      console.log('Users response:', response);
-      
+      const response = await getAllUsersAPI(pageNum, pageSize);
       const usersData = response.content || response.items || [];
       setUsers(usersData);
       setFilteredUsers(usersData);
+      setTotalPages(response.totalPages || 1);
+      setTotalElements(response.totalElements || usersData.length);
       setError(null);
     } catch (err) {
-      console.error('Lỗi khi tải dữ liệu người dùng:', err);
       setError('Không thể tải dữ liệu người dùng. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
@@ -103,10 +131,7 @@ export default function AdminUser() {
     const filtered = users.filter(user => {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       return (
-        user.fullName?.toLowerCase().includes(lowerCaseSearchTerm) ||
-        user.email?.toLowerCase().includes(lowerCaseSearchTerm) ||
-        user.username?.toLowerCase().includes(lowerCaseSearchTerm) ||
-        user.roleName?.toLowerCase().includes(lowerCaseSearchTerm)
+        user.fullName?.toLowerCase().includes(lowerCaseSearchTerm)
       );
     });
     setFilteredUsers(filtered);
@@ -346,12 +371,12 @@ const handleConfirmRoleChange = async () => {
     );
   };
 
-  const paginatedUsers = filteredUsers.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
-
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const handlePrevPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -391,10 +416,10 @@ const handleConfirmRoleChange = async () => {
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={handleAddNew}
+                    onClick={handleOpenAdd}
                     sx={{
                       bgcolor: '#4CAF50',
-                      '&:hover': { bgcolor: '#45a049' },
+                      '&:hover': { bgcolor: '#388e3c' },
                       color: '#fff',
                       boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                       borderRadius: '8px',
@@ -456,7 +481,7 @@ const handleConfirmRoleChange = async () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {paginatedUsers.length === 0 ? (
+                    {filteredUsers.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
@@ -465,7 +490,7 @@ const handleConfirmRoleChange = async () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedUsers.map((user, index) => {
+                      filteredUsers.map((user, index) => {
                         console.log('User data:', user); // Debug log
                         return (
                           <TableRow key={user.userId || user.id} hover>
@@ -529,18 +554,17 @@ const handleConfirmRoleChange = async () => {
             )}
 
             {/* Pagination */}
-            {filteredUsers.length > 0 && (
+            {totalElements > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, px: 2 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredUsers.length)} trong tổng số {filteredUsers.length} người dùng
+                  Hiển thị {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, totalElements)} trong tổng số {totalElements} người dùng
                 </Typography>
-                
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     variant="outlined"
                     size="small"
                     disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
+                    onClick={handlePrevPage}
                   >
                     Trước
                   </Button>
@@ -548,7 +572,7 @@ const handleConfirmRoleChange = async () => {
                     variant="outlined"
                     size="small"
                     disabled={page === totalPages}
-                    onClick={() => setPage(page + 1)}
+                    onClick={handleNextPage}
                   >
                     Sau
                   </Button>
@@ -845,6 +869,28 @@ const handleConfirmRoleChange = async () => {
               </Box>
             ) : 'Xác nhận thay đổi'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add User Modal */}
+      <Dialog open={openAdd} onClose={handleCloseAdd} maxWidth="sm" fullWidth>
+        <DialogTitle>Thêm người dùng mới</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <TextField label="Tên đăng nhập" name="username" value={addData.username} onChange={handleAddChange} fullWidth />
+            <TextField label="Mật khẩu" name="password" type="password" value={addData.password} onChange={handleAddChange} fullWidth />
+            <TextField label="Họ tên" name="fullName" value={addData.fullName} onChange={handleAddChange} fullWidth />
+            <TextField label="Email" name="email" value={addData.email} onChange={handleAddChange} fullWidth />
+            <TextField label="Số điện thoại" name="phoneNumber" value={addData.phoneNumber} onChange={handleAddChange} fullWidth />
+            <TextField label="Địa chỉ" name="address" value={addData.address} onChange={handleAddChange} fullWidth />
+            <TextField label="Giới tính" name="gender" value={addData.gender} onChange={handleAddChange} fullWidth />
+            <TextField label="Ngày sinh" name="dateOfBirth" value={addData.dateOfBirth} onChange={handleAddChange} fullWidth />
+            <TextField label="Vai trò" name="roleName" value={addData.roleName} onChange={handleAddChange} fullWidth />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAdd}>Hủy</Button>
+          <Button onClick={handleAddSubmit} variant="contained">Thêm</Button>
         </DialogActions>
       </Dialog>
     </Box>
