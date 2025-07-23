@@ -41,12 +41,16 @@ import { toast } from 'react-toastify';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import {
   getAllConsultantsAPI,
   createConsultantAPI,
   updateConsultantAPI,
-  deleteConsultantAPI
+  deleteConsultantAPI,
+  autoCreateConsultantSlotsAPI,
+  autoCreateCommonSlotsAPI
 } from '../../services/AdminService';
+import AddConsultantModal from '../../components/admin/AddConsultantModal';
 
 export default function AdminConsultants() {
   const location = useLocation();
@@ -66,6 +70,8 @@ export default function AdminConsultants() {
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [actionLoading, setActionLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedConsultantId, setSelectedConsultantId] = useState(null);
 
   useEffect(() => {
     if (location.state?.toastMessage) {
@@ -115,7 +121,7 @@ export default function AdminConsultants() {
   };
 
   const handleAddNew = () => {
-    toast.info("Tính năng thêm tư vấn viên mới sẽ được phát triển!");
+    setShowAddModal(true);
   };
 
   // Handle view
@@ -152,8 +158,8 @@ export default function AdminConsultants() {
   const handleSaveEdit = async () => {
     try {
       setActionLoading(true);
-      
       const updateData = {
+        id: selectedConsultant.id,
         fullName: editForm.fullName,
         email: editForm.email,
         phoneNumber: editForm.phoneNumber,
@@ -165,7 +171,6 @@ export default function AdminConsultants() {
         experienceYears: editForm.experienceYears,
         specialization: editForm.specialization
       };
-
       const response = await updateConsultantAPI(selectedConsultant.id, updateData);
       
       setEditModalOpen(false);
@@ -195,6 +200,40 @@ export default function AdminConsultants() {
       toast.error('Lỗi khi xóa tư vấn viên: ' + (error.response?.data || error.message));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleAutoCreateSlots = async () => {
+    if (!selectedConsultantId) {
+      toast.error('Vui lòng chọn tư vấn viên để tạo lịch!');
+      return;
+    }
+    try {
+      await autoCreateConsultantSlotsAPI(selectedConsultantId, {
+        slotType: 'CONSULTATION',
+        capacity: 5,
+        description: 'Lịch tự động 7 ngày',
+        duration: 120,
+        days: 7
+      });
+      toast.success('Đã tạo lịch tự động 7 ngày cho tư vấn viên!');
+    } catch (err) {
+      toast.error('Tạo lịch tự động thất bại!');
+    }
+  };
+
+  const handleAutoCreateCommonSlots = async () => {
+    try {
+      await autoCreateCommonSlotsAPI({
+        slotType: 'CONSULTATION',
+        capacity: 5,
+        description: 'Lịch chung tự động 7 ngày',
+        duration: 120,
+        days: 7
+      });
+      toast.success('Đã tạo lịch chung tự động 7 ngày cho hệ thống!');
+    } catch (err) {
+      toast.error('Tạo lịch chung tự động thất bại!');
     }
   };
 
@@ -268,25 +307,53 @@ export default function AdminConsultants() {
 
               {/* Action Buttons */}
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title="Thêm tư vấn viên mới">
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddNew}
+                <Tooltip title="Tạo lịch chung 7 ngày tự động">
+                  <IconButton
+                    size="large"
+                    onClick={handleAutoCreateCommonSlots}
                     sx={{
-                      bgcolor: '#4CAF50',
-                      '&:hover': { bgcolor: '#45a049' },
                       color: '#fff',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      bgcolor: '#43a047',
                       borderRadius: '8px',
-                      px: 3,
-                      py: 1.2,
-                      mr: 1
+                      p: 1.2,
+                      '&:hover': { bgcolor: '#2e7031' }
                     }}
                   >
-                    Thêm mới
-                  </Button>
+                    <EventAvailableIcon fontSize="large" />
+                  </IconButton>
                 </Tooltip>
+                <Tooltip title="Tạo lịch 7 ngày tự động cho tư vấn viên">
+                  <IconButton
+                    size="large"
+                    onClick={handleAutoCreateSlots}
+                    sx={{
+                      color: '#fff',
+                      bgcolor: '#1976d2',
+                      borderRadius: '8px',
+                      p: 1.2,
+                      '&:hover': { bgcolor: '#1565c0' }
+                    }}
+                  >
+                    <EventAvailableIcon fontSize="large" />
+                  </IconButton>
+                </Tooltip>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddNew}
+                  sx={{
+                    bgcolor: '#4CAF50',
+                    '&:hover': { bgcolor: '#45a049' },
+                    color: '#fff',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    borderRadius: '8px',
+                    px: 3,
+                    py: 1.2,
+                    mr: 1
+                  }}
+                >
+                  Thêm mới
+                </Button>
                 <Tooltip title="Làm mới dữ liệu">
                   <Button
                     variant="contained"
@@ -307,6 +374,23 @@ export default function AdminConsultants() {
                 </Tooltip>
               </Box>
             </Box>
+          </Box>
+
+          {/* Thêm dropdown chọn consultant phía trên bảng */}
+          <Box sx={{ mb: 2, width: 260 }}>
+            <TextField
+              select
+              label="Chọn tư vấn viên để tạo lịch tự động"
+              value={selectedConsultantId || ''}
+              onChange={e => setSelectedConsultantId(e.target.value)}
+              fullWidth
+              size="small"
+            >
+              <MenuItem value="">-- Chọn tư vấn viên --</MenuItem>
+              {consultants.map(c => (
+                <MenuItem key={c.id} value={c.id}>{c.fullName || c.email}</MenuItem>
+              ))}
+            </TextField>
           </Box>
 
           {/* TABLE AREA */}
@@ -331,16 +415,15 @@ export default function AdminConsultants() {
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Họ tên</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Email</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Số điện thoại</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Chuyên môn</TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Chuyên môn</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Kinh nghiệm</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Trạng thái</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {paginatedConsultants.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             Không có dữ liệu tư vấn viên nào
                           </Typography>
@@ -362,14 +445,15 @@ export default function AdminConsultants() {
                           </TableCell>
                           <TableCell>{consultant.email || 'Chưa cập nhật'}</TableCell>
                           <TableCell>{consultant.phoneNumber || 'Chưa cập nhật'}</TableCell>
-                          <TableCell>
+                          <TableCell align="center">
                             <Chip 
                               label={consultant.specialization || 'Chưa cập nhật'} 
                               size="small"
                               sx={{ 
                                 backgroundColor: '#E3F2FD',
                                 color: '#1976D2',
-                                fontWeight: 'bold'
+                                fontWeight: 'bold',
+                                justifyContent: 'center'
                               }}
                             />
                           </TableCell>
@@ -378,11 +462,13 @@ export default function AdminConsultants() {
                               {consultant.experienceYears || 0} năm
                             </Typography>
                           </TableCell>
-                          <TableCell>
-                            {getStatusChip(consultant)}
-                          </TableCell>
                           <TableCell align="center">
                             <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                              <Tooltip title="Tạo lịch 7 ngày tự động">
+                                <IconButton size="small" onClick={() => handleAutoCreateSlots(consultant.id)} sx={{ color: 'success.main' }}>
+                                  <EventAvailableIcon fontSize="medium" />
+                                </IconButton>
+                              </Tooltip>
                               <Tooltip title="Xem chi tiết">
                                 <IconButton 
                                   size="small" 
@@ -722,6 +808,9 @@ export default function AdminConsultants() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add Consultant Modal */}
+      <AddConsultantModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={fetchConsultants} />
     </Box>
   );
 }

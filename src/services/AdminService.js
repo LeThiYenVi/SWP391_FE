@@ -90,6 +90,15 @@ const getConsultantByIdAPI = async (consultantId) => {
   }
 };
 
+const autoCreateConsultantSlotsAPI = async (consultantId, data) => {
+  try {
+    const response = await instance.post(`/api/admin/consultants/${consultantId}/auto-create-slots`, data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // =============Admin User Management APIs============
 const getAllUsersAPI = async (pageNumber = 1, pageSize = 10) => {
   try {
@@ -115,24 +124,20 @@ const getUserByIdAPI = async (userId) => {
   }
 };
 
-const updateUserAPI = async (userId, userData) => {
+const updateUserAPI = async (userId, data) => {
   try {
-    const response = await instance.put(`/api/admin/user/${userId}`, userData);
-    console.log('Update user success:', response.data);
+    const response = await instance.put(`/api/admin/users/${userId}`, data);
     return response.data;
   } catch (error) {
-    console.error('Update user error:', error.response?.data || error.message);
     throw error;
   }
 };
 
 const deleteUserAPI = async (userId) => {
   try {
-    const response = await instance.delete(`/api/admin/user/${userId}`);
-    console.log('Delete user success:', response.data);
+    const response = await instance.delete(`/api/admin/users/${userId}`);
     return response.data;
   } catch (error) {
-    console.error('Delete user error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -228,10 +233,11 @@ const getServiceUtilizationReportAPI = async (period) => {
 
 // =============New Admin Dashboard & Reports APIs============
 // Get dashboard statistics
-const getDashboardStatsAPI = async () => {
+const getDashboardStatsAPI = async (month, year) => {
   try {
-    const response = await instance.get('/api/admin/dashboard/stats');
-    console.log('Get dashboard stats success:', response.data);
+    const response = await instance.get('/api/admin/dashboard-stats', {
+      params: { month, year }
+    });
     return response.data;
   } catch (error) {
     console.error('Get dashboard stats error:', error.response?.data || error.message);
@@ -323,6 +329,24 @@ const getReportsServicesAPI = async () => {
   }
 };
 
+const autoCreateCommonSlotsAPI = async (data) => {
+  try {
+    const response = await instance.post('/api/admin/timeslots/auto-create', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const registerUserAPI = async (data) => {
+  try {
+    const response = await instance.post('/api/auth/register', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export {
   // Testing Services APIs
   createTestingServiceAPI,
@@ -335,6 +359,7 @@ export {
   deleteConsultantAPI,
   getAllConsultantsAPI,
   getConsultantByIdAPI,
+  autoCreateConsultantSlotsAPI,
   
   // User Management APIs
   getAllUsersAPI,
@@ -360,5 +385,7 @@ export {
   getReportsFinancialsAPI,
   //getReportsUsersAPI,
   getReportsConsultantsAPI,
-  getReportsServicesAPI
+  getReportsServicesAPI,
+  autoCreateCommonSlotsAPI,
+  registerUserAPI
 };

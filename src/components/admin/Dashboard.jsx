@@ -25,7 +25,8 @@ import {
   //getReportsFinancialsAPI,
   //getReportsUsersAPI,
   //getReportsConsultantsAPI,
-  getReportsServicesAPI
+  getReportsServicesAPI,
+  getDashboardStatsAPI
 } from '../../services/AdminService';
 import {
   LineChart,
@@ -56,9 +57,9 @@ const Dashboard = () => {
   const [revenueData, setRevenueData] = useState([]);
   const [totalDesigners, setTotalDesigners] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [pendingConsultants, setPendingConsultants] = useState(0);
 
   useEffect(() => {
-    // Fetch dashboard stats when component mounts
     fetchDashboardStats();
 
     // Fetch revenue data when month/year changes
@@ -69,22 +70,11 @@ const Dashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      // Get dashboard overview stats
-      // const statsResponse = await getDashboardStatsAPI();
-      // console.log("Dashboard stats:", statsResponse);
-
-      // Update state with dashboard stats
-      // if (statsResponse && statsResponse.data) {
-      //   const stats = statsResponse.data;
-      //   setTotalDesigners(stats.totalConsultants || 0);
-      //   setTotalProducts(stats.totalServices || 0);
-      //   setOrderTotalRevenue(stats.totalRevenue || 0);
-      // }
-
-      // Get overview reports for additional data
-      // const overviewResponse = await getReportsOverviewAPI();
-      // console.log("Overview reports:", overviewResponse);
-
+      const stats = await getDashboardStatsAPI(selectedMonth, selectedYear);
+      setTotalDesigners(stats.totalConsultants || 0);
+      setPendingConsultants(stats.pendingConsultants || 0);
+      setTotalProducts(stats.totalTestingServices || 0);
+      setOrderTotalRevenue(stats.totalRevenue || 0);
     } catch (err) {
       console.error('Lỗi khi lấy thống kê dashboard:', err);
     }
@@ -272,7 +262,7 @@ const Dashboard = () => {
             <Typography className="admin-stat-title" variant="body2" marginBottom={2}>
               Tư vấn viên chờ duyệt
             </Typography>
-            <Typography className="admin-stat-value" variant="h4" mt={1}>0</Typography>
+            <Typography className="admin-stat-value" variant="h4" mt={1}>{pendingConsultants}</Typography>
 
             <Stack direction="row" alignItems="center" spacing={0.5} mt={2}>
               <TrendingDownIcon sx={{ color: '#EF4444', fontSize: 20 }} />
