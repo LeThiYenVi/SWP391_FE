@@ -31,9 +31,15 @@ const DashboardRoutes = [
     path: '/consultation',
     element: (
       <ProtectedRoute>
-        <MainLayout title="Tư vấn trực tuyến - Gynexa">
-          <Consultation />
-        </MainLayout>
+        <Consultation />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/tu-van',
+    element: (
+      <ProtectedRoute>
+        <Consultation />
       </ProtectedRoute>
     ),
   },
@@ -77,6 +83,14 @@ const DashboardRoutes = [
   },
   {
     path: '/user/profile',
+    element: (
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/profile',
     element: (
       <ProtectedRoute>
         <UserProfile />

@@ -12,8 +12,8 @@ export const routes = {
     adminOrderDetail: "/admin/orders/:orderId",
     adminProfile: "/admin/profile",
     adminUser: "/admin/user",
-    adminCounselor: "/admin/counselor",
-    adminWaiting: "/admin/waiting",
+    adminCounselor: "/admin/consultants",
+    adminContentManagement: "/admin/content-management",
 
     // Consultant routes
     consultantDashboard: "/consultant/dashboard",
@@ -22,6 +22,13 @@ export const routes = {
     consultantProfile: "/consultant/profile",
     consultantAnalytics: "/consultant/analytics",
     consultantSettings: "/consultant/settings",
+
+    // Staff routes
+    staffDashboard: "/staff",
+    staffAppointments: "/staff/appointments",
+    staffSampleCollection: "/staff/sample-collection",
+    staffUploadResult: "/staff/upload-result",
+    staffServiceInput: "/staff/service-input",
 
     chat: "/chat",
     partnerDashboard: "/dashboard",

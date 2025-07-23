@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useGoogleLogin } from '@react-oauth/google';
+import GoogleLoginTest from '../../components/GoogleLoginTest';
 import './login.css';
 
 const Login = () => {
@@ -20,6 +21,15 @@ const Login = () => {
 
   const from = location.state?.from?.pathname || '/';
 
+  // Kiểm tra session expired
+  useEffect(() => {
+    const sessionExpired = localStorage.getItem('sessionExpired');
+    if (sessionExpired === 'true') {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.removeItem('sessionExpired');
+    }
+  }, []);
+
   // Redirect user đã đăng nhập
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -31,9 +41,9 @@ const Login = () => {
       if (userRole && userRole.includes('ROLE_')) {
         userRole = userRole.replace('ROLE_', '').toLowerCase();
       }
-      
+
       console.log('User role for redirect:', userRole);
-      
+
       switch (userRole) {
         case 'admin':
           targetPath = '/admin/dashboard';
@@ -41,6 +51,9 @@ const Login = () => {
         case 'consultant':
         case 'counselor':
           targetPath = '/consultant/dashboard';
+          break;
+        case 'staff':
+          targetPath = '/staff';
           break;
         default:
           targetPath = '/dashboard';
@@ -96,6 +109,9 @@ const Login = () => {
           case 'counselor':
             targetPath = '/consultant/dashboard';
             break;
+          case 'staff':
+            targetPath = '/staff';
+            break;
           default:
             targetPath = '/dashboard';
             break;
@@ -117,8 +133,10 @@ const Login = () => {
   };
 
   const handleGoogleLoginSuccess = async codeResponse => {
+    console.log('🔍 Google login response received:', codeResponse);
     setLoading(true);
     try {
+      console.log('🔍 Calling loginGoogle with code:', codeResponse.code?.substring(0, 30) + '...');
       const result = await loginGoogle(codeResponse.code);
 
       if (result.success) {
@@ -144,6 +162,9 @@ const Login = () => {
           case 'counselor':
             targetPath = '/consultant/dashboard';
             break;
+          case 'staff':
+            targetPath = '/staff';
+            break;
           default:
             targetPath = '/dashboard';
             break;
@@ -167,7 +188,8 @@ const Login = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleLoginSuccess,
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Google login error:', error);
       toast.error('Đăng nhập Google không thành công. Vui lòng thử lại.');
     },
     flow: 'auth-code',
@@ -252,7 +274,10 @@ const Login = () => {
             <button
               type="button"
               className="google-login"
-              onClick={() => googleLogin()}
+              onClick={() => {
+                console.log('🔍 Google login button clicked');
+                googleLogin();
+              }}
               disabled={loading}
             >
               <img

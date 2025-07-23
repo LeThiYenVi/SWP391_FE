@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Menu,
@@ -26,6 +26,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer/Footer';
 import styles from './HomePage.module.css';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,6 +44,15 @@ const HomePage = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Kiểm tra session expired
+  useEffect(() => {
+    const sessionExpired = localStorage.getItem('sessionExpired');
+    if (sessionExpired === 'true') {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.removeItem('sessionExpired');
+    }
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -396,6 +406,20 @@ const HomePage = () => {
                 >
                   Theo dõi chu kỳ
                 </button>
+                {isAuthenticated && (
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className={styles.btnOutline}
+                    style={{
+                      backgroundColor: '#B3CCD4',
+                      color: 'white',
+                      borderColor: '#B3CCD4'
+                    }}
+                  >
+                    <User size={16} style={{ marginRight: 4 }} />
+                    Hồ sơ cá nhân
+                  </button>
+                )}
               </div>
 
               <div className={styles.searchSection}>
