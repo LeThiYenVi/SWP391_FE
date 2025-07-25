@@ -8,7 +8,7 @@ import AdminConsultants from "../pages/admin/AdminConsultants"
 import AdminTestingServices from "../pages/admin/AdminTestingServices"
 import AdminContentManagement from "../pages/admin/AdminContentManagement"
 // import ProtectedRoute from "../components/ProtectedRoute";
-import { routes } from "../routes";
+import { routes } from '../routes';
 // import { Route, Routes, useLocation } from "react-router-dom";
 
 const AdminRoutes = [
@@ -16,7 +16,7 @@ const AdminRoutes = [
     path: routes.adminDashboard,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminDashboard />
+      <AdminDashboard />
       // </ProtectedRoute>
     ),
   },
@@ -24,7 +24,7 @@ const AdminRoutes = [
     path: routes.adminTestingServices,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminTestingServices />
+      <AdminTestingServices />
       // </ProtectedRoute>
     ),
   },
@@ -32,7 +32,7 @@ const AdminRoutes = [
     path: routes.adminOrder,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminOrder />
+      <AdminOrder />
       // </ProtectedRoute>
     ),
   },
@@ -40,7 +40,7 @@ const AdminRoutes = [
     path: routes.adminOrderDetail,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminOrderDetails />
+      <AdminOrderDetails />
       // </ProtectedRoute>
     ),
   },
@@ -48,7 +48,7 @@ const AdminRoutes = [
     path: routes.adminProfile,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminProfile />
+      <AdminProfile />
       // </ProtectedRoute>
     ),
   },
@@ -56,7 +56,7 @@ const AdminRoutes = [
     path: routes.adminUser,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminUser />
+      <AdminUser />
       // </ProtectedRoute>
     ),
   },
@@ -64,7 +64,7 @@ const AdminRoutes = [
     path: routes.adminCounselor,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminConsultants />
+      <AdminConsultants />
       // </ProtectedRoute>
     ),
   },
@@ -72,7 +72,7 @@ const AdminRoutes = [
     path: routes.adminContentManagement,
     element: (
       // <ProtectedRoute allowedRoles={["Admin"]}>
-        <AdminContentManagement />
+      <AdminContentManagement />
       // </ProtectedRoute>
     ),
   },
@@ -81,4 +81,3 @@ const AdminRoutes = [
 export default AdminRoutes;
 
 // src/router/index.js
-
