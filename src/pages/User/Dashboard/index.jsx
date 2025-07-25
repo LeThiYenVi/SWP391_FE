@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useCycle } from '../../../context/CycleContext';
 import { useAppointment } from '../../../context/AppointmentContext';
+import { useChat } from '../../../context/ChatContext';
+import ChatList from '../../../components/Chat/ChatList';
+import ChatWindow from '../../../components/Chat/ChatWindow';
 import {
   Search,
   Menu,
@@ -58,6 +61,8 @@ const Dashboard = () => {
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+  const [showRealtimeChat, setShowRealtimeChat] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [overviewStats, setOverviewStats] = useState({
     totalConsultations: 0,
     totalSTITests: 0,
@@ -68,6 +73,14 @@ const Dashboard = () => {
   const { getDaysUntilNextPeriod, getDaysUntilOvulation, isInFertilityWindow } =
     useCycle();
   const { getUpcomingAppointments } = useAppointment();
+  const { 
+    conversations, 
+    currentConversation, 
+    messages, 
+    unreadCount, 
+    selectConversation, 
+    createConversation 
+  } = useChat();
   const navigate = useNavigate();
 
   const upcomingAppointments = getUpcomingAppointments();
@@ -422,42 +435,25 @@ const Dashboard = () => {
     setNewMessage('');
   };
 
-  const handleStartNewChat = counselorId => {
-    const counselor = onlineCounselors.find(c => c.id === counselorId);
-    if (!counselor) return;
+  const handleStartNewChat = async (counselorId) => {
+    try {
+      const conversation = await createConversation(counselorId);
+      setSelectedConversation(conversation);
+      setShowRealtimeChat(true);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  };
 
-    const newChat = {
-      id: Date.now(), // Simple ID generation
-      counselorId: counselor.id,
-      counselorName: counselor.name,
-      counselorAvatar: counselor.avatar,
-      isOnline: true,
-      lastMessage: 'Cuộc trò chuyện mới bắt đầu',
-      lastMessageTime: 'Vừa xong',
-      unreadCount: 0,
-      status: 'active',
-      sessionType: 'consultation',
-    };
+  const handleSelectConversation = async (conversation) => {
+    await selectConversation(conversation);
+    setSelectedConversation(conversation);
+    setShowRealtimeChat(true);
+  };
 
-    setActiveChats(prev => [newChat, ...prev]);
-    setChatMessages(prev => ({
-      ...prev,
-      [newChat.id]: [
-        {
-          id: 1,
-          sender: 'counselor',
-          senderName: counselor.name,
-          message: `Chào bạn! Tôi là ${counselor.name}. Tôi có thể giúp gì cho bạn hôm nay?`,
-          timestamp: new Date().toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-          type: 'text',
-        },
-      ],
-    }));
-
-    handleOpenChat(newChat.id);
+  const handleBackToChatList = () => {
+    setSelectedConversation(null);
+    setShowRealtimeChat(false);
   };
 
   const quickActions = [
@@ -1206,165 +1202,43 @@ const Dashboard = () => {
             <div className="dashboard-section-header">
               <h2>Chat realtime với tư vấn viên</h2>
               <p>Trò chuyện trực tiếp với các chuyên gia của chúng tôi</p>
+              {unreadCount > 0 && (
+                <span className="unread-badge-header">{unreadCount} tin nhắn mới</span>
+              )}
             </div>
 
             <div className="chat-container">
-              {/* Active Chats List */}
-              <div className="chat-sidebar">
-                <div className="chat-sidebar-header">
-                  <h3>Cuộc trò chuyện</h3>
-                  <button
-                    className="new-chat-btn"
-                    onClick={() => handleSmoothScroll('online-counselors')}
-                  >
-                    <Plus size={16} />
-                    Chat mới
-                  </button>
-                </div>
+              {showRealtimeChat && selectedConversation ? (
+                <ChatWindow 
+                  conversation={selectedConversation} 
+                  onBack={handleBackToChatList}
+                />
+              ) : (
+                <>
+                  {/* Chat List */}
+                  <div className="chat-sidebar">
+                    <ChatList onSelectConversation={handleSelectConversation} />
+                  </div>
 
-                <div className="active-chats-list">
-                  {activeChats.map(chat => (
-                    <div
-                      key={chat.id}
-                      className={`chat-item ${
-                        activeChatId === chat.id ? 'active' : ''
-                      }`}
-                      onClick={() => handleOpenChat(chat.id)}
-                    >
-                      <div className="chat-avatar">
-                        <img
-                          src={chat.counselorAvatar}
-                          alt={chat.counselorName}
-                        />
-                        {chat.isOnline && (
-                          <div className="online-indicator"></div>
-                        )}
-                      </div>
-                      <div className="chat-info">
-                        <h4 className="chat-name">{chat.counselorName}</h4>
-                        <p className="chat-last-message">{chat.lastMessage}</p>
-                        <span className="chat-time">
-                          {chat.lastMessageTime}
-                        </span>
-                      </div>
-                      {chat.unreadCount > 0 && (
-                        <div className="chat-unread-badge">
-                          {chat.unreadCount}
-                        </div>
-                      )}
-                      <div className={`chat-status ${chat.status}`}>
-                        {chat.status === 'active' && (
-                          <Circle size={8} className="status-dot" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Chat Window */}
-              <div className="chat-main">
-                {activeChatId ? (
-                  <div className="chat-window">
-                    <div className="chat-header">
-                      <div className="chat-header-info">
-                        <img
-                          src={
-                            activeChats.find(c => c.id === activeChatId)
-                              ?.counselorAvatar
-                          }
-                          alt="Avatar"
-                          className="chat-header-avatar"
-                        />
-                        <div>
-                          <h4>
-                            {
-                              activeChats.find(c => c.id === activeChatId)
-                                ?.counselorName
-                            }
-                          </h4>
-                          <span className="chat-header-status">
-                            {activeChats.find(c => c.id === activeChatId)
-                              ?.isOnline
-                              ? 'Đang trực tuyến'
-                              : 'Ngoại tuyến'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="chat-header-actions">
-                        <button className="chat-action-btn">
-                          <Video size={18} />
-                        </button>
-                        <button className="chat-action-btn">
-                          <Phone size={18} />
-                        </button>
-                        <button
-                          className="chat-action-btn"
-                          onClick={handleCloseChat}
-                        >
-                          <Minimize2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="chat-messages">
-                      {chatMessages[activeChatId]?.map(message => (
-                        <div
-                          key={message.id}
-                          className={`message ${
-                            message.sender === 'user'
-                              ? 'user-message'
-                              : 'counselor-message'
-                          }`}
-                        >
-                          <div className="message-content">
-                            <p>{message.message}</p>
-                            <span className="message-time">
-                              {message.timestamp}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="chat-input">
-                      <div className="chat-input-actions">
-                        <button className="input-action-btn">
-                          <Paperclip size={18} />
-                        </button>
-                        <button className="input-action-btn">
-                          <Smile size={18} />
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Nhập tin nhắn..."
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        onKeyPress={e =>
-                          e.key === 'Enter' && handleSendMessage()
-                        }
-                        className="message-input"
-                      />
-                      <button
-                        className="send-message-btn"
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim()}
+                  {/* Chat Placeholder */}
+                  <div className="chat-main">
+                    <div className="chat-placeholder">
+                      <MessageSquare size={64} />
+                      <h3>Chọn cuộc trò chuyện để bắt đầu</h3>
+                      <p>
+                        Chọn một cuộc trò chuyện từ danh sách bên trái hoặc bắt đầu chat mới với tư vấn viên
+                      </p>
+                      <button 
+                        className="start-new-chat-btn"
+                        onClick={() => handleSmoothScroll('online-counselors')}
                       >
-                        <Send size={18} />
+                        <Plus size={16} />
+                        Bắt đầu chat mới
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="chat-placeholder">
-                    <MessageSquare size={64} />
-                    <h3>Chọn cuộc trò chuyện để bắt đầu</h3>
-                    <p>
-                      Chọn một tư vấn viên từ danh sách bên trái để bắt đầu chat
-                    </p>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
 
             {/* Online Counselors */}

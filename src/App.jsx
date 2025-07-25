@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { ChatProvider } from './context/ChatContext';
 import { CycleProvider } from './context/CycleContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { ConsultantProvider } from './context/ConsultantContext';
@@ -23,25 +24,27 @@ function App() {
       <ErrorBoundary>
         <AuthProvider>
           <WebSocketProvider>
-            <CycleProvider>
-              <AppointmentProvider>
-                <ConsultantProvider>
-                  <RouterProvider router={router} />
-                  <ToastContainer
-                    position="top-right"
-                    autoClose={3000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                  />
-                </ConsultantProvider>
-              </AppointmentProvider>
-            </CycleProvider>
+            <ChatProvider>
+              <CycleProvider>
+                <AppointmentProvider>
+                  <ConsultantProvider>
+                    <RouterProvider router={router} />
+                    <ToastContainer
+                      position="top-right"
+                      autoClose={3000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="light"
+                    />
+                  </ConsultantProvider>
+                </AppointmentProvider>
+              </CycleProvider>
+            </ChatProvider>
           </WebSocketProvider>
         </AuthProvider>
       </ErrorBoundary>

@@ -1319,6 +1319,32 @@ html {
   background: var(--background-light);
 }
 
+.dashboard-section-header {
+  position: relative;
+}
+
+.unread-badge-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
 .chat-container {
   display: grid;
   grid-template-columns: 350px 1fr;
@@ -1678,8 +1704,30 @@ html {
 }
 
 .chat-placeholder p {
-  margin: 0;
+  margin: 0 0 20px 0;
   font-size: 14px;
+  max-width: 300px;
+}
+
+.start-new-chat-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.start-new-chat-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 /* Online Counselors */

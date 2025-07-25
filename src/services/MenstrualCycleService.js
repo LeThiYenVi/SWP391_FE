@@ -1,100 +1,115 @@
 import instance from './customize-axios';
 
-// Sử dụng instance axios chung đã có sẵn interceptor và config
-
-// Debug function để kiểm tra token
-const debugToken = () => {
-  const authToken = localStorage.getItem('authToken');
-  const token = localStorage.getItem('token');
-  console.log('🔍 Token Debug:', {
-    authToken: authToken ? 'Present' : 'Missing',
-    token: token ? 'Present' : 'Missing',
-    authTokenValue: authToken?.substring(0, 20) + '...',
-    tokenValue: token?.substring(0, 20) + '...'
-  });
-  return authToken || token;
-};
-
-// API calls cho tracking chu kỳ
-export const cycleService = {
-  // === Enhanced APIs (from /api/menstrual-cycle) ===
-  
-  // Lấy dashboard tổng quan
-  getDashboard: () => instance.get('/api/menstrual-cycle/dashboard'),
-
-  // Lấy lịch sử logs
-  getLogs: (params = {}) => instance.get('/api/menstrual-cycle/logs', { params }),
-
-  // Tạo log enhanced (chi tiết hơn)
-  createEnhancedLog: (data) => instance.post('/api/menstrual-cycle/log-enhanced', data),
-
-  // Lấy dự đoán chu kỳ
-  getPrediction: () => instance.get('/api/menstrual-cycle/prediction'),
-
-  // Lấy cửa sổ thụ thai
-  getFertilityWindow: () => instance.get('/api/menstrual-cycle/fertility-window'),
-
-  // Lấy thống kê analytics
-  getAnalytics: () => instance.get('/api/menstrual-cycle/analytics'),
-
-  // Lấy mẫu triệu chứng
-  getSymptomPatterns: () => instance.get('/api/menstrual-cycle/symptom-patterns'),
-
-  // Lấy gợi ý sức khỏe
-  getHealthInsights: () => instance.get('/api/menstrual-cycle/health-insights'),
-
-  // Lấy dữ liệu calendar cho tháng cụ thể
-  getCalendarData: (year, month) => instance.get('/api/menstrual-cycle/calendar', { params: { year, month } }),
-
-  // Lấy thông tin chu kỳ hiện tại (không sử dụng nữa, thay bằng getDashboard)
-  getCurrentCycleInfo: () => instance.get('/api/user/menstrual-cycle/current-cycle'),
-  
-  // === Basic APIs (from /api/user/menstrual-cycle) ===
-  
-  // Thêm hoặc cập nhật thông tin chu kỳ
-  addOrUpdateCycle: (cycleData) => instance.post('/api/user/menstrual-cycle', cycleData),
-
-  // Ghi nhận kỳ kinh
-  logMenstrualPeriod: (logData) => instance.post('/api/user/menstrual-cycle/log', logData),
-
-  // Lấy thông tin tracker
-  getCycleTracker: () => {
-    debugToken();
-    return instance.get('/api/user/menstrual-cycle/tracker');
+const MenstrualCycleService = {
+  // Get current menstrual cycle
+  getCurrentMenstrualCycle: async () => {
+    try {
+      const response = await instance.get('/api/menstrual-cycle/current');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching current menstrual cycle:', error);
+      throw error;
+    }
   },
-  
-  // === Legacy APIs (for backward compatibility) ===
-  
-  // Tạo log mới
-  createLog: (data) => instance.post('/api/menstrual-cycle/log', data),
 
-  // Lấy chu kỳ hiện tại
-  getCurrentCycle: () => instance.get('/api/menstrual-cycle/current'),
+  // Create menstrual cycle
+  createMenstrualCycle: async (cycleData) => {
+    try {
+      const response = await instance.post('/api/menstrual-cycle/create', cycleData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating menstrual cycle:', error);
+      throw error;
+    }
+  },
 
-  // Cập nhật thông tin chu kỳ
-  updateCycle: (data) => instance.put('/api/menstrual-cycle/update', data),
+  // Get day log
+  getDayLog: async (date) => {
+    try {
+      const response = await instance.get(`/api/menstrual-cycle/day-log/${date}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching day log:', error);
+      throw error;
+    }
+  },
 
-  // Xóa log
-  deleteLog: (logId) => instance.delete(`/api/menstrual-cycle/log/${logId}`),
+  // Update day log
+  updateDayLog: async (logData) => {
+    try {
+      const response = await instance.post('/api/menstrual-cycle/update-day-log', logData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating day log:', error);
+      throw error;
+    }
+  },
 
-  // Lấy logs theo tháng
-  getLogsByMonth: (year, month) => instance.get(`/api/menstrual-cycle/logs/${year}/${month}`),
+  // Quick log
+  quickLog: async (logData) => {
+    try {
+      const response = await instance.post('/api/menstrual-cycle/quick-log', logData);
+      return response.data;
+    } catch (error) {
+      console.error('Error quick logging:', error);
+      throw error;
+    }
+  },
 
-  // Lấy thống kê theo khoảng thời gian
-  getStatsByDateRange: (startDate, endDate) =>
-    instance.get('/api/menstrual-cycle/stats', { params: { startDate, endDate } }),
-};
+  // Get phases for a month
+  getPhasesForMonth: async (year, month) => {
+    try {
+      const response = await instance.get(`/api/menstrual-cycle/phases/${year}/${month}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching phases:', error);
+      throw error;
+    }
+  },
 
-// Helper functions
-export const formatDateForAPI = (date) => {
-  return date.toISOString().split('T')[0];
-};
+  // Get detailed phases for a month (with icons, colors, descriptions)
+  getDetailedPhasesForMonth: async (year, month) => {
+    try {
+      const response = await instance.get(`/api/menstrual-cycle/phases-detailed/${year}/${month}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching detailed phases:', error);
+      throw error;
+    }
+  },
 
-export const parseAPIResponse = (response) => {
-  if (response.data && response.data.content) {
-    return response.data.content;
+  // Get logs for date range
+  getLogsForDateRange: async (startDate, endDate) => {
+    try {
+      const response = await instance.get(`/api/menstrual-cycle/logs/${startDate}/${endDate}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      throw error;
+    }
+  },
+
+  // Get cycle summary with predictions
+  getCycleSummary: async () => {
+    try {
+      const response = await instance.get('/api/menstrual-cycle/cycle-summary');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cycle summary:', error);
+      throw error;
+    }
+  },
+
+  // Update cycle settings
+  updateCycleSettings: async (settings) => {
+    try {
+      const response = await instance.patch('/api/menstrual-cycle/update-settings', settings);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating cycle settings:', error);
+      throw error;
+    }
   }
-  return response.data;
 };
 
-export default cycleService; 
+export default MenstrualCycleService; 
