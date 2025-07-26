@@ -36,16 +36,49 @@ import {
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../../context/AuthContext';
-import { getPublicConsultantsAPI } from '../../../services/ConsultantService';
-import { bookConsultationAPI, getConsultantAvailabilityAPI } from '../../../services/ConsultationService';
-import { format, addDays, startOfDay } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-const ConsultationPage = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [consultants, setConsultants] = useState([]);
-  const [loading, setLoading] = useState(true);
+// Mock data for demo
+const mockConsultants = [
+  {
+    id: 1,
+    fullName: 'Bác sĩ Nguyễn Thị Hương',
+    specialization: 'Sản Phụ khoa',
+    experienceYears: 10,
+    rating: 4.5,
+    consultations: 650
+  },
+  {
+    id: 2,
+    fullName: 'Bác sĩ Trần Văn Minh',
+    specialization: 'Nội tiết - Sinh sản',
+    experienceYears: 8,
+    rating: 4.5,
+    consultations: 650
+  },
+  {
+    id: 3,
+    fullName: 'Bác sĩ Lê Thị Lan',
+    specialization: 'Tâm lý sức khỏe phụ nữ',
+    experienceYears: 6,
+    rating: 4.5,
+    consultations: 650
+  }
+];
+
+const mockAvailability = [
+  { startTime: '08:00', endTime: '09:00' },
+  { startTime: '09:00', endTime: '10:00' },
+  { startTime: '10:00', endTime: '11:00' },
+  { startTime: '14:00', endTime: '15:00' },
+  { startTime: '15:00', endTime: '16:00' },
+  { startTime: '16:00', endTime: '17:00' },
+  { startTime: '17:00', endTime: '18:00' }
+];
+
+const ConsultationDemo = () => {
+  const [consultants] = useState(mockConsultants);
   const [selectedConsultant, setSelectedConsultant] = useState(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availability, setAvailability] = useState([]);
@@ -76,41 +109,18 @@ const ConsultationPage = () => {
 
   const availableDates = generateAvailableDates();
 
-  useEffect(() => {
-    fetchConsultants();
-  }, []);
-
-  const fetchConsultants = async () => {
-    try {
-      setLoading(true);
-      const data = await getPublicConsultantsAPI();
-      setConsultants(data || []);
-    } catch (error) {
-      console.error('Error fetching consultants:', error);
-      toast.error('Không thể tải danh sách tư vấn viên');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleConsultantSelect = async (consultant) => {
     setSelectedConsultant(consultant);
     setBookingDialogOpen(true);
     
-    // Fetch availability for today
-    try {
-      setAvailabilityLoading(true);
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const availabilityData = await getConsultantAvailabilityAPI(consultant.id, today);
-      setAvailability(availabilityData || []);
-      setSelectedDate(today);
+    // Simulate loading
+    setAvailabilityLoading(true);
+    setTimeout(() => {
+      setAvailability(mockAvailability);
+      setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
       setSelectedTimeSlot(null);
-    } catch (error) {
-      console.error('Error fetching availability:', error);
-      toast.error('Không thể tải lịch trống của tư vấn viên');
-    } finally {
       setAvailabilityLoading(false);
-    }
+    }, 1000);
   };
 
   const handleDateChange = async (date) => {
@@ -118,16 +128,11 @@ const ConsultationPage = () => {
     setSelectedTimeSlot(null);
     
     if (selectedConsultant) {
-      try {
-        setAvailabilityLoading(true);
-        const availabilityData = await getConsultantAvailabilityAPI(selectedConsultant.id, date);
-        setAvailability(availabilityData || []);
-      } catch (error) {
-        console.error('Error fetching availability:', error);
-        toast.error('Không thể tải lịch trống');
-      } finally {
+      setAvailabilityLoading(true);
+      setTimeout(() => {
+        setAvailability(mockAvailability);
         setAvailabilityLoading(false);
-      }
+      }, 500);
     }
   };
 
@@ -136,11 +141,6 @@ const ConsultationPage = () => {
   };
 
   const handleBookingSubmit = async () => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đặt lịch tư vấn');
-      return;
-    }
-
     if (!selectedDate || !selectedTimeSlot) {
       toast.error('Vui lòng chọn ngày và giờ tư vấn');
       return;
@@ -149,15 +149,8 @@ const ConsultationPage = () => {
     try {
       setBookingLoading(true);
       
-      const bookingData = {
-        consultantId: selectedConsultant.id,
-        startTime: `${selectedDate}T${selectedTimeSlot.startTimeStr}`,
-        endTime: `${selectedDate}T${selectedTimeSlot.endTimeStr}`,
-        consultationType: bookingForm.consultationType,
-        notes: bookingForm.notes
-      };
-
-      const result = await bookConsultationAPI(bookingData);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Đặt lịch tư vấn thành công! Tư vấn viên sẽ xác nhận và gửi link meeting.');
       setBookingDialogOpen(false);
@@ -167,7 +160,7 @@ const ConsultationPage = () => {
       
     } catch (error) {
       console.error('Error booking consultation:', error);
-      toast.error(error.response?.data?.message || 'Không thể đặt lịch tư vấn');
+      toast.error('Không thể đặt lịch tư vấn');
     } finally {
       setBookingLoading(false);
     }
@@ -188,14 +181,6 @@ const ConsultationPage = () => {
     if (!time) return '';
     return time.substring(0, 5); // Format HH:mm
   };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
     <Box className="consultation-page">
@@ -244,13 +229,13 @@ const ConsultationPage = () => {
                 {/* Rating */}
                 <Box display="flex" alignItems="center" mb={2}>
                   <Rating 
-                    value={4.5} 
+                    value={consultant.rating} 
                     readOnly 
                     size="small"
                     sx={{ mr: 1 }}
                   />
                   <Typography variant="body2" color="text.secondary">
-                    4.5 • 650 buổi tư vấn
+                    {consultant.rating} • {consultant.consultations} buổi tư vấn
                   </Typography>
                 </Box>
 
@@ -258,7 +243,7 @@ const ConsultationPage = () => {
                 <Box display="flex" alignItems="center" mb={2}>
                   <WorkIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body2" color="text.secondary">
-                    Kinh nghiệm: {consultant.experienceYears || 5}+ năm kinh nghiệm
+                    Kinh nghiệm: {consultant.experienceYears}+ năm kinh nghiệm
                   </Typography>
                 </Box>
 
@@ -392,9 +377,9 @@ const ConsultationPage = () => {
                         </Typography>
                         <Grid container spacing={2}>
                           {availability.map((slot) => {
-                            const isSelected = selectedTimeSlot?.startTimeStr === slot.startTimeStr;
+                            const isSelected = selectedTimeSlot?.startTime === slot.startTime;
                             return (
-                              <Grid item xs={6} sm={4} md={3} key={slot.startTimeStr}>
+                              <Grid item xs={6} sm={4} md={3} key={slot.startTime}>
                                 <Box
                                   onClick={() => handleTimeSlotSelect(slot)}
                                   sx={{
@@ -415,7 +400,7 @@ const ConsultationPage = () => {
                                   <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
                                     <AccessTimeIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
                                     <Typography variant="body2" fontWeight="500">
-                                      {slot.startTimeStr} - {slot.endTimeStr}
+                                      {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                                     </Typography>
                                   </Box>
                                   <Chip 
@@ -502,4 +487,4 @@ const ConsultationPage = () => {
   );
 };
 
-export default ConsultationPage;
+export default ConsultationDemo; 

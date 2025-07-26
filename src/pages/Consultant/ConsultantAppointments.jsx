@@ -1,430 +1,511 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  Calendar,
-  Clock,
-  Video,
-  Phone,
-  MessageCircle,
-  User,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  ChevronDown,
-  MoreVertical,
-  Phone as PhoneIcon,
-  Video as VideoIcon,
-  MessageSquare,
-  Eye,
-  Edit,
-  Trash2,
-} from 'lucide-react';
-import './ConsultantAppointments.css';
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Grid,
+  Button,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  Divider
+} from '@mui/material';
+import {
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  VideoCall as VideoCallIcon,
+  Person as PersonIcon,
+  Event as EventIcon,
+  AccessTime as AccessTimeIcon,
+  Close as CloseIcon,
+  Edit as EditIcon
+} from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 import { getConsultationBookingsAPI } from '../../services/ConsultantService';
-import instance from '../../services/customize-axios';
+import { confirmConsultationAPI, updateConsultationStatusAPI, confirmWithMeetingLinkAPI } from '../../services/ConsultationService';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 const ConsultantAppointments = () => {
-  const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState('upcoming');
-
-  // Appointments data - sẽ được thay thế bằng API calls
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const [selectedConsultationId, setSelectedConsultationId] = useState(null);
-  const [consultationDetail, setConsultationDetail] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-
-  useEffect(() => {
-    const fetchConsultations = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getConsultationBookingsAPI();
-        if (Array.isArray(data)) {
-          setAppointments(data);
-        } else {
-          setAppointments([]);
-        }
-      } catch (err) {
-        setError('Không thể tải danh sách cuộc hẹn');
-        setAppointments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchConsultations();
-  }, []);
-
-  // Mapping lại dữ liệu từ API
-  const mappedAppointments = appointments.map(item => ({
-    id: item.id,
-    patientName: item.userName,
-    patientId: item.userId,
-    consultantName: item.consultantName,
-    consultantId: item.consultantId,
-    startTime: item.startTime,
-    endTime: item.endTime,
-    status: item.status?.toLowerCase(),
-    type: item.consultationType?.toLowerCase(),
-    notes: item.notes,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-    // FE có thể bổ sung avatar nếu backend trả về
-    avatar: '',
-    // FE có thể bổ sung các trường khác nếu backend trả về
-  }));
-
-  const getStatusColor = status => {
-    switch (status) {
-      case 'confirmed':
-        return '#10b981';
-      case 'pending':
-        return '#f59e0b';
-      case 'completed':
-        return '#3b82f6';
-      case 'cancelled':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
-
-  const getStatusText = status => {
-    switch (status) {
-      case 'confirmed':
-        return 'Đã xác nhận';
-      case 'pending':
-        return 'Chờ xác nhận';
-      case 'completed':
-        return 'Hoàn thành';
-      case 'cancelled':
-        return 'Đã hủy';
-      case 'scheduled':
-        return 'Đã lên lịch'; // hoặc 'Sắp tới'
-      default:
-        return 'Không xác định';
-    }
-  };
-
-  const getTypeIcon = type => {
-    switch (type) {
-      case 'video':
-        return VideoIcon;
-      case 'phone':
-        return PhoneIcon;
-      case 'chat':
-        return MessageSquare;
-      default:
-        return MessageCircle;
-    }
-  };
-
-  const getTypeText = type => {
-    switch (type) {
-      case 'video':
-        return 'Video Call';
-      case 'phone':
-        return 'Phone Call';
-      case 'chat':
-        return 'Chat';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  const handleConfirmAppointment = appointmentId => {
-    console.log('Confirm appointment:', appointmentId);
-  };
-
-  const handleCancelAppointment = appointmentId => {
-    console.log('Cancel appointment:', appointmentId);
-  };
-
-  const handleStartConsultation = (appointmentId, type) => {
-    console.log('Start consultation:', appointmentId, type);
-    // Navigate to consultation interface based on type
-    if (type === 'video') {
-      navigate(`/consultant/video-call/${appointmentId}`);
-    } else if (type === 'phone') {
-      navigate(`/consultant/phone-call/${appointmentId}`);
-    } else if (type === 'chat') {
-      navigate(`/consultant/chat/${appointmentId}`);
-    }
-  };
-
-  const handleViewDetails = async (appointmentId) => {
-    setSelectedConsultationId(appointmentId);
-    setShowDetailModal(true);
-    setDetailLoading(true);
-    setDetailError(null);
-    setConsultationDetail(null);
-    try {
-      const res = await instance.get(`/api/consultation/${appointmentId}`);
-      setConsultationDetail(res.data);
-    } catch (err) {
-      setDetailError('Không thể tải chi tiết cuộc hẹn');
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const filteredAppointments = mappedAppointments.filter(appointment => {
-    const matchesSearch =
-      appointment.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.notes?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || appointment.status === statusFilter;
-    const matchesType = typeFilter === 'all' || appointment.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const [confirmationLoading, setConfirmationLoading] = useState(false);
+  const [confirmationForm, setConfirmationForm] = useState({
+    status: 'CONFIRMED',
+    meetingLink: '',
+    notes: '',
+    meetingPassword: '',
+    meetingPlatform: 'ZOOM'
   });
 
-  // Tách danh sách theo trạng thái
-  const upcomingAppointments = filteredAppointments.filter(
-    apt => apt.status === 'scheduled' || apt.status === 'confirmed' || apt.status === 'pending'
-  );
-  const completedAppointments = filteredAppointments.filter(
-    apt => apt.status === 'completed'
-  );
-  const cancelledAppointments = filteredAppointments.filter(
-    apt => apt.status === 'cancelled'
-  );
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
-  const renderAppointmentCard = appointment => {
-    const TypeIcon = getTypeIcon(appointment.type);
-    return (
-      <div key={appointment.id} className="appointment-card">
-        <div className="appointment-header">
-          <div className="patient-info">
-            <div className="patient-avatar">
-              <img src={appointment.avatar || 'https://i.pravatar.cc/100?u=' + appointment.patientId} alt={appointment.patientName} />
-            </div>
-            <div className="patient-details">
-              <h4>{appointment.patientName}</h4>
-              <p className="appointment-reason">{appointment.notes || 'Không có ghi chú'}</p>
-            </div>
-          </div>
-          <div className="appointment-actions">
-            <button
-              className="action-btn"
-              onClick={() => handleViewDetails(appointment.id)}
-            >
-              <Eye size={16} />
-            </button>
-            <button className="action-btn">
-              <MoreVertical size={16} />
-            </button>
-          </div>
-        </div>
-        <div className="appointment-meta">
-          <div className="meta-item">
-            <Clock size={16} />
-            <span>
-              {appointment.startTime ? new Date(appointment.startTime).toLocaleString('vi-VN') : '--'}
-            </span>
-          </div>
-          <div className="meta-item">
-            <TypeIcon size={16} />
-            <span>{getTypeText(appointment.type)}</span>
-          </div>
-          <div className="meta-item">
-            <div
-              className="status-badge"
-              style={{ backgroundColor: getStatusColor(appointment.status) }}
-            >
-              {getStatusText(appointment.status)}
-            </div>
-          </div>
-        </div>
-        {appointment.notes && (
-          <div className="appointment-notes">
-            <p>{appointment.notes}</p>
-          </div>
-        )}
-        {/* Footer actions giữ nguyên */}
-        {appointment.status === 'pending' && (
-            <div className="appointment-actions-footer">
-              <button
-                className="btn btn-outline"
-                onClick={() => handleCancelAppointment(appointment.id)}
-              >
-                <XCircle size={16} />
-                Từ chối
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => handleConfirmAppointment(appointment.id)}
-              >
-                <CheckCircle size={16} />
-                Xác nhận
-              </button>
-            </div>
-          )}
-
-          {appointment.status === 'confirmed' && (
-            <div className="appointment-actions-footer">
-              <button
-                className="btn btn-outline"
-                onClick={() => handleCancelAppointment(appointment.id)}
-              >
-                Hủy lịch
-              </button>
-              <button
-                className="btn btn-success"
-                onClick={() =>
-                  handleStartConsultation(appointment.id, appointment.type)
-                }
-              >
-                <TypeIcon size={16} />
-                Bắt đầu tư vấn
-              </button>
-            </div>
-          )}
-      </div>
-    );
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const data = await getConsultationBookingsAPI();
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast.error('Không thể tải danh sách lịch hẹn');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Render danh sách theo tab
-  let currentList = [];
-  if (activeTab === 'upcoming') currentList = upcomingAppointments;
-  if (activeTab === 'completed') currentList = completedAppointments;
-  if (activeTab === 'cancelled') currentList = cancelledAppointments;
+  const handleConfirmBooking = (booking) => {
+    setSelectedBooking(booking);
+    setConfirmationForm({
+      status: 'CONFIRMED',
+      meetingLink: '',
+      notes: '',
+      meetingPassword: '',
+      meetingPlatform: 'ZOOM'
+    });
+    setConfirmationDialogOpen(true);
+  };
+
+  const handleCancelBooking = (booking) => {
+    setSelectedBooking(booking);
+    setConfirmationForm({
+      status: 'CANCELLED',
+      meetingLink: '',
+      notes: '',
+      meetingPassword: '',
+      meetingPlatform: 'ZOOM'
+    });
+    setConfirmationDialogOpen(true);
+  };
+
+  const handleAutoConfirmBooking = async (booking) => {
+    try {
+      setConfirmationLoading(true);
+      
+      const result = await confirmWithMeetingLinkAPI(booking.id);
+      
+      toast.success(`Đã xác nhận lịch hẹn và tạo meeting link tự động! Link: ${result.meetingLink}`);
+      fetchBookings(); // Refresh the list
+      
+    } catch (error) {
+      console.error('Error auto-confirming booking:', error);
+      toast.error(error.response?.data?.message || 'Không thể xác nhận lịch hẹn tự động');
+    } finally {
+      setConfirmationLoading(false);
+    }
+  };
+
+  const handleConfirmationSubmit = async () => {
+    if (!selectedBooking) return;
+
+    if (confirmationForm.status === 'CONFIRMED' && !confirmationForm.meetingLink) {
+      toast.error('Vui lòng nhập link meeting cho lịch hẹn đã xác nhận');
+      return;
+    }
+
+    try {
+      setConfirmationLoading(true);
+      
+      const result = await confirmConsultationAPI(selectedBooking.id, confirmationForm);
+      
+             toast.success(confirmationForm.status === 'CONFIRMED' 
+         ? 'Đã xác nhận lịch hẹn và gửi link meeting!' 
+         : 'Đã hủy lịch hẹn');
+      
+      setConfirmationDialogOpen(false);
+      setSelectedBooking(null);
+      fetchBookings(); // Refresh the list
+      
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      toast.error(error.response?.data?.message || 'Không thể xác nhận lịch hẹn');
+    } finally {
+      setConfirmationLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    try {
+      await updateConsultationStatusAPI(bookingId, { status: newStatus });
+      toast.success('Cập nhật trạng thái thành công');
+      fetchBookings();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Không thể cập nhật trạng thái');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'SCHEDULED': 'warning',
+      'CONFIRMED': 'success',
+      'IN_PROGRESS': 'info',
+      'COMPLETED': 'primary',
+      'CANCELLED': 'error'
+    };
+    return colors[status] || 'default';
+  };
+
+  const getStatusText = (status) => {
+    const texts = {
+      'SCHEDULED': 'Đã lên lịch',
+      'CONFIRMED': 'Đã xác nhận',
+      'IN_PROGRESS': 'Đang diễn ra',
+      'COMPLETED': 'Hoàn thành',
+      'CANCELLED': 'Đã hủy'
+    };
+    return texts[status] || status;
+  };
+
+  const formatDateTime = (dateTime) => {
+    try {
+      return format(new Date(dateTime), 'dd/MM/yyyy HH:mm', { locale: vi });
+    } catch (error) {
+      return dateTime;
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="consultant-appointments">
-      <div className="appointments-header">
-        <div className="header-content">
-          <h1>Quản lý cuộc hẹn</h1>
-          <p>Xem và quản lý tất cả các cuộc hẹn của bạn</p>
-        </div>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+        Lịch hẹn tư vấn
+      </Typography>
+      <Typography variant="h6" color="text.secondary" mb={4}>
+        Quản lý và xác nhận các lịch hẹn tư vấn
+      </Typography>
 
-        <div className="header-actions">
-          <div className="search-bar">
-            <Search size={20} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm bệnh nhân..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <button
-            className="filter-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={20} />
-            Lọc
-            <ChevronDown size={16} />
-          </button>
-        </div>
-      </div>
-
-      {showFilters && (
-        <div className="filters-panel">
-          <div className="filter-group">
-            <label>Trạng thái:</label>
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Loại tư vấn:</label>
-            <select
-              value={typeFilter}
-              onChange={e => setTypeFilter(e.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="video">Video Call</option>
-              <option value="phone">Phone Call</option>
-              <option value="chat">Chat</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div style={{textAlign:'center',padding:'2rem'}}>
-          <span>Đang tải dữ liệu...</span>
-        </div>
-      ) : error ? (
-        <div style={{textAlign:'center',padding:'2rem',color:'#ef4444'}}>{error}</div>
+      {bookings.length === 0 ? (
+        <Card>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h6" color="text.secondary">
+              Chưa có lịch hẹn tư vấn nào
+            </Typography>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="appointments-content">
-          <div className="appointments-tabs">
-            <div className={`tab${activeTab==='upcoming'?' active':''}`} onClick={()=>setActiveTab('upcoming')}>
-              <span>Sắp tới</span>
-              <span className="tab-count">{upcomingAppointments.length}</span>
-            </div>
-            <div className={`tab${activeTab==='completed'?' active':''}`} onClick={()=>setActiveTab('completed')}>
-              <span>Hoàn thành</span>
-              <span className="tab-count">{completedAppointments.length}</span>
-            </div>
-            <div className={`tab${activeTab==='cancelled'?' active':''}`} onClick={()=>setActiveTab('cancelled')}>
-              <span>Đã hủy</span>
-              <span className="tab-count">{cancelledAppointments.length}</span>
-            </div>
-          </div>
-          <div className="appointments-grid">
-            {currentList.map(renderAppointmentCard)}
-            {currentList.length === 0 && (
-              <div className="empty-state">
-                <Calendar size={48} />
-                <h3>Không có cuộc hẹn nào</h3>
-                <p>Bạn chưa có cuộc hẹn nào ở mục này</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Khách hàng</TableCell>
+                <TableCell>Ngày giờ</TableCell>
+                <TableCell>Hình thức</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Ghi chú</TableCell>
+                <TableCell>Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {bookings.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell>
+                    <Box display="flex" alignItems="center">
+                      <Avatar sx={{ mr: 2, width: 40, height: 40 }}>
+                        {booking.customerName?.charAt(0) || 'K'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                          {booking.customerName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {booking.customerEmail}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatDateTime(booking.startTime)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDateTime(booking.endTime)}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={booking.consultationType === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'}
+                      color={booking.consultationType === 'ONLINE' ? 'primary' : 'secondary'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={getStatusText(booking.status)}
+                      color={getStatusColor(booking.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                        {booking.notes || 'Không có ghi chú'}
+                      </Typography>
+                      {booking.meetingLink && (
+                        <Typography 
+                          variant="body2" 
+                          color="primary" 
+                          sx={{ 
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            fontSize: '0.75rem'
+                          }}
+                          onClick={() => window.open(booking.meetingLink, '_blank')}
+                        >
+                          📹 Link Meeting
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={1}>
+                      {/* SCHEDULED: Có thể xác nhận hoặc hủy */}
+                      {booking.status === 'SCHEDULED' && (
+                        <>
+                          <Tooltip title="Xác nhận và tạo link tự động">
+                            <IconButton
+                              color="success"
+                              size="small"
+                              onClick={() => handleAutoConfirmBooking(booking)}
+                              disabled={confirmationLoading}
+                            >
+                              {confirmationLoading ? <CircularProgress size={20} /> : <CheckCircleIcon />}
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Xác nhận thủ công">
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              onClick={() => handleConfirmBooking(booking)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Hủy lịch hẹn">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleStatusUpdate(booking.id, 'CANCELLED')}
+                            >
+                              <CancelIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      
+                      {/* CONFIRMED: Có thể bắt đầu tư vấn hoặc hủy */}
+                      {booking.status === 'CONFIRMED' && (
+                        <>
+                          <Tooltip title="Bắt đầu tư vấn">
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              onClick={() => handleStatusUpdate(booking.id, 'IN_PROGRESS')}
+                            >
+                              <VideoCallIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Hủy lịch hẹn">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleStatusUpdate(booking.id, 'CANCELLED')}
+                            >
+                              <CancelIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      
+                      {/* IN_PROGRESS: Có thể hoàn thành hoặc hủy */}
+                      {booking.status === 'IN_PROGRESS' && (
+                        <>
+                          <Tooltip title="Hoàn thành tư vấn">
+                            <IconButton
+                              color="success"
+                              size="small"
+                              onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}
+                            >
+                              <CheckCircleIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Hủy lịch hẹn">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleStatusUpdate(booking.id, 'CANCELLED')}
+                            >
+                              <CancelIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      
+                      {/* COMPLETED: Không có thao tác */}
+                      {booking.status === 'COMPLETED' && (
+                        <Typography variant="body2" color="text.secondary" fontSize="0.75rem">
+                          Đã hoàn thành
+                        </Typography>
+                      )}
+                      
+                      {/* CANCELLED: Không có thao tác */}
+                      {booking.status === 'CANCELLED' && (
+                        <Typography variant="body2" color="text.secondary" fontSize="0.75rem">
+                          Đã hủy
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
-      {/* Modal chi tiết consultation */}
-      {showDetailModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{minWidth:400,maxWidth:600,background:'#fff',borderRadius:12,padding:24,boxShadow:'0 2px 16px rgba(0,0,0,0.12)'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-              <h2 style={{fontSize:'1.2rem',fontWeight:700}}>Chi tiết cuộc hẹn</h2>
-              <button onClick={()=>setShowDetailModal(false)} style={{background:'none',border:'none',fontSize:20,cursor:'pointer'}}>&times;</button>
-            </div>
-            {detailLoading ? (
-              <div style={{textAlign:'center',padding:'2rem'}}>Đang tải chi tiết...</div>
-            ) : detailError ? (
-              <div style={{color:'#ef4444',textAlign:'center'}}>{detailError}</div>
-            ) : consultationDetail ? (
-              <div style={{lineHeight:1.7}}>
-                <div><b>Bệnh nhân:</b> {consultationDetail.userName}</div>
-                <div><b>Bác sĩ:</b> {consultationDetail.consultantName}</div>
-                <div><b>Thời gian:</b> {consultationDetail.timeSlot && consultationDetail.timeSlot.slotDate ? new Date(consultationDetail.timeSlot.slotDate).toLocaleDateString('vi-VN') : '--'}</div>
-                <div><b>Trạng thái:</b> {getStatusText(consultationDetail.status?.toLowerCase())}</div>
-                <div><b>Loại tư vấn:</b> {consultationDetail.timeSlot && consultationDetail.timeSlot.slotType ? (consultationDetail.timeSlot.slotType === 'FACILITY' ? 'Xét nghiệm' : (consultationDetail.timeSlot.slotType === 'CONSULTATION' ? 'Tư vấn' : consultationDetail.timeSlot.slotType)) : '--'}</div>
-                <div><b>Meeting link:</b> {consultationDetail.meetingLink ? <a href={consultationDetail.meetingLink} target="_blank" rel="noopener noreferrer">{consultationDetail.meetingLink}</a> : '--'}</div>
-                <div><b>Ghi chú:</b> {consultationDetail.notes || '--'}</div>
-                <div><b>Ngày tạo:</b> {consultationDetail.createdAt ? new Date(consultationDetail.createdAt).toLocaleString('vi-VN') : '--'}</div>
-              </div>
-            ) : null}
-          </div>
-          <div className="modal-backdrop" onClick={()=>setShowDetailModal(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.15)',zIndex:10}}></div>
-        </div>
-      )}
-    </div>
+      {/* Confirmation Dialog */}
+      <Dialog 
+        open={confirmationDialogOpen} 
+        onClose={() => setConfirmationDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+                 <DialogTitle>
+           <Box display="flex" justifyContent="space-between" alignItems="center">
+             <Typography variant="h6">
+               {confirmationForm.status === 'CONFIRMED' ? 'Xác nhận lịch hẹn' : 'Hủy lịch hẹn'}
+             </Typography>
+             <IconButton onClick={() => setConfirmationDialogOpen(false)}>
+               <CloseIcon />
+             </IconButton>
+           </Box>
+         </DialogTitle>
+        
+        <DialogContent>
+          <Grid container spacing={3}>
+            {confirmationForm.status === 'CONFIRMED' && (
+              <>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Link Meeting *"
+                    value={confirmationForm.meetingLink}
+                    onChange={(e) => setConfirmationForm({
+                      ...confirmationForm,
+                      meetingLink: e.target.value
+                    })}
+                    fullWidth
+                    placeholder="https://zoom.us/j/..."
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Nền tảng</InputLabel>
+                    <Select
+                      value={confirmationForm.meetingPlatform}
+                      onChange={(e) => setConfirmationForm({
+                        ...confirmationForm,
+                        meetingPlatform: e.target.value
+                      })}
+                      label="Nền tảng"
+                    >
+                      <MenuItem value="ZOOM">Zoom</MenuItem>
+                      <MenuItem value="GOOGLE_MEET">Google Meet</MenuItem>
+                      <MenuItem value="TEAMS">Microsoft Teams</MenuItem>
+                      <MenuItem value="SKYPE">Skype</MenuItem>
+                      <MenuItem value="OTHER">Khác</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Mật khẩu (tùy chọn)"
+                    value={confirmationForm.meetingPassword}
+                    onChange={(e) => setConfirmationForm({
+                      ...confirmationForm,
+                      meetingPassword: e.target.value
+                    })}
+                    fullWidth
+                    placeholder="Nhập mật khẩu nếu có"
+                  />
+                </Grid>
+              </>
+            )}
+            <Grid item xs={12}>
+              <TextField
+                label="Ghi chú"
+                multiline
+                rows={3}
+                value={confirmationForm.notes}
+                onChange={(e) => setConfirmationForm({
+                  ...confirmationForm,
+                  notes: e.target.value
+                })}
+                fullWidth
+                               placeholder={confirmationForm.status === 'CONFIRMED' 
+                 ? "Ghi chú cho khách hàng..." 
+                 : "Lý do hủy lịch hẹn..."}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={() => setConfirmationDialogOpen(false)}
+            disabled={confirmationLoading}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            color={confirmationForm.status === 'CONFIRMED' ? 'success' : 'error'}
+            onClick={handleConfirmationSubmit}
+            disabled={confirmationLoading}
+            startIcon={confirmationLoading ? <CircularProgress size={20} /> : 
+              (confirmationForm.status === 'CONFIRMED' ? <CheckCircleIcon /> : <CancelIcon />)}
+          >
+                         {confirmationLoading ? 'Đang xử lý...' : 
+               (confirmationForm.status === 'CONFIRMED' ? 'Xác nhận' : 'Hủy')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

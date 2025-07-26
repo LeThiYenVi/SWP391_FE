@@ -160,6 +160,18 @@ export const getRevenueAPI = async (type = 'today') => {
   return res.data;
 };
 
+// =============Public Consultant APIs============
+const getPublicConsultantsAPI = async () => {
+  try {
+    const response = await instance.get('/api/homepage/consultants');
+    console.log('Get public consultants success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get public consultants error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // =============Consultant Service Class (Wrapper for backward compatibility)============
 class ConsultantService {
   // Profile management
@@ -321,5 +333,6 @@ export {
   createReminderAPI,
   getReminderByIdAPI,
   updateReminderAPI,
-  deleteReminderAPI
+  deleteReminderAPI,
+  getPublicConsultantsAPI
 };

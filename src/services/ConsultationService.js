@@ -100,6 +100,29 @@ const getUpcomingConsultationsAPI = async () => {
   }
 };
 
+// =============Consultation Confirmation APIs============
+const confirmConsultationAPI = async (consultationId, confirmationData) => {
+  try {
+    const response = await instance.put(`/api/consultation/${consultationId}/confirm`, confirmationData);
+    console.log('Confirm consultation success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Confirm consultation error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const confirmWithMeetingLinkAPI = async (consultationId) => {
+  try {
+    const response = await instance.post(`/api/consultation/consultant/${consultationId}/confirm-with-meeting`);
+    console.log('Confirm with meeting link success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Confirm with meeting link error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export {
   // Availability APIs
   getConsultantAvailabilityAPI,
@@ -113,5 +136,7 @@ export {
   updateConsultationStatusAPI,
   getConsultationDetailsAPI,
   cancelConsultationAPI,
-  getUpcomingConsultationsAPI
+  getUpcomingConsultationsAPI,
+  confirmConsultationAPI,
+  confirmWithMeetingLinkAPI
 }; 

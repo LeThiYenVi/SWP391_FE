@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   User,
   Mail,
@@ -26,7 +26,9 @@ import {
   Plus,
   Trash2,
   Download,
-  Share2
+  Share2,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +36,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import axios from '../../services/customize-axios';
 import BookingService from '../../services/BookingService';
+import Avatar from '../../components/Avatar';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -45,6 +48,9 @@ const UserProfile = () => {
   const [editProfile, setEditProfile] = useState({});
   const [bookings, setBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deletingAvatar, setDeletingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadProfile();
@@ -143,6 +149,81 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
+  const handleAvatarUpload = async (file) => {
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', profile.id); // Sử dụng ID từ profile
+      
+      const response = await axios.post('/api/user/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Update profile with new avatar URL
+      setProfile(prev => ({ ...prev, avatarUrl: response.data }));
+      toast.success('Cập nhật ảnh đại diện thành công!');
+      
+      // Reload profile để lấy thông tin mới nhất
+      await loadProfile();
+    } catch (error) {
+      console.error('Upload avatar error:', error);
+      toast.error('Không thể cập nhật ảnh đại diện!');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa ảnh đại diện?')) {
+      return;
+    }
+
+    setDeletingAvatar(true);
+    try {
+      await axios.delete('/api/user/avatar');
+      
+      // Update profile
+      setProfile(prev => ({ ...prev, avatarUrl: null, avatarPublicId: null }));
+      toast.success('Đã xóa ảnh đại diện thành công!');
+      
+      // Reload profile
+      await loadProfile();
+    } catch (error) {
+      console.error('Delete avatar error:', error);
+      toast.error('Không thể xóa ảnh đại diện!');
+    } finally {
+      setDeletingAvatar(false);
+    }
+  };
+
+  const validateAvatarUrl = async () => {
+    try {
+      const response = await axios.get('/api/user/avatar/validate');
+      const validatedUrl = response.data;
+      
+      if (validatedUrl !== profile.avatarUrl) {
+        setProfile(prev => ({ ...prev, avatarUrl: validatedUrl }));
+        toast.info('Đã cập nhật ảnh đại diện với URL mới!');
+      }
+    } catch (error) {
+      console.error('Avatar validation error:', error);
+    }
+  };
+
+  // Validate avatar khi component mount
+  useEffect(() => {
+    if (profile?.avatarUrl && profile?.avatarPublicId) {
+      validateAvatarUrl();
+    }
+  }, [profile?.avatarPublicId]);
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Chưa cập nhật';
     try {
@@ -236,8 +317,37 @@ const UserProfile = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 flex items-center justify-center shadow-lg">
-                <User className="h-8 w-8 text-white" />
+              <div className="relative group">
+                <Avatar
+                  src={profile.avatarUrl}
+                  alt={profile.fullName || "User Avatar"}
+                  size="lg"
+                  className="mx-auto"
+                />
+                <button
+                  onClick={triggerFileInput}
+                  disabled={uploadingAvatar || deletingAvatar}
+                  className="absolute inset-0 w-16 h-16 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300 disabled:opacity-75"
+                >
+                  {uploadingAvatar ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </button>
+                {profile.avatarUrl && (
+                  <button
+                    onClick={handleDeleteAvatar}
+                    disabled={deletingAvatar}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors duration-300 disabled:opacity-75"
+                  >
+                    {deletingAvatar ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
               </div>
               <div>
                 <p className="font-bold text-white text-lg">{profile.fullName || 'Chưa cập nhật'}</p>
@@ -709,6 +819,19 @@ const UserProfile = () => {
           </div>
         )}
       </div>
+      
+      {/* Hidden file input for avatar upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleAvatarUpload(e.target.files[0]);
+          }
+        }}
+        className="hidden"
+      />
     </div>
   );
 };

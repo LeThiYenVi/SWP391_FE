@@ -27,6 +27,7 @@ import Footer from '../components/Footer/Footer';
 import styles from './HomePage.module.css';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import BlogService from '../services/BlogService';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -44,6 +45,9 @@ const HomePage = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [blogLoading, setBlogLoading] = useState(true);
+  const [blogApiMessage, setBlogApiMessage] = useState('');
 
   // Kiểm tra session expired
   useEffect(() => {
@@ -53,6 +57,31 @@ const HomePage = () => {
       localStorage.removeItem('sessionExpired');
     }
   }, []);
+
+  // Load blog posts
+  useEffect(() => {
+    loadBlogPosts();
+  }, []);
+
+  const loadBlogPosts = async () => {
+    try {
+      setBlogLoading(true);
+      const response = await BlogService.getAllBlogPosts(1, 3);
+      if (response.success && response.data && response.data.content.length > 0) {
+        setBlogPosts(response.data.content);
+        setBlogApiMessage('');
+      } else {
+        setBlogPosts([]);
+        setBlogApiMessage(response.message || 'Chưa có bài viết nào.');
+      }
+    } catch (error) {
+      setBlogPosts([]);
+      setBlogApiMessage('Lỗi khi tải bài viết.');
+      console.error('Error loading blog posts:', error);
+    } finally {
+      setBlogLoading(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -206,44 +235,17 @@ const HomePage = () => {
     },
   ];
 
-  const blogPosts = [
-    {
-      title: 'Những điều cần biết về chu kỳ kinh nguyệt của phụ nữ',
-      date: 'Thứ Hai, 05/09/2021',
-      author: 'Dr. Vũ Thị Thu Hiền',
-      views: '68',
-      comments: '86',
-      image:
-        'https://cdn.tiemchunglongchau.com.vn/chu_ky_kinh_nguyet_nhung_dieu_phu_nu_can_luu_y_1_7a2abf2443.png',
-    },
-    {
-      title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
-      date: 'Thứ Ba, 06/09/2021',
-      author: 'Dr. Lê Văn Minh',
-      views: '52',
-      comments: '73',
-      image:
-        'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/cham_soc_suc_khoe_phu_nu_tuoi_30_4_8b7757f4c0.jpg',
-    },
-    {
-      title: 'Tầm quan trọng của việc xét nghiệm STI định kỳ',
-      date: 'Thứ Tư, 07/09/2021',
-      author: 'Dr. Đỗ Phạm Nguyệt Thanh',
-      views: '94',
-      comments: '121',
-      image:
-        'https://cdn.nhathuoclongchau.com.vn/unsafe/800x0/https://cms-prod.s3-sgn09.fptcloud.com/xet_nghiem_sti_la_gi_nhung_loai_xet_nghiem_sti_pho_bien_hien_nay_1_0f7ae7b22c.jpg',
-    },
-    {
-      title: 'Lời khuyên từ chuyên gia về sức khỏe sinh sản',
-      date: 'Thứ Năm, 08/09/2021',
-      author: 'Dr. Vũ Thị Thu Hiền',
-      views: '76',
-      comments: '95',
-      image:
-        'https://login.medlatec.vn//ImagePath/images/20220816/20220816_kham-chua-benh-tai-medlatec-2.jpg',
-    },
-  ];
+  // Format date function
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dayName = days[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${dayName}, ${day}/${month}/${year}`;
+  };
 
   return (
     <div className={styles.homepage}>
@@ -713,30 +715,69 @@ const HomePage = () => {
             <h2>Blog</h2>
           </div>
 
-          <div className={styles.blogGrid}>
-            {blogPosts.map((post, index) => (
-              <Link
-                key={index}
-                to={`/blog/${index + 1}`}
-                className={styles.blogCard}
-              >
-                <div className={styles.blogImage}>
-                  <img src={post.image} alt={post.title} />
-                </div>
-                <div className={styles.blogContent}>
-                  <div className={styles.blogMeta}>
-                    <span>
-                      {post.date} | By {post.author}
-                    </span>
+          {blogLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                border: '4px solid #e1e5e9',
+                borderTop: '4px solid #3a99b7',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 20px'
+              }}></div>
+              <p style={{ color: '#666' }}>Đang tải bài viết...</p>
+            </div>
+          ) : blogPosts.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#888', padding: 32 }}>
+              {blogApiMessage}
+            </div>
+          ) : (
+            <div className={styles.blogGrid}>
+              {blogPosts.map((post, index) => (
+                <Link
+                  key={post.id || index}
+                  to={`/blog/${post.id || index + 1}`}
+                  className={styles.blogCard}
+                >
+                  <div className={styles.blogImage}>
+                    <div style={{
+                      width: '100%',
+                      height: '200px',
+                      background: 'linear-gradient(135deg, #3a99b7 0%, #2d7a91 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '48px'
+                    }}>
+                      📝
+                    </div>
                   </div>
-                  <h3>{post.title}</h3>
-                  <div className={styles.blogStats}>
-                    <span>👁 {post.views}</span>
-                    <span>💬 {post.comments}</span>
+                  <div className={styles.blogContent}>
+                    <div className={styles.blogMeta}>
+                      <span>
+                        {formatDate(post.createdAt)} | By {post.author?.name || 'Gynexa'}
+                      </span>
+                    </div>
+                    <h3>{post.title}</h3>
+                    <p className={styles.blogSummary}>
+                      {post.summary || post.content?.substring(0, 120) + '...' || 'Khám phá những thông tin hữu ích về sức khỏe phụ nữ và các vấn đề sinh sản.'}
+                    </p>
+                    <div className={styles.blogStats}>
+                      <span>📝 {post.categories?.[0]?.name || 'Blog'}</span>
+                      <span>👁 {Math.floor(Math.random() * 100) + 50}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
+          )}
+          
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <Link to="/blog" className={styles.btnPrimary}>
+              Xem tất cả bài viết
+            </Link>
           </div>
         </div>
       </section>
@@ -787,6 +828,14 @@ const HomePage = () => {
 
       {/* Footer */}
       <Footer />
+      
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

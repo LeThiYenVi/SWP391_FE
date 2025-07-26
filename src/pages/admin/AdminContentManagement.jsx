@@ -17,6 +17,8 @@ import {
   MenuItem,
   Button,
   Tooltip,
+  Switch,
+  FormControlLabel,
   // Tabs,
   // Tab
 } from '@mui/material';
@@ -57,10 +59,18 @@ const AdminContentManagement = () => {
   // State cho modal blog
   const [blogModalOpen, setBlogModalOpen] = useState(false);
   const [blogEditMode, setBlogEditMode] = useState(false);
-  const [blogForm, setBlogForm] = useState({ title: '', content: '', categoryIds: [] });
+  const [blogForm, setBlogForm] = useState({ 
+    title: '', 
+    content: '', 
+    summary: '',
+    tags: '',
+    categoryIds: [],
+    isPublished: false
+  });
   const [blogError, setBlogError] = useState({});
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [deleteBlogId, setDeleteBlogId] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
 
   // Load blog posts from API
   const loadBlogPosts = async (pageNumber = 1) => {
@@ -75,33 +85,14 @@ const AdminContentManagement = () => {
         setTotalPages(response.totalPages || 1);
         toast.success('Đã tải dữ liệu thành công!');
       } else {
-        toast.error('Không thể tải danh sách bài viết!');
+        setBlogPosts([]);
+        setTotalPages(1);
+        toast.info('Chưa có bài viết nào trong hệ thống');
       }
     } catch (error) {
       console.error('Error loading blog posts:', error);
-      toast.error('Có lỗi xảy ra khi tải dữ liệu!');
-
-      // Fallback to sample data if API fails
-      setBlogPosts([
-        {
-          postID: 1,
-          title: "Hướng dẫn chăm sóc sức khỏe phụ nữ",
-          author: { fullName: "Dr. Nguyễn Thị A" },
-          category: { categoryName: "Sức khỏe phụ nữ" },
-          isPublished: true,
-          createdAt: "2024-01-15T10:30:00",
-          viewCount: 1250
-        },
-        {
-          postID: 2,
-          title: "Tầm quan trọng của xét nghiệm định kỳ",
-          author: { fullName: "Dr. Trần Văn B" },
-          category: { categoryName: "Xét nghiệm" },
-          isPublished: false,
-          createdAt: "2024-01-14T14:20:00",
-          viewCount: 890
-        }
-      ]);
+      toast.error('Có lỗi xảy ra khi tải dữ liệu: ' + error.message);
+      setBlogPosts([]);
       setTotalPages(1);
     } finally {
       setLoading(false);
@@ -256,14 +247,14 @@ const AdminContentManagement = () => {
   // Filter blog posts based on search term and status
   const filteredBlogPosts = blogPosts.filter(post => {
     const matchSearch = post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       post.authorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       (post.author?.name || post.author?.fullName)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        post.id?.toString().includes(searchTerm);
 
     let matchStatus = true;
     if (statusFilter === 'published') {
-      matchStatus = post.isPublished === true;
+      matchStatus = (post.featured || post.isPublished) === true;
     } else if (statusFilter === 'draft') {
-      matchStatus = post.isPublished === false;
+      matchStatus = (post.featured || post.isPublished) === false;
     }
 
     return matchSearch && matchStatus;
@@ -271,19 +262,31 @@ const AdminContentManagement = () => {
 
   const openAddBlog = () => {
     setBlogEditMode(false);
-    setBlogForm({ title: '', content: '', categoryIds: [] });
+    setBlogForm({ 
+      title: '', 
+      content: '', 
+      summary: '',
+      tags: '',
+      categoryIds: [],
+      isPublished: false
+    });
     setBlogError({});
+    setCoverImage(null);
     setBlogModalOpen(true);
   };
   const openEditBlog = (post) => {
     setBlogEditMode(true);
     setBlogForm({
-      title: post.title,
+      title: post.title || '',
       content: post.content || '',
-      categoryIds: post.categoryIds || [],
+      summary: post.summary || '',
+      tags: post.tags || '',
+      categoryIds: post.categories ? post.categories.map(cat => cat.categoryID || cat.id) : [],
+      isPublished: post.isPublished || false
     });
     setSelectedBlog(post);
     setBlogError({});
+    setCoverImage(null);
     setBlogModalOpen(true);
   };
   const closeBlogModal = () => {
@@ -300,28 +303,52 @@ const AdminContentManagement = () => {
     const err = {};
     if (!blogForm.title || !blogForm.title.trim()) err.title = 'Tiêu đề không được để trống';
     if (blogForm.title && blogForm.title.length > 200) err.title = 'Tiêu đề tối đa 200 ký tự';
+    if (!blogForm.content || !blogForm.content.trim()) err.content = 'Nội dung không được để trống';
+    if (blogForm.summary && blogForm.summary.length > 500) err.summary = 'Tóm tắt tối đa 500 ký tự';
     if (!blogForm.categoryIds || blogForm.categoryIds.length === 0) err.categoryIds = 'Chọn ít nhất 1 danh mục';
     setBlogError(err);
     return Object.keys(err).length === 0;
   };
+
   const handleBlogSubmit = async () => {
     if (!validateBlog()) return;
-    const payload = {
-      ...blogForm,
-      categoryIds: (blogForm.categoryIds || []).map(Number)
-    };
+    
     try {
+      const formData = new FormData();
+      
+      // Tạo payload cho blog post
+      const blogPayload = {
+        title: blogForm.title.trim(),
+        content: blogForm.content.trim(),
+        summary: blogForm.summary.trim(),
+        tags: blogForm.tags.trim(),
+        categoryIds: (blogForm.categoryIds || []).map(Number),
+        isPublished: blogForm.isPublished
+      };
+      
+      // Thêm blog data vào FormData
+      formData.append('blogPost', new Blob([JSON.stringify(blogPayload)], {
+        type: 'application/json'
+      }));
+      
+      // Thêm cover image nếu có
+      if (coverImage) {
+        formData.append('coverImage', coverImage);
+      }
+      
       if (blogEditMode && selectedBlog) {
-        await BlogService.updateBlogPost(selectedBlog.id, payload);
+        await BlogService.updateBlogPost(selectedBlog.id, formData);
         toast.success('Cập nhật bài viết thành công!');
       } else {
-        await BlogService.createBlogPost(payload);
+        await BlogService.createBlogPost(formData);
         toast.success('Thêm bài viết thành công!');
       }
       closeBlogModal();
       loadBlogPosts(page);
     } catch (err) {
-      toast.error('Lỗi khi lưu bài viết!');
+      console.error('Blog submit error:', err);
+      const errorMsg = err?.response?.data?.message || 'Lỗi khi lưu bài viết!';
+      toast.error(errorMsg);
     }
   };
   const handleDeleteBlog = async () => {
@@ -575,26 +602,31 @@ const AdminContentManagement = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {filteredBlogPosts.length > 0 ? (
-                            filteredBlogPosts.map((post) => (
-                              <TableRow key={post.id} hover>
-                                <TableCell>{post.id}</TableCell>
-                                <TableCell sx={{ maxWidth: 200 }}>
-                                  <Typography variant="body2" noWrap>
-                                    {post.title}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell>{post.authorName || 'N/A'}</TableCell>
-                                <TableCell>{getCategoryNames(post.categoryIds)}</TableCell>
-                                <TableCell>{getStatusChip(post.isPublished || false)}</TableCell>
-                                <TableCell>{formatDate(post.createdAt)}</TableCell>
-                                <TableCell>{post.viewCount || 0}</TableCell>
-                                <TableCell>
-                                  <Button size="small" color="primary" onClick={() => openEditBlog(post)} startIcon={<EditIcon />}>Sửa</Button>
-                                  <Button size="small" color="error" onClick={() => setDeleteBlogId(post.id)} startIcon={<DeleteIcon />}>Xóa</Button>
-                                </TableCell>
-                              </TableRow>
-                            ))
+                                                     {filteredBlogPosts.length > 0 ? (
+                             filteredBlogPosts.map((post) => (
+                               <TableRow key={post.id} hover>
+                                 <TableCell>{post.id}</TableCell>
+                                 <TableCell sx={{ maxWidth: 200 }}>
+                                   <Typography variant="body2" noWrap>
+                                     {post.title}
+                                   </Typography>
+                                 </TableCell>
+                                 <TableCell>{post.author?.name || post.author?.fullName || 'N/A'}</TableCell>
+                                 <TableCell>
+                                   {post.categories && post.categories.length > 0 
+                                     ? post.categories.map(cat => cat.name || cat.categoryName).join(', ')
+                                     : 'N/A'
+                                   }
+                                 </TableCell>
+                                 <TableCell>{getStatusChip(post.featured || post.isPublished || false)}</TableCell>
+                                 <TableCell>{formatDate(post.createdAt)}</TableCell>
+                                 <TableCell>{post.views || 0}</TableCell>
+                                 <TableCell>
+                                   <Button size="small" color="primary" onClick={() => openEditBlog(post)} startIcon={<EditIcon />}>Sửa</Button>
+                                   <Button size="small" color="error" onClick={() => setDeleteBlogId(post.id)} startIcon={<DeleteIcon />}>Xóa</Button>
+                                 </TableCell>
+                               </TableRow>
+                             ))
                           ) : (
                             <TableRow>
                               <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4 }}>
@@ -711,51 +743,103 @@ const AdminContentManagement = () => {
           </Box>
         </Box>
       </Box>
-      {/* Modal thêm/sửa blog */}
-      <Dialog open={blogModalOpen} onClose={closeBlogModal} maxWidth="sm" fullWidth>
-        <DialogTitle>{blogEditMode ? 'Cập nhật bài viết' : 'Thêm bài viết mới'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Tiêu đề"
-            name="title"
-            value={blogForm.title}
-            onChange={handleBlogFormChange}
-            error={!!blogError.title}
-            helperText={blogError.title}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Nội dung"
-            name="content"
-            value={blogForm.content}
-            onChange={handleBlogFormChange}
-            fullWidth
-            multiline
-            minRows={4}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            select
-            label="Danh mục"
-            name="categoryIds"
-            value={blogForm.categoryIds}
-            onChange={handleBlogCategoryChange}
-            SelectProps={{ multiple: true }}
-            error={!!blogError.categoryIds}
-            helperText={blogError.categoryIds}
-            fullWidth
-          >
-            {categories.map(cat => (
-              <MenuItem key={cat.categoryID} value={cat.categoryID}>{cat.categoryName}</MenuItem>
-            ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeBlogModal}>Hủy</Button>
-          <Button onClick={handleBlogSubmit} variant="contained">{blogEditMode ? 'Lưu' : 'Thêm'}</Button>
-        </DialogActions>
-      </Dialog>
+             {/* Modal thêm/sửa blog */}
+       <Dialog open={blogModalOpen} onClose={closeBlogModal} maxWidth="md" fullWidth>
+         <DialogTitle>{blogEditMode ? 'Cập nhật bài viết' : 'Thêm bài viết mới'}</DialogTitle>
+         <DialogContent>
+           <TextField
+             label="Tiêu đề"
+             name="title"
+             value={blogForm.title}
+             onChange={handleBlogFormChange}
+             error={!!blogError.title}
+             helperText={blogError.title}
+             fullWidth
+             sx={{ mb: 2 }}
+           />
+           <TextField
+             label="Tóm tắt"
+             name="summary"
+             value={blogForm.summary}
+             onChange={handleBlogFormChange}
+             error={!!blogError.summary}
+             helperText={blogError.summary}
+             fullWidth
+             multiline
+             minRows={2}
+             maxRows={3}
+             sx={{ mb: 2 }}
+           />
+           <TextField
+             label="Tags (phân cách bằng dấu phẩy)"
+             name="tags"
+             value={blogForm.tags}
+             onChange={handleBlogFormChange}
+             fullWidth
+             sx={{ mb: 2 }}
+             placeholder="sức khỏe, phụ nữ, dinh dưỡng"
+           />
+           <TextField
+             label="Nội dung"
+             name="content"
+             value={blogForm.content}
+             onChange={handleBlogFormChange}
+             error={!!blogError.content}
+             helperText={blogError.content}
+             fullWidth
+             multiline
+             minRows={6}
+             sx={{ mb: 2 }}
+           />
+           <TextField
+             select
+             label="Danh mục"
+             name="categoryIds"
+             value={blogForm.categoryIds}
+             onChange={handleBlogCategoryChange}
+             SelectProps={{ multiple: true }}
+             error={!!blogError.categoryIds}
+             helperText={blogError.categoryIds}
+             fullWidth
+             sx={{ mb: 2 }}
+           >
+             {categories.map(cat => (
+               <MenuItem key={cat.categoryID} value={cat.categoryID}>{cat.categoryName}</MenuItem>
+             ))}
+           </TextField>
+           
+           {/* Cover Image Upload */}
+           <Box sx={{ mb: 2 }}>
+             <Typography variant="subtitle2" sx={{ mb: 1 }}>Ảnh bìa</Typography>
+             <input
+               type="file"
+               accept="image/*"
+               onChange={(e) => setCoverImage(e.target.files[0])}
+               style={{ width: '100%' }}
+             />
+             {coverImage && (
+               <Typography variant="caption" color="success.main">
+                 Đã chọn: {coverImage.name}
+               </Typography>
+             )}
+           </Box>
+           
+           {/* Published Status */}
+           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+             <Typography variant="subtitle2" sx={{ mr: 2 }}>Trạng thái:</Typography>
+             <Chip
+               label={blogForm.isPublished ? 'Đã xuất bản' : 'Nháp'}
+               color={blogForm.isPublished ? 'success' : 'default'}
+               onClick={() => setBlogForm({ ...blogForm, isPublished: !blogForm.isPublished })}
+               sx={{ cursor: 'pointer' }}
+             />
+           </Box>
+         </DialogContent>
+         <DialogActions>
+           <Button onClick={closeBlogModal}>Hủy</Button>
+           <Button onClick={handleBlogSubmit} variant="contained">{blogEditMode ? 'Lưu' : 'Thêm'}</Button>
+         </DialogActions>
+       </Dialog>
       {/* Xác nhận xóa blog */}
       <Dialog open={!!deleteBlogId} onClose={() => setDeleteBlogId(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Xác nhận xóa bài viết</DialogTitle>

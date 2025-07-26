@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import HomePage from '../pages/HomePage.jsx';
 import SearchPage from '../pages/Search/Search.jsx';
 import Consultation from '../pages/User/Consultation/index.jsx';
@@ -8,6 +9,10 @@ import QA from '../pages/User/QA/index.jsx';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
+import BlogService from '../services/BlogService';
+import { toast } from 'react-toastify';
+import BlogDetailPage from '../pages/BlogDetailPage';
+import BlogPage from '../pages/BlogPage';
 
 // Simple placeholder components for missing pages
 const AboutPage = () => (
@@ -89,44 +94,7 @@ const DoctorsPage = () => (
   </div>
 );
 
-const BlogPage = () => (
-  <div
-    style={{
-      minHeight: '100vh',
-      padding: '40px 20px',
-      textAlign: 'center',
-      backgroundColor: '#fafdfe',
-    }}
-  >
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '36px', color: '#3a99b7', marginBottom: '20px' }}>
-        Blog & Tin tức
-      </h1>
-      <p
-        style={{
-          fontSize: '18px',
-          color: '#666',
-          lineHeight: '1.6',
-          marginBottom: '30px',
-        }}
-      >
-        Cập nhật những thông tin mới nhất về sức khỏe giới tính và các kiến thức
-        y khoa.
-      </p>
-      <a
-        href="/"
-        style={{
-          color: '#3a99b7',
-          textDecoration: 'none',
-          fontSize: '16px',
-          fontWeight: '500',
-        }}
-      >
-        ← Quay lại trang chủ
-      </a>
-    </div>
-  </div>
-);
+// BlogPage component đã được import từ file riêng
 
 const ServicesPage = () => (
   <div
@@ -503,7 +471,7 @@ const HomePageRoutes = [
   },
   {
     path: '/blog/:id',
-    element: <BlogPage />,
+    element: <BlogDetailPage />,
   },
   {
     path: '/tin-tuc',

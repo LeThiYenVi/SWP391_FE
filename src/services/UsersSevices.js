@@ -7,7 +7,7 @@ const loginAPI = async (username, password) => {
       username,
       password,
     });
-    console.log('Login success response:', response);
+
     return response;
   } catch (error) {
     console.error('Login error:', error);
@@ -16,7 +16,7 @@ const loginAPI = async (username, password) => {
 };
 
 const registerAPI = async (userData) => {
-  console.log('Sending registration data to backend:', userData);
+  
   try {
     const response = await instance.post('/api/auth/register', {
       username: userData.username,
@@ -24,7 +24,7 @@ const registerAPI = async (userData) => {
       email: userData.email,
       fullName: userData.fullName,
     });
-    console.log('Register success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Register error:', error.response?.data || error.message);
@@ -51,17 +51,14 @@ const forgetPasswordAPI = async (email, verificationUrl = null) => {
 
 const validateOtpAPI = async (email, otpCode) => {
   try {
-    console.log('Validating OTP for email:', email, 'OTP:', otpCode);
+
     
     const response = await instance.post('/api/auth/validate-otp', {
       email: email,
       otpCode: otpCode
     });
     
-    console.log('Validate OTP full response:', response);
-    console.log('Validate OTP response.data:', response.data);
-    console.log('Validate OTP response.status:', response.status);
-    console.log('Validate OTP response.headers:', response.headers);
+    
     
     return response.data;
   } catch (error) {
@@ -78,7 +75,7 @@ const validateOtpAPI = async (email, otpCode) => {
 
 const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
   try {
-    console.log('DEBUG - Calling reset password API with token:', token ? `${token.substring(0, 10)}...` : 'invalid token');
+
     
     // Nếu có email và otpCode từ extraParams, sử dụng format OTP-based reset
     if (extraParams.email && extraParams.otpCode) {
@@ -88,9 +85,8 @@ const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
         newPassword: newPassword
       };
       
-      console.log('DEBUG - Using OTP-based reset with email:', extraParams.email);
+
       const response = await instance.post('/api/auth/reset-password', requestData);
-      console.log('DEBUG - Reset password success:', response.data);
       return response.data;
     } else {
       // Fallback to token-based reset (old format)
@@ -101,7 +97,6 @@ const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
       };
       
       const response = await instance.post('/api/auth/reset-password', requestData);
-      console.log('DEBUG - Reset password success:', response.data);
       return response.data;
     }
   } catch (error) {
@@ -118,7 +113,7 @@ const updatePasswordAPI = async (password, newPassword) => {
         newPassword,
       },
     });
-    console.log('Password update success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Password update error:', error.response?.data || error.message);
@@ -128,14 +123,13 @@ const updatePasswordAPI = async (password, newPassword) => {
 
 const loginByGoogleAPI = async code => {
   try {
-    console.log('🔍 loginByGoogleAPI called with code:', code?.substring(0, 30) + '...');
-    console.log('🔍 Sending POST to /api/auth/login-by-google with body:', { code: code?.substring(0, 30) + '...' });
+
 
     const response = await instance.post('/api/auth/login-by-google', {
       code,
     });
 
-    console.log('✅ Google Login API success:', response);
+
     return response;
   } catch (error) {
     console.error('❌ Google Login API error:', error);
@@ -148,7 +142,7 @@ const loginByGoogleAPI = async code => {
 const logoutAPI = async () => {
   try {
     const response = await instance.post('/api/auth/logout');
-    console.log('Logout success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Logout error:', error.response?.data || error.message);
@@ -161,7 +155,7 @@ const refreshTokenAPI = async (refreshToken) => {
     const response = await instance.post('/api/auth/refresh-token', {
       refreshToken
     });
-    console.log('Refresh token success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Refresh token error:', error.response?.data || error.message);
@@ -173,7 +167,7 @@ const refreshTokenAPI = async (refreshToken) => {
 const getUserProfileAPI = async () => {
   try {
     const response = await instance.get('/api/user/profile');
-    console.log('Get user profile success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Get user profile error:', error.response?.data || error.message);
@@ -184,7 +178,7 @@ const getUserProfileAPI = async () => {
 const updateUserProfileAPI = async (profileData) => {
   try {
     const response = await instance.put('/api/user/profile', profileData);
-    console.log('Update user profile success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Update user profile error:', error.response?.data || error.message);

@@ -36,13 +36,13 @@ const navigationItems = [
       },
       {
         label: 'Theo dõi chu kỳ',
-        href: '/cycle-tracking',
+        href: '/theo-doi-chu-ky',
         icon: <Calendar className="w-4 h-4" />,
         description: 'Theo dõi và dự đoán chu kỳ sinh lý',
       },
       {
         label: 'Xét nghiệm STIs',
-        href: '/sti-testing',
+        href: '/xet-nghiem-sti',
         icon: <TestTube className="w-4 h-4" />,
         description: 'Đặt lịch và xem kết quả xét nghiệm',
       },
@@ -73,6 +73,28 @@ export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeDropdown && !event.target.closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
+  const handleDropdownEnter = (href) => {
+    setActiveDropdown(href);
+  };
+
+  const handleDropdownLeave = () => {
+    setActiveDropdown(null);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -122,11 +144,11 @@ export const Header = () => {
             {navigationItems.map(item => (
               <div
                 key={item.href}
-                className="relative"
+                className="relative dropdown-container"
                 onMouseEnter={() =>
-                  item.children && setActiveDropdown(item.href)
+                  item.children && handleDropdownEnter(item.href)
                 }
-                onMouseLeave={() => setActiveDropdown(null)}
+                onMouseLeave={handleDropdownLeave}
               >
                 {item.children ? (
                   <button
@@ -174,13 +196,20 @@ export const Header = () => {
                 {/* Dropdown Menu */}
                 <AnimatePresence>
                   {item.children && activeDropdown === item.href && (
-                    <motion.div
-                      className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <>
+                      {/* Invisible bridge to prevent dropdown from closing */}
+                      <div 
+                        className="absolute top-full left-0 w-full h-4 bg-transparent"
+                        style={{ marginTop: '-4px' }}
+                      />
+                      <motion.div
+                        className="absolute top-full left-0 mt-1 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ marginTop: '4px' }}
+                      >
                       <div className="p-2">
                         {item.children.map(child => (
                           <Link
@@ -204,6 +233,7 @@ export const Header = () => {
                         ))}
                       </div>
                     </motion.div>
+                    </>
                   )}
                 </AnimatePresence>
               </div>
@@ -418,40 +448,46 @@ export const Header = () => {
             <div className="px-4 py-6 space-y-4">
               {navigationItems.map(item => (
                 <div key={item.href}>
-                  <Link
-                    to={item.href}
-                    className={`
-                      flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors
-                      ${
-                        isActivePath(item.href)
-                          ? 'bg-gray-100'
-                          : 'text-gray-700'
-                      }
-                    `}
-                    style={{
-                      color: isActivePath(item.href) ? '#3a99b7' : undefined,
-                    }}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-
-                  {/* Mobile Submenu */}
-                  {item.children && (
-                    <div className="ml-8 mt-2 space-y-2">
-                      {item.children.map(child => (
-                        <Link
-                          key={child.href}
-                          to={child.href}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          {child.icon}
-                          <span>{child.label}</span>
-                        </Link>
-                      ))}
-                    </div>
+                  {item.children ? (
+                    <>
+                      <div className="px-4 py-3 text-base font-medium text-gray-700">
+                        {item.icon}
+                        <span className="ml-3">{item.label}</span>
+                      </div>
+                      {/* Mobile Submenu */}
+                      <div className="ml-8 mt-2 space-y-2">
+                        {item.children.map(child => (
+                          <Link
+                            key={child.href}
+                            to={child.href}
+                            className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {child.icon}
+                            <span>{child.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      className={`
+                        flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors
+                        ${
+                          isActivePath(item.href)
+                            ? 'bg-gray-100'
+                            : 'text-gray-700'
+                        }
+                      `}
+                      style={{
+                        color: isActivePath(item.href) ? '#3a99b7' : undefined,
+                      }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </Link>
                   )}
                 </div>
               ))}

@@ -1041,6 +1041,18 @@
   color: var(--text-primary);
 }
 
+.blogSummary {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .blogStats {
   display: flex;
   align-items: center;
