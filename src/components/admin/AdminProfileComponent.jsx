@@ -126,8 +126,11 @@ const AdminProfileComponent = () => {
       {/* Avatar + Tên */}
       <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
         <Avatar
-          src={userInfo.avatarSource || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
+          src={userInfo.avatarSource && userInfo.avatarSource.trim() !== '' ? userInfo.avatarSource : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
           sx={{ width: 120, height: 120, mb: 2 }}
+          onError={(e) => {
+            e.target.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+          }}
         />
         <Typography variant="h5" fontWeight={600}>
           {userInfo.firstName} {userInfo.lastName}

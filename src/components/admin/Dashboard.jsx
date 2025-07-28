@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Card, Typography, Avatar, Stack, MenuItem, Select, FormControl } from '@mui/material';
+import './AdminDashboard.css';
 import GroupsIcon from '@mui/icons-material/Groups';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -7,14 +8,26 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import {
-  getAllAccountsAPI,
-  getNewProductsAPI,
-  getRevenueByDayAPI,
-  getAllOrdersAPI,
-  getTopDesignersByRevenueAPI,
-  getOrderStatusByMonthAPI,
-  getCustomerGrowthAPI,
-} from '../../services/UsersSevices';
+  getAllUsersAPI,
+  //getNewProductsAPI,
+  //getRevenueByDayAPI,
+  //getAllOrdersAPI,
+  //getTopDesignersByRevenueAPI,
+  //getOrderStatusByMonthAPI,
+  //getCustomerGrowthAPI,
+} from '../../services/AdminService';
+
+// Import new dashboard API endpoints
+import {
+  //getDashboardStatsAPI,
+  //getReportsOverviewAPI,
+  //getReportsBookingsAPI,
+  //getReportsFinancialsAPI,
+  //getReportsUsersAPI,
+  //getReportsConsultantsAPI,
+  getReportsServicesAPI,
+  getDashboardStatsAPI
+} from '../../services/AdminService';
 import {
   LineChart,
   Line,
@@ -44,29 +57,55 @@ const Dashboard = () => {
   const [revenueData, setRevenueData] = useState([]);
   const [totalDesigners, setTotalDesigners] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [pendingConsultants, setPendingConsultants] = useState(0);
 
   useEffect(() => {
-    if (selectedMonth && selectedYear) {
-      fetchRevenueData(selectedMonth, selectedYear);
+    // Chỉ gọi API khi user đã đăng nhập và có role admin
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      fetchDashboardStats();
+
+      // Fetch revenue data when month/year changes
+      if (selectedMonth && selectedYear) {
+        fetchRevenueData(selectedMonth, selectedYear);
+      }
     }
   }, [selectedMonth, selectedYear]);
 
+  const fetchDashboardStats = async () => {
+    try {
+      const stats = await getDashboardStatsAPI(selectedMonth, selectedYear);
+      setTotalDesigners(stats.totalConsultants || 0);
+      setPendingConsultants(stats.pendingConsultants || 0);
+      setTotalProducts(stats.totalTestingServices || 0);
+      setOrderTotalRevenue(stats.totalRevenue || 0);
+    } catch (err) {
+      console.error('Lỗi khi lấy thống kê dashboard:', err);
+    }
+  };
+
   const fetchRevenueData = async (month, year) => {
     try {
-      console.log("Fetching data for:", month, year);
-      const res = await getRevenueByDayAPI(month, year);
-      console.log("Revenue data from API:", res);
+      // Format dates for API
+      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
 
-      const rawData = res || [];
-      console.log("Raw revenue data:", rawData);
+      // Get financial reports with date range
+      const response = await getReportsFinancialsAPI(startDate, endDate, 'daily');
+      console.log("Financial reports:", response);
 
-      const cleanData = rawData.map(item => ({
-        day: Number(item.day),
-        revenue: Number(item.revenue),
-      }));
-      console.log("Clean revenue data:", cleanData);
+      if (response && response.data) {
+        const rawData = response.data || [];
 
-      setRevenueData(cleanData);
+        // Transform data for chart
+        const cleanData = rawData.map(item => ({
+          day: new Date(item.date).getDate(),
+          revenue: Number(item.amount || 0),
+        }));
+
+        setRevenueData(cleanData);
+      }
     } catch (err) {
       console.error('Lỗi khi lấy doanh thu theo ngày:', err);
     }
@@ -74,22 +113,30 @@ const Dashboard = () => {
 
   const fetchTopDesigners = async () => {
     try {
-      const res = await getTopDesignersByRevenueAPI(5);
-      const data = res || [];
-      console.log("Top designers raw data:", data);
+      // Use new consultants report API
+      // const response = await getReportsConsultantsAPI();
+      // console.log("Consultants report:", response);
 
-      const transformedData = data.map(designer => ({
-        name: designer.accountName,
-        revenue: designer.totalIncome,
-      }));
+      // if (response && response.data) {
+      //   const data = response.data || [];
 
-      setDesignerData(transformedData);
-    } catch (err) {              console.error("Lỗi khi lấy top tư vấn viên:", err);
+      //   // Transform data for chart
+      //   const transformedData = data.slice(0, 5).map(consultant => ({
+      //     name: consultant.fullName || consultant.name,
+      //     revenue: consultant.totalRevenue || consultant.totalIncome || 0,
+      //   }));
+
+      //   setDesignerData(transformedData);
+      // }
+    } catch (err) {
+      console.error("Lỗi khi lấy báo cáo tư vấn viên:", err);
     }
   };
 
   const fetchTotalRevenueFromOrders = async () => {
     try {
+      // This is now handled in fetchDashboardStats
+      // But keep this function for backward compatibility
       const res = await getAllOrdersAPI();
       const orders = res?.items || [];
       const total = orders.reduce((sum, order) => sum + (order.orderPrice || 0), 0);
@@ -119,17 +166,27 @@ const Dashboard = () => {
 
   const fetchCustomerGrowth = async () => {
     try {
-      const res = await getCustomerGrowthAPI();
-      const rawData = res || [];
+      // Use new users report API
+      // const currentDate = new Date();
+      // const startDate = new Date(currentDate.getFullYear(), 0, 1).toISOString().split('T')[0]; // Start of year
+      // const endDate = currentDate.toISOString().split('T')[0]; // Today
 
-      const formatted = rawData.map(item => ({
-        name: `Tháng ${item.month}`,
-        count: item.count,
-      }));
+      // const response = await getReportsUsersAPI(startDate, endDate, 'monthly');
+      // console.log("Users report:", response);
 
-      setUserGrowthData(formatted);
+      // if (response && response.data) {
+      //   const rawData = response.data || [];
+
+      //   // Transform data for chart
+      //   const formatted = rawData.map(item => ({
+      //     name: `Tháng ${item.period || item.month}`,
+      //     count: item.count || item.newUsers || 0,
+      //   }));
+
+      //   setUserGrowthData(formatted);
+      // }
     } catch (err) {
-      console.error('Lỗi khi lấy dữ liệu tăng trưởng khách hàng:', err);
+      console.error('Lỗi khi lấy báo cáo người dùng:', err);
     }
   };
 
@@ -142,19 +199,23 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-    fetchData();
-    fetchTopDesigners();
-    fetchTotalRevenueFromOrders();
-    fetchOrderSystemData();
-    fetchCustomerGrowth();
+    // Chỉ gọi API khi user đã đăng nhập và có role admin
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Fetch all dashboard data on component mount
+      // fetchDashboardStats();
+      // fetchTopDesigners();
+      fetchOrderSystemData();
+      // fetchCustomerGrowth();
+      fetchData();
+    }
   }, []);
 
   const fetchAccounts = async () => {
     try {
-      const response = await getAllAccountsAPI();
-      const items = response.items || [];
-      const designerCount = items.filter(user => user.role === 1).length;
+      const response = await getAllUsersAPI();
+      const items = response.content || response.items || [];
+      const designerCount = items.filter(user => user.roleName === 'CONSULTANT').length;
       setTotalDesigners(designerCount);
     } catch (err) {
       console.error('Error fetching accounts:', err);
@@ -173,88 +234,87 @@ const Dashboard = () => {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', gap: 2, mt: 0, flexWrap: 'wrap' }}>
+    <Box className="admin-dashboard-container">
+      <Box sx={{ display: 'flex', gap: 3, mt: 0, flexWrap: 'wrap', p: 2 }}>
         {/* Total User */}
         <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
-            {/* Icon góc phải */}
+          <Card className="admin-stat-card" sx={{ height: '180px', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Avatar sx={{ bgcolor: '#E9E5FB', width: 56, height: 56 }}>
-                <GroupsIcon sx={{ color: '#5B50E5', fontSize: 30 }} />
+              <Avatar className="admin-stat-icon">
+                <GroupsIcon sx={{ color: '#354766', fontSize: 30 }} />
               </Avatar>
             </Box>
 
-            <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
+            <Typography className="admin-stat-title" variant="body2" marginBottom={2}>
               Tổng tư vấn viên
             </Typography>
-            <Typography variant="h4" fontWeight="bold" mt={1}>{totalDesigners}</Typography>
+            <Typography className="admin-stat-value" variant="h4" mt={1}>{totalDesigners}</Typography>
 
             <Stack direction="row" alignItems="center" spacing={0.5} mt={2}>
-              <TrendingUpIcon sx={{ color: 'green', fontSize: 20 }} />
-              <Typography variant="body2" sx={{ color: 'green', fontWeight: 500 }}>8.5%</Typography>
-              <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
+              <TrendingUpIcon sx={{ color: '#22C55E', fontSize: 20 }} />
+              <Typography variant="body2" sx={{ color: '#22C55E', fontWeight: 600 }}>8.5%</Typography>
+              <Typography className="admin-stat-trend" variant="body2">So với hôm qua</Typography>
             </Stack>
           </Card>
         </Box>
 
         {/* Total Order */}
         <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
+          <Card className="admin-stat-card" sx={{ height: '180px', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Avatar sx={{ bgcolor: '#FDEBD3', width: 56, height: 56 }}>
-                <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 30 }} />
+              <Avatar className="admin-stat-icon">
+                <AccessTimeIcon sx={{ color: '#354766', fontSize: 30 }} />
               </Avatar>
             </Box>
 
-            <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
+            <Typography className="admin-stat-title" variant="body2" marginBottom={2}>
               Tư vấn viên chờ duyệt
             </Typography>
-            <Typography variant="h4" fontWeight="bold" mt={1}>0</Typography>
+            <Typography className="admin-stat-value" variant="h4" mt={1}>{pendingConsultants}</Typography>
 
             <Stack direction="row" alignItems="center" spacing={0.5} mt={2}>
-              <TrendingDownIcon sx={{ color: 'red', fontSize: 20 }} />
-              <Typography variant="body2" sx={{ color: 'red', fontWeight: 500 }}>0.3%</Typography>
-              <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
+              <TrendingDownIcon sx={{ color: '#EF4444', fontSize: 20 }} />
+              <Typography variant="body2" sx={{ color: '#EF4444', fontWeight: 600 }}>0.3%</Typography>
+              <Typography className="admin-stat-trend" variant="body2">So với hôm qua</Typography>
             </Stack>
           </Card>
         </Box>
 
         {/* Total Pending */}
         <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
+          <Card className="admin-stat-card" sx={{ height: '180px', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Avatar sx={{ bgcolor: '#FFEFE3', width: 56, height: 56 }}>
-                <InventoryIcon sx={{ color: '#F97316', fontSize: 30 }} />
+              <Avatar className="admin-stat-icon">
+                <InventoryIcon sx={{ color: '#354766', fontSize: 30 }} />
               </Avatar>
             </Box>
 
-            <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
-              Sản phẩm chờ duyệt
+            <Typography className="admin-stat-title" variant="body2" marginBottom={2}>
+              Dịch vụ xét nghiệm
             </Typography>
-            <Typography variant="h4" fontWeight="bold" mt={1}>{totalProducts}</Typography>
+            <Typography className="admin-stat-value" variant="h4" mt={1}>{totalProducts}</Typography>
 
             <Stack direction="row" alignItems="center" spacing={0.5} mt={2}>
-              <TrendingUpIcon sx={{ color: 'green', fontSize: 20 }} />
-              <Typography variant="body2" sx={{ color: 'green', fontWeight: 500 }}>1.8%</Typography>
-              <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
+              <TrendingUpIcon sx={{ color: '#22C55E', fontSize: 20 }} />
+              <Typography variant="body2" sx={{ color: '#22C55E', fontWeight: 600 }}>1.8%</Typography>
+              <Typography className="admin-stat-trend" variant="body2">So với hôm qua</Typography>
             </Stack>
           </Card>
         </Box>
 
         {/* Total Sales */}
         <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2, height: '70%', position: 'relative' }}>
+          <Card className="admin-stat-card" sx={{ height: '180px', position: 'relative' }}>
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Avatar sx={{ bgcolor: '#DDF5EC', width: 56, height: 56 }}>
-                <ShoppingCartIcon sx={{ color: '#22C55E', fontSize: 30 }} />
+              <Avatar className="admin-stat-icon">
+                <ShoppingCartIcon sx={{ color: '#354766', fontSize: 30 }} />
               </Avatar>
             </Box>
 
-            <Typography variant="body2" color="textSecondary" fontWeight={500} marginBottom={2}>
+            <Typography className="admin-stat-title" variant="body2" marginBottom={2}>
               Tổng doanh thu
             </Typography>
-            <Typography variant="h4" fontWeight="bold" mt={1}>
+            <Typography className="admin-stat-value" variant="h4" mt={1}>
               {(orderTotalRevenue % 1000000 === 0
                 ? (orderTotalRevenue / 1000000).toFixed(0)
                 : (orderTotalRevenue / 1000000).toFixed(2)
@@ -262,11 +322,10 @@ const Dashboard = () => {
               }
             </Typography>
 
-
             <Stack direction="row" alignItems="center" spacing={0.5} mt={2}>
-              <TrendingDownIcon sx={{ color: 'red', fontSize: 20 }} />
-              <Typography variant="body2" sx={{ color: 'red', fontWeight: 500 }}>4.3%</Typography>
-              <Typography variant="body2" color="textSecondary">So với hôm qua</Typography>
+              <TrendingDownIcon sx={{ color: '#EF4444', fontSize: 20 }} />
+              <Typography variant="body2" sx={{ color: '#EF4444', fontWeight: 600 }}>4.3%</Typography>
+              <Typography className="admin-stat-trend" variant="body2">So với hôm qua</Typography>
             </Stack>
           </Card>
         </Box>
@@ -274,14 +333,24 @@ const Dashboard = () => {
       </Box>
 
       {/* Line Chart */}
-      <Card sx={{ mt: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>
+      <Card className="admin-chart-container" sx={{ mt: 4 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={5}>
-          <Typography variant="h6" fontWeight="bold">Doanh thu theo ngày trong tháng</Typography>
+          <Typography className="admin-chart-title" variant="h6">Doanh thu theo ngày trong tháng</Typography>
           <Stack direction="row" spacing={2}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select 
-                value={selectedMonth} 
+            <FormControl size="small" sx={{ minWidth: 120 }} className="admin-form-control">
+              <Select
+                value={selectedMonth}
                 onChange={handleMonthChange}
+                sx={{
+                  fontWeight: 600,
+                  color: '#354766',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(179, 204, 212, 0.3)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(179, 204, 212, 0.5)',
+                  },
+                }}
                 MenuProps={{
                   PaperProps: {
                     sx: { maxHeight: 200 }
@@ -295,10 +364,20 @@ const Dashboard = () => {
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 100 }}>
-              <Select 
-                value={selectedYear} 
+            <FormControl size="small" sx={{ minWidth: 100 }} className="admin-form-control">
+              <Select
+                value={selectedYear}
                 onChange={handleYearChange}
+                sx={{
+                  fontWeight: 600,
+                  color: '#354766',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(179, 204, 212, 0.3)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(179, 204, 212, 0.5)',
+                  },
+                }}
                 MenuProps={{
                   PaperProps: {
                     sx: { maxHeight: 200 }

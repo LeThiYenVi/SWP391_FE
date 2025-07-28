@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import consultantService from '../services/ConsultantService';
+import ChatService from '../services/ChatService';
 import { toast } from 'react-toastify';
 import { useAuth } from './AuthContext';
 
@@ -154,11 +155,11 @@ export const ConsultantProvider = ({ children }) => {
     }
   }, []);
 
-  // Load conversations
+  // Load conversations - chỉ gọi khi component cần
   const loadConversations = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await consultantService.getConversations();
+      const response = await ChatService.getConversations();
       if (response.success) {
         setConversations(response.data);
       }
@@ -287,12 +288,13 @@ export const ConsultantProvider = ({ children }) => {
       userRole: user?.role,
       shouldLoadProfile: user?.role === 'ROLE_CONSULTANT'
     });
-    
+
     if (user?.role === 'ROLE_CONSULTANT') {
       console.log('Loading consultant profile...');
       loadConsultantProfile();
+      // Không tự động load conversations để tránh gọi API liên tục
     }
-  }, [user?.role]); // Chỉ chạy khi role thay đổi
+  }, [user?.role]); // ✅ Chỉ phụ thuộc vào user.role, không phụ thuộc vào function
 
   // Helper functions
   const getUpcomingAppointments = useCallback(() => {

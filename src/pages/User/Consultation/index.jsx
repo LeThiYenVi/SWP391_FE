@@ -1,332 +1,527 @@
-import React, { useState } from 'react';
-import { useAppointment } from '../../../context/AppointmentContext';
-import {
-  Calendar,
-  Clock,
-  Star,
-  User,
-  MessageCircle,
-  Video,
-  Phone,
-  X,
-} from 'lucide-react';
-import { format, addDays, isSameDay, isToday, isTomorrow } from 'date-fns';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Card, 
+  CardContent, 
+  Grid, 
+  Button, 
+  Avatar, 
+  Chip, 
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  CircularProgress,
+  Rating,
+  Divider,
+  IconButton,
+  Tooltip,
+  Tabs,
+  Tab
+} from '@mui/material';
 import './index.css';
+import { 
+  Star as StarIcon,
+  Schedule as ScheduleIcon,
+  Person as PersonIcon,
+  Work as WorkIcon,
+  Event as EventIcon,
+  AccessTime as AccessTimeIcon,
+  Close as CloseIcon,
+  CalendarToday as CalendarIcon
+} from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../../context/AuthContext';
+import { getPublicConsultantsAPI } from '../../../services/ConsultantService';
+import { bookConsultationAPI, getConsultantAvailabilityAPI } from '../../../services/ConsultationService';
+import { format, addDays, startOfDay } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import ConsultationHistory from '../../../components/ConsultationHistory';
 
-const Consultation = () => {
-  const { counselors, bookAppointment, getAvailableCounselors } =
-    useAppointment();
-  const [selectedCounselor, setSelectedCounselor] = useState(null);
+const ConsultationPage = () => {
+  const { user, isAuthenticated } = useAuth();
+  const [consultants, setConsultants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedConsultant, setSelectedConsultant] = useState(null);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [consultationType, setConsultationType] = useState('video'); // video, phone, chat
-  const [reason, setReason] = useState('');
-  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    notes: '',
+    consultationType: 'ONLINE'
+  });
+  const [activeTab, setActiveTab] = useState(0); // 0: Đặt lịch, 1: Lịch sử
 
-  const availableCounselors = getAvailableCounselors();
-
-  // Generate next 14 days for booking
-  const availableDates = Array.from({ length: 14 }, (_, i) =>
-    addDays(new Date(), i)
-  );
-
-  const consultationTypes = [
-    {
-      id: 'video',
-      name: 'Video Call',
-      description: 'Tư vấn qua video call trực tuyến',
-      icon: Video,
-      price: '300.000đ',
-    },
-    {
-      id: 'phone',
-      name: 'Phone Call',
-      description: 'Tư vấn qua điện thoại',
-      icon: Phone,
-      price: '200.000đ',
-    },
-    {
-      id: 'chat',
-      name: 'Live Chat',
-      description: 'Tư vấn qua tin nhắn trực tuyến',
-      icon: MessageCircle,
-      price: '150.000đ',
-    },
-  ];
-
-  const timeSlots = [
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-  ];
-
-  const formatDate = date => {
-    if (isToday(date)) return 'Hôm nay';
-    if (isTomorrow(date)) return 'Ngày mai';
-    return format(date, 'dd/MM');
+  // Generate available dates (next 14 days)
+  const generateAvailableDates = () => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+      const date = addDays(today, i);
+      dates.push({
+        date: format(date, 'yyyy-MM-dd'),
+        display: format(date, 'dd/MM/yyyy'),
+        dayName: format(date, 'EEEE', { locale: vi }),
+        isToday: i === 0
+      });
+    }
+    return dates;
   };
 
-  const handleBookAppointment = () => {
-    if (
-      !selectedCounselor ||
-      !selectedDate ||
-      !selectedTime ||
-      !consultationType ||
-      !reason.trim()
-    ) {
-      toast.error('Vui lòng điền đầy đủ thông tin');
+  const availableDates = generateAvailableDates();
+
+  useEffect(() => {
+    fetchConsultants();
+  }, []);
+
+  const fetchConsultants = async () => {
+    try {
+      setLoading(true);
+      const data = await getPublicConsultantsAPI();
+      setConsultants(data || []);
+    } catch (error) {
+      console.error('Error fetching consultants:', error);
+      toast.error('Không thể tải danh sách tư vấn viên');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConsultantSelect = async (consultant) => {
+    setSelectedConsultant(consultant);
+    setBookingDialogOpen(true);
+    
+    // Fetch availability for today
+    try {
+      setAvailabilityLoading(true);
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const availabilityData = await getConsultantAvailabilityAPI(consultant.id, today);
+      setAvailability(availabilityData || []);
+      setSelectedDate(today);
+      setSelectedTimeSlot(null);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+      toast.error('Không thể tải lịch trống của tư vấn viên');
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const handleDateChange = async (date) => {
+    setSelectedDate(date);
+    setSelectedTimeSlot(null);
+    
+    if (selectedConsultant) {
+      try {
+        setAvailabilityLoading(true);
+        const availabilityData = await getConsultantAvailabilityAPI(selectedConsultant.id, date);
+        setAvailability(availabilityData || []);
+      } catch (error) {
+        console.error('Error fetching availability:', error);
+        toast.error('Không thể tải lịch trống');
+      } finally {
+        setAvailabilityLoading(false);
+      }
+    }
+  };
+
+  const handleTimeSlotSelect = (timeSlot) => {
+    setSelectedTimeSlot(timeSlot);
+  };
+
+  const handleBookingSubmit = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để đặt lịch tư vấn');
       return;
     }
 
-    const appointmentData = {
-      counselorId: selectedCounselor.id,
-      counselorName: selectedCounselor.name,
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      time: selectedTime,
-      type: consultationType,
-      reason: reason.trim(),
-    };
+    if (!selectedDate || !selectedTimeSlot) {
+      toast.error('Vui lòng chọn ngày và giờ tư vấn');
+      return;
+    }
 
-    bookAppointment(appointmentData);
-    toast.success('Đặt lịch tư vấn thành công!');
+    try {
+      setBookingLoading(true);
+      
+      const bookingData = {
+        consultantId: selectedConsultant.id,
+        startTime: `${selectedDate}T${selectedTimeSlot.startTimeStr}`,
+        endTime: `${selectedDate}T${selectedTimeSlot.endTimeStr}`,
+        consultationType: bookingForm.consultationType,
+        notes: bookingForm.notes
+      };
 
-    // Reset form
-    setSelectedCounselor(null);
-    setSelectedDate('');
-    setSelectedTime('');
-    setConsultationType('video');
-    setReason('');
-    setShowBookingForm(false);
+      const result = await bookConsultationAPI(bookingData);
+      
+      toast.success('Đặt lịch tư vấn thành công! Tư vấn viên sẽ xác nhận và gửi link meeting.');
+      setBookingDialogOpen(false);
+      setSelectedConsultant(null);
+      setSelectedTimeSlot(null);
+      setBookingForm({ notes: '', consultationType: 'ONLINE' });
+      
+    } catch (error) {
+      console.error('Error booking consultation:', error);
+      toast.error(error.response?.data?.message || 'Không thể đặt lịch tư vấn');
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
+  const getSpecializationColor = (specialization) => {
+    const colors = {
+      'Dinh dưỡng & Kế hoạch hóa gia đình': 'primary',
+      'Sản Phụ khoa': 'secondary',
+      'Nội tiết - Sinh sản': 'success',
+      'Tâm lý sức khỏe phụ nữ': 'warning',
+      'default': 'default'
+    };
+    return colors[specialization] || colors.default;
+  };
+
+  const formatTime = (time) => {
+    if (!time) return '';
+    return time.substring(0, 5); // Format HH:mm
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <div className="consultation-container">
+    <Box className="consultation-page">
       {/* Header */}
-      <div className="consultation-header">
-        <div className="consultation-header-content">
-          <h1 className="consultation-title">Tư vấn trực tuyến</h1>
-          <p className="consultation-subtitle">
-            Đặt lịch tư vấn với các chuyên gia của chúng tôi
-          </p>
-        </div>
-      </div>
+      <Box className="page-header">
+        <Typography variant="h4" className="page-title">
+          Tư vấn trực tuyến
+        </Typography>
+        <Typography variant="body1" className="page-subtitle">
+          Đặt lịch tư vấn với các chuyên gia của chúng tôi
+        </Typography>
+      </Box>
 
-      <div className="consultation-main">
-        {/* Consultation Types */}
-        <div className="consultation-types-section">
-          <h2 className="section-title">Chọn hình thức tư vấn</h2>
-          <div className="consultation-types-grid">
-            {consultationTypes.map(type => (
-              <div
-                key={type.id}
-                className={`consultation-type-card ${
-                  consultationType === type.id ? 'selected' : ''
-                }`}
-                onClick={() => setConsultationType(type.id)}
-              >
-                <div className="type-header">
-                  <type.icon className="type-icon" />
-                  <div className="type-info">
-                    <h3>{type.name}</h3>
-                    <p>{type.description}</p>
-                  </div>
-                </div>
-                <div className="type-price">{type.price}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="Đặt lịch tư vấn" />
+          <Tab label="Lịch sử tư vấn" />
+        </Tabs>
+      </Box>
 
-        {/* Available Counselors */}
-        {consultationType && (
-          <div className="counselors-section">
-            <h2 className="section-title">Chọn tư vấn viên</h2>
-            <div className="counselors-grid">
-              {availableCounselors.map(counselor => (
-                <div
-                  key={counselor.id}
-                  className={`counselor-card ${
-                    selectedCounselor?.id === counselor.id ? 'selected' : ''
-                  }`}
-                  onClick={() => setSelectedCounselor(counselor)}
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <>
+          {/* Consultants Grid */}
+          <Grid container spacing={3} className="consultants-grid">
+        {consultants.map((consultant) => (
+          <Grid item xs={12} md={4} key={consultant.id}>
+            <Card className="consultant-card">
+              <CardContent>
+                {/* Consultant Info */}
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Avatar 
+                    className="consultant-avatar"
+                    sx={{ 
+                      width: 60, 
+                      height: 60, 
+                      bgcolor: 'primary.main',
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {consultant.fullName?.charAt(0) || 'C'}
+                  </Avatar>
+                  <Box ml={2}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      {consultant.fullName}
+                    </Typography>
+                    <Chip 
+                      label={consultant.specialization || 'Tư vấn viên'}
+                      color={getSpecializationColor(consultant.specialization)}
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+
+                {/* Rating */}
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Rating 
+                    value={4.5} 
+                    readOnly 
+                    size="small"
+                    sx={{ mr: 1 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    4.5 • 650 buổi tư vấn
+                  </Typography>
+                </Box>
+
+                {/* Experience */}
+                <Box display="flex" alignItems="center" mb={2}>
+                  <WorkIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Kinh nghiệm: {consultant.experienceYears || 5}+ năm kinh nghiệm
+                  </Typography>
+                </Box>
+
+                {/* Expertise */}
+                <Box display="flex" alignItems="center" mb={3}>
+                  <PersonIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Chuyên môn: {consultant.specialization || 'Tư vấn sức khỏe'}
+                  </Typography>
+                </Box>
+
+                {/* Book Button */}
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<ScheduleIcon />}
+                  onClick={() => handleConsultantSelect(consultant)}
+                  sx={{ mt: 'auto' }}
                 >
-                  <div className="counselor-header">
-                    <div className="counselor-avatar">
-                      <User />
-                    </div>
-                    <div className="counselor-info">
-                      <h3>{counselor.name}</h3>
-                      <p className="specialty">{counselor.specialty}</p>
-                      <div className="counselor-rating">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`rating-star ${
-                              i < counselor.rating ? 'filled' : ''
-                            }`}
-                          />
-                        ))}
-                        <span className="rating-text">
-                          ({counselor.rating}/5)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  Đặt lịch tư vấn
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-                  <div className="counselor-details">
-                    <p>Kinh nghiệm: {counselor.experience} năm</p>
-                    <p>Chuyên môn: {counselor.specialty}</p>
-                  </div>
+      {/* Booking Dialog */}
+      <Dialog 
+        open={bookingDialogOpen} 
+        onClose={() => setBookingDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            maxHeight: '90vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Typography variant="h5" fontWeight="bold">
+              Đặt lịch tư vấn
+            </Typography>
+            <IconButton onClick={() => setBookingDialogOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-                  <div className="online-status">
-                    <div className="status-dot"></div>
-                    <span className="status-text">Đang trực tuyến</span>
-                  </div>
+        <DialogContent sx={{ pt: 2 }}>
+          {selectedConsultant && (
+            <>
+              {/* Selected Consultant Summary */}
+              <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
+                <Box display="flex" alignItems="center">
+                  <Avatar 
+                    sx={{ 
+                      width: 50, 
+                      height: 50, 
+                      bgcolor: 'primary.main',
+                      mr: 2
+                    }}
+                  >
+                    {selectedConsultant.fullName?.charAt(0) || 'C'}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      {selectedConsultant.fullName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedConsultant.specialization || 'Tư vấn viên'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
 
-                  <div className="time-slots-preview">
-                    <p className="slots-title">Thời gian có sẵn hôm nay:</p>
-                    <div className="slots-list">
-                      {timeSlots.slice(0, 3).map(slot => (
-                        <span key={slot} className="slot-tag">
-                          {slot}
-                        </span>
-                      ))}
-                      <span className="slot-tag">
-                        +{timeSlots.length - 3} khác
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Book Button */}
-        {consultationType && selectedCounselor && (
-          <button
-            onClick={() => setShowBookingForm(true)}
-            className="book-consultation-btn"
-          >
-            Đặt lịch tư vấn
-          </button>
-        )}
-
-        {/* Booking Form Modal */}
-        {showBookingForm && (
-          <div className="booking-form-overlay">
-            <div className="booking-form-container">
-              <div className="booking-form-header">
-                <h2 className="booking-form-title">Đặt lịch tư vấn</h2>
-                <button
-                  onClick={() => setShowBookingForm(false)}
-                  className="close-btn"
-                >
-                  <X />
-                </button>
-              </div>
-
-              {/* Selected counselor summary */}
-              <div className="counselor-summary">
-                <div className="summary-header">
-                  <div className="summary-avatar">
-                    <User />
-                  </div>
-                  <div className="summary-info">
-                    <h3>{selectedCounselor.name}</h3>
-                    <p className="specialty">{selectedCounselor.specialty}</p>
-                    <p className="summary-price">
-                      {
-                        consultationTypes.find(t => t.id === consultationType)
-                          ?.price
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date Selection */}
-              <div className="form-section">
-                <h3 className="form-section-title">Chọn ngày</h3>
-                <div className="date-grid">
-                  {availableDates.map(date => (
-                    <div
-                      key={date.toString()}
-                      className={`date-option ${
-                        selectedDate === date.toString() ? 'selected' : ''
-                      }`}
-                      onClick={() => setSelectedDate(date.toString())}
-                    >
-                      <div className="date-day">{format(date, 'EEE')}</div>
-                      <div className="date-number">{formatDate(date)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Selection */}
-              {selectedDate && (
-                <div className="form-section">
-                  <h3 className="form-section-title">Chọn giờ</h3>
-                  <div className="time-grid">
-                    {timeSlots.map(time => (
-                      <div
-                        key={time}
-                        className={`time-option ${
-                          selectedTime === time ? 'selected' : ''
-                        }`}
-                        onClick={() => setSelectedTime(time)}
+              <Grid container spacing={3}>
+                {/* Date Selection */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    Chọn ngày
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    {availableDates.map((dateInfo) => (
+                      <Button
+                        key={dateInfo.date}
+                        variant={selectedDate === dateInfo.date ? "contained" : "outlined"}
+                        size="small"
+                        onClick={() => handleDateChange(dateInfo.date)}
+                        sx={{ 
+                          minWidth: 'auto',
+                          px: 2,
+                          py: 1,
+                          borderRadius: 2
+                        }}
                       >
-                        {time}
-                      </div>
+                        <Box textAlign="center">
+                          <Typography variant="caption" display="block" fontWeight="bold">
+                            {dateInfo.dayName}
+                          </Typography>
+                          <Typography variant="body2">
+                            {dateInfo.display}
+                          </Typography>
+                          {dateInfo.isToday && (
+                            <Typography variant="caption" color="primary" display="block">
+                              Hôm nay
+                            </Typography>
+                          )}
+                        </Box>
+                      </Button>
                     ))}
-                  </div>
-                </div>
-              )}
+                  </Box>
+                </Grid>
 
-              {/* Reason */}
-              <div className="form-section">
-                <h3 className="form-section-title">Lý do tư vấn (tùy chọn)</h3>
-                <textarea
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  placeholder="Mô tả ngắn gọn vấn đề bạn muốn tư vấn..."
-                  className="reason-textarea"
-                />
-              </div>
+                {/* Time Slots Grid */}
+                {selectedDate && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Chọn giờ
+                    </Typography>
+                    {availabilityLoading ? (
+                      <Box display="flex" justifyContent="center" py={4}>
+                        <CircularProgress />
+                      </Box>
+                    ) : availability.length > 0 ? (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
+                          ✅ Có {availability.length} slot trống cho ngày {format(new Date(selectedDate), 'dd/MM/yyyy')}
+                        </Typography>
+                        <Grid container spacing={2}>
+                          {availability.map((slot) => {
+                            const isSelected = selectedTimeSlot?.startTimeStr === slot.startTimeStr;
+                            return (
+                              <Grid item xs={6} sm={4} md={3} key={slot.startTimeStr}>
+                                <Box
+                                  onClick={() => handleTimeSlotSelect(slot)}
+                                  sx={{
+                                    p: 2,
+                                    border: 2,
+                                    borderRadius: 2,
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    transition: 'all 0.2s',
+                                    borderColor: isSelected ? 'primary.main' : 'grey.300',
+                                    bgcolor: isSelected ? 'primary.50' : 'white',
+                                    '&:hover': {
+                                      borderColor: 'primary.main',
+                                      bgcolor: 'primary.50'
+                                    }
+                                  }}
+                                >
+                                  <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
+                                    <AccessTimeIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
+                                    <Typography variant="body2" fontWeight="500">
+                                      {slot.startTimeStr} - {slot.endTimeStr}
+                                    </Typography>
+                                  </Box>
+                                  <Chip 
+                                    label="Còn trống" 
+                                    size="small" 
+                                    color="success" 
+                                    variant="outlined"
+                                  />
+                                  {isSelected && (
+                                    <Typography variant="caption" color="primary" display="block" sx={{ mt: 1 }}>
+                                      ✓ Đã chọn
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      </Box>
+                    ) : (
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        Không có slot trống cho ngày này. Vui lòng chọn ngày khác hoặc liên hệ tư vấn viên.
+                      </Alert>
+                    )}
+                  </Grid>
+                )}
 
-              {/* Form Actions */}
-              <div className="form-actions">
-                <button
-                  onClick={() => setShowBookingForm(false)}
-                  className="form-btn cancel"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleBookAppointment}
-                  className="form-btn confirm"
-                  disabled={!selectedDate || !selectedTime}
-                >
-                  Xác nhận đặt lịch
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+                {/* Consultation Type */}
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Hình thức tư vấn</InputLabel>
+                    <Select
+                      value={bookingForm.consultationType}
+                      onChange={(e) => setBookingForm({
+                        ...bookingForm,
+                        consultationType: e.target.value
+                      })}
+                      label="Hình thức tư vấn"
+                    >
+                      <MenuItem value="ONLINE">Tư vấn trực tuyến</MenuItem>
+                      <MenuItem value="IN_PERSON">Tư vấn trực tiếp</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                {/* Notes */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Ghi chú (tùy chọn)"
+                    value={bookingForm.notes}
+                    onChange={(e) => setBookingForm({
+                      ...bookingForm,
+                      notes: e.target.value
+                    })}
+                    placeholder="Mô tả vấn đề bạn muốn tư vấn..."
+                  />
+                </Grid>
+              </Grid>
+            </>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button 
+            onClick={() => setBookingDialogOpen(false)}
+            variant="outlined"
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleBookingSubmit}
+            variant="contained"
+            disabled={!selectedTimeSlot || bookingLoading}
+            startIcon={bookingLoading ? <CircularProgress size={16} /> : null}
+          >
+            {bookingLoading ? 'Đang đặt lịch...' : 'Xác nhận đặt lịch'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+        </>
+      )}
+
+      {/* History Tab */}
+      {activeTab === 1 && (
+        <ConsultationHistory />
+      )}
+    </Box>
   );
 };
 
-export default Consultation;
+export default ConsultationPage;

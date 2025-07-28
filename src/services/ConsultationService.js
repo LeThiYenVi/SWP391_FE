@@ -47,10 +47,8 @@ const getConsultantBookingsAPI = async (date = null, status = null) => {
     if (status) params.status = status;
     
     const response = await instance.get('/api/consultation/consultant-bookings', { params });
-    console.log('Get consultant bookings success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Get consultant bookings error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -100,18 +98,36 @@ const getUpcomingConsultationsAPI = async () => {
   }
 };
 
+// =============Consultation Confirmation APIs============
+const confirmConsultationAPI = async (consultationId, confirmationData) => {
+  try {
+    const response = await instance.put(`/api/consultation/${consultationId}/confirm`, confirmationData);
+    console.log('Confirm consultation success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Confirm consultation error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const confirmWithMeetingLinkAPI = async (consultationId) => {
+  try {
+    const response = await instance.post(`/api/consultation/consultant/${consultationId}/confirm-with-meeting`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export {
-  // Availability APIs
   getConsultantAvailabilityAPI,
-  
-  // Booking APIs
   bookConsultationAPI,
   getUserBookingsAPI,
   getConsultantBookingsAPI,
-  
-  // Management APIs
   updateConsultationStatusAPI,
   getConsultationDetailsAPI,
   cancelConsultationAPI,
-  getUpcomingConsultationsAPI
-}; 
+  getUpcomingConsultationsAPI,
+  confirmConsultationAPI,
+  confirmWithMeetingLinkAPI
+};

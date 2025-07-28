@@ -1,39 +1,50 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './context/AuthContext';
+import { WebSocketProvider } from './context/WebSocketContext';
+import { ChatProvider } from './context/ChatContext';
 import { CycleProvider } from './context/CycleContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { ConsultantProvider } from './context/ConsultantContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import { checkVersionAndClearCache } from './utils/cacheUtils';
 import router from './router';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  useEffect(() => {
+    checkVersionAndClearCache();
+  }, []);
+
   return (
     <HelmetProvider>
       <ErrorBoundary>
         <AuthProvider>
-          <CycleProvider>
-            <AppointmentProvider>
-              <ConsultantProvider>
-                <RouterProvider router={router} />
-                <ToastContainer
-                  position="top-right"
-                  autoClose={3000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="light"
-                />
-              </ConsultantProvider>
-            </AppointmentProvider>
-          </CycleProvider>
+          <WebSocketProvider>
+            <ChatProvider>
+              <CycleProvider>
+                <AppointmentProvider>
+                  <ConsultantProvider>
+                    <RouterProvider router={router} />
+                    <ToastContainer
+                      position="top-right"
+                      autoClose={3000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="light"
+                    />
+                  </ConsultantProvider>
+                </AppointmentProvider>
+              </CycleProvider>
+            </ChatProvider>
+          </WebSocketProvider>
         </AuthProvider>
       </ErrorBoundary>
     </HelmetProvider>

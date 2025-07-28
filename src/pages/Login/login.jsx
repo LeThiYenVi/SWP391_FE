@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useGoogleLogin } from '@react-oauth/google';
+import GoogleLoginTest from '../../components/GoogleLoginTest';
 import './login.css';
 
 const Login = () => {
@@ -20,35 +21,20 @@ const Login = () => {
 
   const from = location.state?.from?.pathname || '/';
 
-  // Redirect user đã đăng nhập
+  // Kiểm tra session expired
+  useEffect(() => {
+    const sessionExpired = localStorage.getItem('sessionExpired');
+    if (sessionExpired === 'true') {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      localStorage.removeItem('sessionExpired');
+    }
+  }, []);
+
+  // Redirect user đã đăng nhập - chỉ forward về trang chủ
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('User already logged in, redirecting...', user);
-      let targetPath = '/dashboard'; // Default path
-
-      // Kiểm tra role và chuyển đổi nếu cần
-      let userRole = user.role;
-      if (userRole && userRole.includes('ROLE_')) {
-        userRole = userRole.replace('ROLE_', '').toLowerCase();
-      }
-      
-      console.log('User role for redirect:', userRole);
-      
-      switch (userRole) {
-        case 'admin':
-          targetPath = '/admin/dashboard';
-          break;
-        case 'consultant':
-        case 'counselor':
-          targetPath = '/consultant/dashboard';
-          break;
-        default:
-          targetPath = '/dashboard';
-          break;
-      }
-
-      console.log('Redirecting to:', targetPath);
-      navigate(targetPath, { replace: true });
+      // Chỉ forward về trang chủ, không tự động vào dashboard
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -75,91 +61,40 @@ const Login = () => {
 
       if (result.success) {
         toast.success('Đăng nhập thành công!');
-        const { user } = result;
-        let targetPath = '/dashboard'; // Default path
-
-        // Kiểm tra role và chuyển đổi nếu cần
-        let userRole = user.role;
-        if (userRole && userRole.includes('ROLE_')) {
-          userRole = userRole.replace('ROLE_', '').toLowerCase();
-        }
-        
-        console.log('User role after login:', userRole);
-        console.log('Original user.role:', user.role);
-        console.log('Target path:', targetPath);
-        
-        switch (userRole) {
-          case 'admin':
-            targetPath = '/admin/dashboard';
-            break;
-          case 'consultant':
-          case 'counselor':
-            targetPath = '/consultant/dashboard';
-            break;
-          default:
-            targetPath = '/dashboard';
-            break;
-        }
-
-        // Navigate and then reload the window to ensure state is updated.
-        console.log('Navigating to:', targetPath);
-        navigate(targetPath, { replace: true });
+        // Chỉ forward về trang chủ, không tự động vào dashboard
+        navigate('/', { replace: true });
       } else {
+        // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập thất bại');
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập'
-      );
+      // Fallback error handling nếu có lỗi không mong muốn
+      console.error('Unexpected login error:', error);
+      toast.error('Có lỗi xảy ra khi đăng nhập');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLoginSuccess = async codeResponse => {
+    
     setLoading(true);
     try {
+      
       const result = await loginGoogle(codeResponse.code);
 
       if (result.success) {
         toast.success('Đăng nhập bằng Google thành công!');
-        const { user } = result;
-        let targetPath = '/dashboard'; // Default path
-
-        // Kiểm tra role và chuyển đổi nếu cần
-        let userRole = user.role;
-        if (userRole && userRole.includes('ROLE_')) {
-          userRole = userRole.replace('ROLE_', '').toLowerCase();
-        }
-        
-        console.log('User role after Google login:', userRole);
-        console.log('Original user.role:', user.role);
-        console.log('Target path:', targetPath);
-        
-        switch (userRole) {
-          case 'admin':
-            targetPath = '/admin/dashboard';
-            break;
-          case 'consultant':
-          case 'counselor':
-            targetPath = '/consultant/dashboard';
-            break;
-          default:
-            targetPath = '/dashboard';
-            break;
-        }
-
-        // Navigate and then reload the window to ensure state is updated.
-        console.log('Navigating to (Google):', targetPath);
-        navigate(targetPath, { replace: true });
+        // Chỉ forward về trang chủ, không tự động vào dashboard
+        navigate('/', { replace: true });
       } else {
+        // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập bằng Google thất bại.');
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          'Có lỗi xảy ra khi đăng nhập bằng Google.'
-      );
+      // Fallback error handling nếu có lỗi không mong muốn
+      console.error('Unexpected Google login error:', error);
+      toast.error('Có lỗi xảy ra khi đăng nhập bằng Google.');
     } finally {
       setLoading(false);
     }
@@ -167,7 +102,8 @@ const Login = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleLoginSuccess,
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Google login error:', error);
       toast.error('Đăng nhập Google không thành công. Vui lòng thử lại.');
     },
     flow: 'auth-code',
@@ -252,7 +188,10 @@ const Login = () => {
             <button
               type="button"
               className="google-login"
-              onClick={() => googleLogin()}
+              onClick={() => {
+            
+                googleLogin();
+              }}
               disabled={loading}
             >
               <img

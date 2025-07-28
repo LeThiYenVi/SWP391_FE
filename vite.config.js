@@ -2,9 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default defineConfig(() => ({
   base: './',
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.0'),
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -22,6 +26,11 @@ export default defineConfig({
     port: 3000,
     host: true,
     open: true,
+    // ✅ Tắt HMR WebSocket khi BE down để tránh spam console
+    hmr: {
+      port: 3001, // Dùng port khác để tránh conflict
+      overlay: false, // Tắt error overlay
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -60,6 +69,19 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
+        entryFileNames: '[name].[hash].js',
+        chunkFileNames: '[name].[hash].js',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/\.(css)$/.test(assetInfo.name)) {
+            return `css/[name].[hash].${ext}`;
+          }
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
+            return `img/[name].[hash].${ext}`;
+          }
+          return `assets/[name].[hash].${ext}`;
+        },
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
@@ -73,7 +95,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'buffer', 'process'],
   },
-  define: {
-    global: 'globalThis',
-  },
-});
+}));

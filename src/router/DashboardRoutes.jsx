@@ -6,9 +6,12 @@ import CycleTracking from '../pages/User/CycleTracking';
 import Consultation from '../pages/User/Consultation';
 import STITesting from '../pages/User/STITesting';
 import BookingConfirmation from '../pages/User/STITesting/BookingConfirmation';
+import BookingConfirmationNew from '../pages/User/BookingConfirmation';
 import QA from '../pages/User/QA';
 import TrackingPage from '../pages/User/STITesting/TrackingPage';
 import UserProfile from '../pages/User/UserProfile.jsx';
+import NotificationCenter from '../components/NotificationCenter';
+import ChatPage from '../pages/User/Chat';
 
 const DashboardRoutes = [
   {
@@ -31,12 +34,11 @@ const DashboardRoutes = [
     path: '/consultation',
     element: (
       <ProtectedRoute>
-        <MainLayout title="Tư vấn trực tuyến - Gynexa">
-          <Consultation />
-        </MainLayout>
+        <Consultation />
       </ProtectedRoute>
     ),
   },
+  // Vietnamese route for consultation - handled in HomePageRoutes
   {
     path: '/sti-testing',
     element: (
@@ -52,6 +54,14 @@ const DashboardRoutes = [
     element: (
       <ProtectedRoute>
         <BookingConfirmation />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/booking-confirmation',
+    element: (
+      <ProtectedRoute>
+        <BookingConfirmationNew />
       </ProtectedRoute>
     ),
   },
@@ -80,6 +90,30 @@ const DashboardRoutes = [
     element: (
       <ProtectedRoute>
         <UserProfile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/notifications',
+    element: (
+      <ProtectedRoute>
+        <NotificationCenter />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/chat',
+    element: (
+      <ProtectedRoute>
+        <ChatPage />
       </ProtectedRoute>
     ),
   },

@@ -7,7 +7,7 @@ const loginAPI = async (username, password) => {
       username,
       password,
     });
-    console.log('Login success response:', response);
+
     return response;
   } catch (error) {
     console.error('Login error:', error);
@@ -16,7 +16,7 @@ const loginAPI = async (username, password) => {
 };
 
 const registerAPI = async (userData) => {
-  console.log('Sending registration data to backend:', userData);
+  
   try {
     const response = await instance.post('/api/auth/register', {
       username: userData.username,
@@ -24,7 +24,7 @@ const registerAPI = async (userData) => {
       email: userData.email,
       fullName: userData.fullName,
     });
-    console.log('Register success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Register error:', error.response?.data || error.message);
@@ -51,17 +51,14 @@ const forgetPasswordAPI = async (email, verificationUrl = null) => {
 
 const validateOtpAPI = async (email, otpCode) => {
   try {
-    console.log('Validating OTP for email:', email, 'OTP:', otpCode);
+
     
     const response = await instance.post('/api/auth/validate-otp', {
       email: email,
       otpCode: otpCode
     });
     
-    console.log('Validate OTP full response:', response);
-    console.log('Validate OTP response.data:', response.data);
-    console.log('Validate OTP response.status:', response.status);
-    console.log('Validate OTP response.headers:', response.headers);
+    
     
     return response.data;
   } catch (error) {
@@ -78,7 +75,7 @@ const validateOtpAPI = async (email, otpCode) => {
 
 const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
   try {
-    console.log('DEBUG - Calling reset password API with token:', token ? `${token.substring(0, 10)}...` : 'invalid token');
+
     
     // Nếu có email và otpCode từ extraParams, sử dụng format OTP-based reset
     if (extraParams.email && extraParams.otpCode) {
@@ -88,9 +85,8 @@ const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
         newPassword: newPassword
       };
       
-      console.log('DEBUG - Using OTP-based reset with email:', extraParams.email);
+
       const response = await instance.post('/api/auth/reset-password', requestData);
-      console.log('DEBUG - Reset password success:', response.data);
       return response.data;
     } else {
       // Fallback to token-based reset (old format)
@@ -101,7 +97,6 @@ const resetPasswordAPI = async (token, newPassword, extraParams = {}) => {
       };
       
       const response = await instance.post('/api/auth/reset-password', requestData);
-      console.log('DEBUG - Reset password success:', response.data);
       return response.data;
     }
   } catch (error) {
@@ -118,7 +113,7 @@ const updatePasswordAPI = async (password, newPassword) => {
         newPassword,
       },
     });
-    console.log('Password update success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Password update error:', error.response?.data || error.message);
@@ -128,13 +123,18 @@ const updatePasswordAPI = async (password, newPassword) => {
 
 const loginByGoogleAPI = async code => {
   try {
+
+
     const response = await instance.post('/api/auth/login-by-google', {
       code,
     });
-    console.log('Google Login success:', response);
+
+
     return response;
   } catch (error) {
-    console.error('Google Login error:', error);
+    console.error('❌ Google Login API error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     throw error;
   }
 };
@@ -142,7 +142,7 @@ const loginByGoogleAPI = async code => {
 const logoutAPI = async () => {
   try {
     const response = await instance.post('/api/auth/logout');
-    console.log('Logout success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Logout error:', error.response?.data || error.message);
@@ -155,7 +155,7 @@ const refreshTokenAPI = async (refreshToken) => {
     const response = await instance.post('/api/auth/refresh-token', {
       refreshToken
     });
-    console.log('Refresh token success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Refresh token error:', error.response?.data || error.message);
@@ -167,7 +167,7 @@ const refreshTokenAPI = async (refreshToken) => {
 const getUserProfileAPI = async () => {
   try {
     const response = await instance.get('/api/user/profile');
-    console.log('Get user profile success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Get user profile error:', error.response?.data || error.message);
@@ -175,10 +175,21 @@ const getUserProfileAPI = async () => {
   }
 };
 
+const getUserProfileWithTrendsAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/profile/trends');
+    console.log('Get user profile with trends success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get user profile with trends error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 const updateUserProfileAPI = async (profileData) => {
   try {
     const response = await instance.put('/api/user/profile', profileData);
-    console.log('Update user profile success:', response.data);
+
     return response.data;
   } catch (error) {
     console.error('Update user profile error:', error.response?.data || error.message);
@@ -242,52 +253,12 @@ const getUserRemindersAPI = async () => {
   }
 };
 
-// =============Admin APIs============
-const getAllAccountsAPI = async (role = null, pageNumber = 1, pageSize = 10) => {
-  try {
-    const params = {};
-    if (role !== null) {
-      params.role = role;
-    }
-    params.pageNumber = pageNumber;
-    params.pageSize = pageSize;
-    const response = await instance.get('/api/admin/users', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Get all accounts error:', error.response?.data || error.message);
-    throw error;
-  }
-};
 
-const getAwaitingDesignersAPI = async () => {
-  try {
-    const response = await instance.get('/api/admin/users/awaiting-designers');
-    console.log('Get awaiting designers success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get awaiting designers error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-const applicationResultAPI = async (userId, status) => {
-  try {
-    const response = await instance.post('/api/admin/users/application-result', {
-      userId,
-      status
-    });
-    console.log('Application result success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Application result error:', error.response?.data || error.message);
-    throw error;
-  }
-};
 
 // =============Dashboard APIs============
 const getRevenueByDayAPI = async (month, year) => {
   try {
-    const response = await instance.get('/api/admin/dashboard/revenue-by-day', {
+    const response = await instance.get('/api/admin/reports/dashboard', {
       params: { month, year }
     });
     console.log('Get revenue by day success:', response.data);
@@ -307,7 +278,7 @@ const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
     if (pageSize > 0) {
       params.pageSize = pageSize;
     }
-    const response = await instance.get('/api/admin/orders', { params });
+    const response = await instance.get('/api/admin/reports/overview', { params });
     console.log('Get all orders success:', response.data);
     return response.data;
   } catch (error) {
@@ -318,7 +289,7 @@ const getAllOrdersAPI = async (pageNumber = 1, pageSize = 10) => {
 
 const getTopDesignersByRevenueAPI = async (topN = 5) => {
   try {
-    const response = await instance.get('/api/admin/dashboard/top-designers', {
+    const response = await instance.get('/api/admin/reports/bookings', {
       params: { topN }
     });
     console.log('Get top designers by revenue success:', response.data);
@@ -528,29 +499,94 @@ const getAllFursByDesAPI = async (pageNumber = -1, pageSize = -1) => {
 };
 
 // =============Testing Services APIs============
-const getAllTestingServicesAPI = async (pageNumber = -1, pageSize = -1) => {
+const getAllTestingServicesAPI = async (pageNumber = 1, pageSize = 100) => {
   try {
-    const params = {};
-
-    if (pageNumber !== -1) {
-      params.pageNumber = pageNumber;
+    const response = await instance.get('/api/admin/testing-services', {
+      params: { pageNumber, pageSize }
+    });
+    console.log('Get all testing services success:', response);
+    
+    // Kiểm tra cấu trúc response
+    if (response.data && response.data.content) {
+      // Nếu response có cấu trúc pagination
+      return response.data.content;
+    } else if (Array.isArray(response.data)) {
+      // Nếu response là array trực tiếp
+      return response.data;
+    } else {
+      // Fallback
+      return response.data || [];
     }
-
-    if (pageSize !== -1) {
-      params.pageSize = pageSize;
-    }
-
-    const response = await instance.get('/api/admin/testing-services', { params });
-    console.log('Get all testing services success:', response.data);
-    return response.data;
   } catch (error) {
     console.error('Get all testing services error:', error.response?.data || error.message);
     throw error;
   }
 };
 
+const updateTestingServiceAPI = async (serviceId, updateData) => {
+  try {
+    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, updateData);
+    console.log('Update testing service success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update testing service error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const deleteTestingServiceAPI = async (serviceId) => {
+  try {
+    const response = await instance.delete(`/api/admin/testing-services/${serviceId}`);
+    console.log('Delete testing service success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Delete testing service error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Booking APIs============
+const getAllBookingsAPI = async (pageNumber = 1, pageSize = 10) => {
+  try {
+    const response = await instance.get('/api/admin/testing-services/bookings', {
+      params: { pageNumber, pageSize }
+    });
+    console.log('Get all bookings success:', response);
+    
+    // Kiểm tra cấu trúc response
+    if (response.data && response.data.content) {
+      // Nếu response có cấu trúc pagination
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      // Nếu response là array trực tiếp
+      return {
+        content: response.data,
+        pageNumber: 1,
+        pageSize: response.data.length,
+        totalElements: response.data.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false
+      };
+    } else {
+      // Fallback
+      return response.data || {
+        content: [],
+        pageNumber: 1,
+        pageSize: 10,
+        totalElements: 0,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false
+      };
+    }
+  } catch (error) {
+    console.error('Get all bookings error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export {
-  // Authentication APIs
   loginAPI,
   registerAPI,
   forgetPasswordAPI,
@@ -560,42 +596,24 @@ export {
   loginByGoogleAPI,
   logoutAPI,
   refreshTokenAPI,
-  
-  // User Profile APIs
   getUserProfileAPI,
+  getUserProfileWithTrendsAPI,
   updateUserProfileAPI,
   getUserBookingHistoryAPI,
-  
-  // Menstrual Cycle APIs
   addOrUpdateMenstrualCycleAPI,
   logMenstrualPeriodAPI,
   getMenstrualCycleTrackerAPI,
   getUserRemindersAPI,
-  
-  // Admin APIs
-  getAllAccountsAPI,
-  getAwaitingDesignersAPI,
-  applicationResultAPI,
-  
-  // Dashboard APIs
   getRevenueByDayAPI,
   getAllOrdersAPI,
   getTopDesignersByRevenueAPI,
   getOrderStatusByMonthAPI,
   getCustomerGrowthAPI,
-  
-  // Product APIs
   getNewProductsAPI,
   createNewProductAPI,
-  
-  // Category APIs
   getAllCategoriesAPI,
-  
-  // Furniture APIs
   createFurnitureAPI,
   updateFurnitureAPI,
-  
-  // Design APIs
   createDesignAPI,
   updateDesignAPI,
   
@@ -608,5 +626,10 @@ export {
   getAllFursByDesAPI,
   
   // Testing Services APIs
-  getAllTestingServicesAPI
+  getAllTestingServicesAPI,
+  updateTestingServiceAPI,
+  deleteTestingServiceAPI,
+  
+  // Booking APIs
+  getAllBookingsAPI
 };

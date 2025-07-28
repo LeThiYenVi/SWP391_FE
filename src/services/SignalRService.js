@@ -6,7 +6,6 @@ export const getSignalRConnection = () => connection;
 
 export const startSignalRConnection = async (accessToken, onReceiveMessage) => {
   if (connection && connection.state === signalR.HubConnectionState.Connected) {
-    console.log("✅ Đã kết nối SignalR.");
     return;
   }
 
@@ -19,7 +18,6 @@ export const startSignalRConnection = async (accessToken, onReceiveMessage) => {
     .build();
 
   connection.on("ReceiveMessage", (message) => {
-    console.log("📥 Nhận tin nhắn:", message);
     if (typeof onReceiveMessage === "function") {
       onReceiveMessage(message);
     }

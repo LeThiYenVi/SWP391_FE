@@ -1,26 +1,18 @@
 import { format, isValid, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-/**
- * Safely format a date to string
- * @param {Date|string} date - Date to format
- * @param {string} formatStr - Format string (default: 'yyyy-MM-dd')
- * @returns {string} - Formatted date string or empty string if invalid
- */
 export const safeFormatDate = (date, formatStr = 'yyyy-MM-dd') => {
   try {
     if (!date) return '';
-    
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
     if (!isValid(dateObj)) {
-      console.warn('Invalid date provided to safeFormatDate:', date);
       return '';
     }
-    
+
     return format(dateObj, formatStr, { locale: vi });
   } catch (error) {
-    console.error('Error formatting date:', error, 'Date:', date);
     return '';
   }
 };
@@ -61,13 +53,11 @@ export const safeCreateDate = (date) => {
     const dateObj = new Date(date);
     
     if (!isValid(dateObj)) {
-      console.warn('Invalid date provided to safeCreateDate:', date);
       return null;
     }
-    
+
     return dateObj;
   } catch (error) {
-    console.error('Error creating date:', error, 'Date:', date);
     return null;
   }
 };

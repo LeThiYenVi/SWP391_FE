@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import ConsultantDashboard from './ConsultantDashboard';
 import ConsultantAppointments from './ConsultantAppointments';
 import ConsultantMessages from './ConsultantMessages';
 import ConsultantProfile from './ConsultantProfile';
+import CreateAppointment from './CreateAppointment';
+import ConsultantQA from './ConsultantQA';
 import {
   Menu,
   X,
@@ -15,20 +17,23 @@ import {
   Settings,
   LogOut,
   Heart,
+  HelpCircle,
 } from 'lucide-react';
 import './ConsultantLayout.css';
 import { useAuth } from '../../context/AuthContext';
+import { useConsultant } from '../../context/ConsultantContext';
 
 const ConsultantLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout } = useAuth();
+  const { consultantProfile } = useConsultant();
 
   const consultantData = {
-    name: 'Dr. Nguyễn Thị Hương',
-    specialty: 'Chuyên khoa Sản Phụ khoa',
-    avatar:
-      'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
+    name: consultantProfile?.fullName || 'Dr. Nguyễn Thị Hương',
+    specialty: consultantProfile?.specialization || 'Chuyên khoa Sản Phụ khoa',
+    avatar: consultantProfile?.profileImageUrl || 'https://i.pravatar.cc/100?u=consultant',
     onlineStatus: true,
   };
 
@@ -52,6 +57,12 @@ const ConsultantLayout = () => {
       badge: '12',
     },
     {
+      path: '/consultant/qa',
+      icon: HelpCircle,
+      label: 'Hỏi đáp',
+      badge: null,
+    },
+    {
       path: '/consultant/profile',
       icon: User,
       label: 'Hồ sơ',
@@ -61,7 +72,7 @@ const ConsultantLayout = () => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    navigate('/');
   };
 
   const toggleSidebar = () => {
@@ -85,33 +96,26 @@ const ConsultantLayout = () => {
           </Link>
           <Link to="/consultant/dashboard" style={{marginLeft:24,color:'#334155',fontWeight:600,textDecoration:'none'}}>Dashboard</Link>
           <Link to="/consultant/appointments" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Lịch hẹn</Link>
+          <Link to="/consultant/create-appointment" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Tạo lịch hẹn</Link>
           <Link to="/consultant/messages" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Tin nhắn</Link>
+          <Link to="/consultant/qa" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Hỏi đáp</Link>
           <Link to="/consultant/profile" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Hồ sơ</Link>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <img src={consultantData.avatar} alt={consultantData.name} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:'2px solid #e0e7ef'}} />
+          <img 
+            src={consultantData.avatar && consultantData.avatar.trim() !== '' ? consultantData.avatar : 'https://i.pravatar.cc/100?u=consultant'} 
+            alt={consultantData.name} 
+            style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:'2px solid #e0e7ef'}}
+            onError={(e) => {
+              e.target.src = 'https://i.pravatar.cc/100?u=consultant';
+            }}
+          />
           <span style={{fontWeight:600,color:'#334155',fontSize:'1rem'}}>{consultantData.name}</span>
           <button className="logout-btn" onClick={handleLogout} style={{display:'flex',alignItems:'center',gap:8,background:'none',border:'none',color:'#dc2626',fontWeight:600,cursor:'pointer',fontSize:'1rem',padding:'6px 16px',borderRadius:8,transition:'background 0.2s'}}>
             <LogOut size={18} /> Đăng xuất
           </button>
         </div>
       </nav>
-
-      {/* Mobile Header */}
-      <div className="mobile-header">
-        <div className="mobile-header-content">
-          <h1>Bảng điều khiển</h1>
-          <div className="mobile-header-actions">
-            <button className="notification-btn">
-              <Bell size={20} />
-              <span className="notification-badge">3</span>
-            </button>
-            <button className="mobile-menu-btn" onClick={toggleSidebar}>
-              <Menu size={24} />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <main className="consultant-main">
@@ -122,7 +126,9 @@ const ConsultantLayout = () => {
           />
           <Route path="/dashboard" element={<ConsultantDashboard />} />
           <Route path="/appointments" element={<ConsultantAppointments />} />
+          <Route path="/create-appointment" element={<CreateAppointment />} />
           <Route path="/messages" element={<ConsultantMessages />} />
+          <Route path="/qa" element={<ConsultantQA />} />
           <Route path="/profile" element={<ConsultantProfile />} />
         </Routes>
       </main>

@@ -1,4 +1,5 @@
 import { differenceInDays, addDays, format } from 'date-fns';
+import instance from './customize-axios';
 
 class NotificationService {
   constructor() {
@@ -219,7 +220,6 @@ class NotificationService {
     });
   }
 
-  // Thông báo khi có triệu chứng bất thường
   checkAbnormalSymptoms(symptoms, cycleData) {
     const concerningSymptoms = [
       'Chảy máu bất thường',
@@ -252,7 +252,6 @@ class NotificationService {
     }
   }
 
-  // Thông báo khi chu kỳ bất thường
   checkIrregularCycle(cycleHistory) {
     if (cycleHistory.length < 3) return;
 
@@ -276,7 +275,6 @@ class NotificationService {
     }
   }
 
-  // Lấy thống kê thông báo
   getNotificationStats() {
     const total = this.notifications.length;
     const unread = this.notifications.filter(n => !n.read).length;
@@ -288,7 +286,6 @@ class NotificationService {
     return { total, unread, byType };
   }
 
-  // Xóa thông báo cũ
   cleanupOldNotifications(daysOld = 30) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
@@ -299,9 +296,253 @@ class NotificationService {
 
     this.notify();
   }
+
+  // ========== API METHODS ==========
+
+  // Lấy tất cả notifications từ backend
+  async fetchNotifications() {
+    try {
+      const response = await instance.get('/api/notifications');
+      if (response.data.success) {
+        this.notifications = response.data.data.map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          description: notification.description,
+          link: notification.link,
+          read: notification.isRead,
+          timestamp: new Date(notification.createdAt)
+        }));
+        this.notify();
+        return this.notifications;
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      throw error;
+    }
+  }
+
+  // Lấy notifications theo loại
+  async fetchNotificationsByType(type) {
+    try {
+      const response = await axios.get(`/api/notifications/type/${type}`);
+      if (response.data.success) {
+        return response.data.data.map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          description: notification.description,
+          link: notification.link,
+          read: notification.isRead,
+          timestamp: new Date(notification.createdAt)
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching notifications by type:', error);
+      throw error;
+    }
+  }
+
+  // Lấy số lượng notifications chưa đọc
+  async getUnreadCount() {
+    try {
+      const response = await axios.get('/api/notifications/unread-count');
+      if (response.data.success) {
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      throw error;
+    }
+  }
+
+  // Đánh dấu notification đã đọc
+  async markAsRead(notificationId) {
+    try {
+      const response = await instance.patch(`/api/notifications/${notificationId}/read`);
+      if (response.data.success) {
+        // Cập nhật local state
+        const notification = this.notifications.find(n => n.id === notificationId);
+        if (notification) {
+          notification.read = true;
+          this.notify();
+        }
+        return true;
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  // Đánh dấu tất cả notifications đã đọc
+  async markAllAsRead() {
+    try {
+      const response = await instance.patch('/api/notifications/mark-all-read');
+      if (response.data.success) {
+        // Cập nhật local state
+        this.notifications.forEach(notification => {
+          notification.read = true;
+        });
+        this.notify();
+        return true;
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  }
+
+  // Tạo notifications mẫu
+  async createSampleNotifications() {
+    try {
+      const response = await instance.post('/api/notifications/create-sample');
+      if (response.data.success) {
+        console.log('Sample notifications created successfully');
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error('Error creating sample notifications:', error);
+      throw error;
+    }
+  }
+
+  // Tạo notification mới (được gọi từ backend)
+  async createNotification(notificationData) {
+    try {
+      // Thông thường notification sẽ được tạo từ backend
+      // Method này chỉ để sync với backend nếu cần
+      const newNotification = {
+        id: Date.now() + Math.random(),
+        timestamp: new Date(),
+        read: false,
+        ...notificationData
+      };
+
+      this.notifications.unshift(newNotification);
+      
+      // Giới hạn số lượng thông báo
+      if (this.notifications.length > 50) {
+        this.notifications = this.notifications.slice(0, 50);
+      }
+
+      this.notify();
+      return newNotification;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  // Gửi email xác nhận đặt lịch (mock)
+  sendBookingConfirmationEmail({ to, counselorName, date, time, type }) {
+    // Giả lập gửi email, thực tế sẽ gọi API backend hoặc EmailJS
+    console.log(
+      `Gửi email xác nhận tới ${to}:\nBạn đã đặt lịch tư vấn với ${counselorName} vào ${date} lúc ${time} (${type})`
+    );
+    // Có thể show toast hoặc notification in-app nếu muốn
+    this.createInAppNotification({
+      type: 'appointment',
+      title: 'Đã gửi email xác nhận',
+      message: `Đã gửi email xác nhận đặt lịch tư vấn tới ${to}`,
+      priority: 'low',
+    });
+  }
+
+  // Gửi email nhắc nhở lịch hẹn (mock)
+  sendAppointmentReminderEmail({ to, counselorName, date, time, type }) {
+    // Giả lập gửi email nhắc nhở, thực tế sẽ gọi API backend hoặc EmailJS
+    console.log(
+      `Gửi email nhắc nhở tới ${to}:\nBạn có lịch tư vấn với ${counselorName} vào ${date} lúc ${time} (${type})`
+    );
+    this.createInAppNotification({
+      type: 'appointment',
+      title: 'Đã gửi email nhắc nhở',
+      message: `Đã gửi email nhắc nhở lịch tư vấn tới ${to}`,
+      priority: 'low',
+    });
+  }
+
+  // ============= API CALLS =============
+  
+  // Lấy tất cả notifications của user
+  async fetchUserNotifications() {
+    try {
+      const response = await instance.get('/api/homepage/notifications');
+      if (response.data.success) {
+        return response.data.content || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  }
+
+  // Lấy notifications theo type
+  async fetchUserNotificationsByType(type) {
+    try {
+      const response = await instance.get(`/api/homepage/notifications?type=${type}`);
+      if (response.data.success) {
+        return response.data.content || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching notifications by type:', error);
+      return [];
+    }
+  }
+
+  // Đánh dấu notification đã đọc
+  async markNotificationAsReadAPI(notificationId) {
+    try {
+      const response = await instance.post(`/api/homepage/notifications/${notificationId}/mark-read`);
+      return response.data.success;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  // Đánh dấu tất cả notifications đã đọc
+  async markAllNotificationsAsReadAPI() {
+    try {
+      const response = await instance.post('/api/homepage/notifications/mark-all-read');
+      return response.data.success;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+  }
+
+  // Lấy số lượng unread notifications
+  async getUnreadNotificationCountAPI() {
+    try {
+      const response = await instance.get('/api/homepage/stats');
+      if (response.data.success) {
+        return response.data.content?.newNotifications || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      return 0;
+    }
+  }
+
+  // Tạo notification mẫu (cho testing)
+  async createSampleNotificationsAPI() {
+    try {
+      const response = await instance.post('/api/user/create-sample-notifications');
+      return response.data.success;
+    } catch (error) {
+      console.error('Error creating sample notifications:', error);
+      return false;
+    }
+  }
 }
 
-// Singleton instance
+// Export instance
 const notificationService = new NotificationService();
-
 export default notificationService; 

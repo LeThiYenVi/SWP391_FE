@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import BookingTrackingService from '../../../services/BookingTrackingService';
-import { Loader, CheckCircle, XCircle, Clock, FlaskConical, Check, AlertTriangle } from 'lucide-react';
+import { useBookingTracking } from '../../../hooks/useBookingTracking';
+import { Loader, CheckCircle, XCircle, Clock, FlaskConical, Check, AlertTriangle, RefreshCw } from 'lucide-react';
+import bookingService from '../../../services/BookingService';
+import StatusUpdateNotification from '../../../components/StatusUpdateNotification';
 
 const steps = [
   {
@@ -9,6 +11,12 @@ const steps = [
     label: 'Chờ xác nhận',
     icon: <Clock size={28} />,
     color: '#fbbf24',
+  },
+  {
+    key: 'CONFIRMED',
+    label: 'Đã xác nhận',
+    icon: <CheckCircle size={28} />,
+    color: '#10b981',
   },
   {
     key: 'SAMPLE_COLLECTED',
@@ -25,13 +33,13 @@ const steps = [
   {
     key: 'COMPLETED',
     label: 'Hoàn thành',
-    icon: <CheckCircle size={28} />, 
+    icon: <CheckCircle size={28} />,
     color: '#22c55e',
   },
   {
     key: 'CANCELLED',
     label: 'Đã huỷ',
-    icon: <XCircle size={28} />, 
+    icon: <XCircle size={28} />,
     color: '#ef4444',
     isCancel: true,
   },
@@ -40,10 +48,11 @@ const steps = [
 const statusToStepIndex = status => {
   switch (status) {
     case 'PENDING': return 0;
-    case 'SAMPLE_COLLECTED': return 1;
-    case 'TESTING': return 2;
-    case 'COMPLETED': return 3;
-    case 'CANCELLED': return 4;
+    case 'CONFIRMED': return 1;
+    case 'SAMPLE_COLLECTED': return 2;
+    case 'TESTING': return 3;
+    case 'COMPLETED': return 4;
+    case 'CANCELLED': return 5;
     default: return 0;
   }
 };
@@ -52,28 +61,137 @@ const TrackingPage = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState(null);
-  const [connected, setConnected] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const { connected, subscribeToBooking, unsubscribeFromBooking } = useBookingTracking();
 
-  useEffect(() => {
+
+  // Fetch booking data
+  const fetchBookingData = useCallback(async () => {
     if (!bookingId) return;
-    BookingTrackingService.connect(() => {
-      setConnected(true);
-      BookingTrackingService.subscribeBooking(bookingId, (update) => {
-        setStatus(update);
-      });
-    });
-    return () => {
-      BookingTrackingService.unsubscribeBooking(bookingId);
-      BookingTrackingService.disconnect();
-      setConnected(false);
-    };
+
+    setLoading(true);
+    try {
+      const result = await bookingService.getBookingById(bookingId);
+
+      if (result.success) {
+        setBookingData(result.data);
+        setStatus({
+          status: result.data.status,
+          message: getStatusMessage(result.data.status),
+          timestamp: result.data.updatedAt || result.data.createdAt,
+          updatedBy: 'System'
+        });
+      }
+    } catch (error) {
+      // Handle error silently or show user-friendly message
+    } finally {
+      setLoading(false);
+    }
   }, [bookingId]);
 
-  const currentStep = status ? statusToStepIndex(status.status) : 0;
+  // Get status message
+  const getStatusMessage = (status) => {
+    switch (status) {
+      case 'PENDING': return 'Booking đang chờ xác nhận từ nhân viên';
+      case 'SAMPLE_COLLECTED': return 'Đã lấy mẫu xét nghiệm thành công';
+      case 'TESTING': return 'Mẫu đang được xét nghiệm';
+      case 'COMPLETED': return 'Xét nghiệm hoàn thành, kết quả đã sẵn sàng';
+      case 'CANCELLED': return 'Booking đã bị hủy';
+      default: return 'Trạng thái không xác định';
+    }
+  };
+
+  // Show notification when status changes
+  const showStatusNotification = (update) => {
+    const message = `Trạng thái booking đã được cập nhật thành: ${steps.find(s => s.key === update.status)?.label || update.status}`;
+    setNotification({
+      message,
+      status: update.status,
+      timestamp: new Date(),
+      canReload: true
+    });
+    setShowNotification(true);
+
+    // Auto hide after 10 seconds
+    setTimeout(() => {
+      setShowNotification(false);
+    }, 10000);
+  };
+
+  // Handle reload booking data
+  const handleReloadData = () => {
+    setShowNotification(false);
+    fetchBookingData();
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchBookingData();
+  }, [fetchBookingData]);
+
+  useEffect(() => {
+    if (!bookingId || !connected) {
+      return;
+    }
+
+    const subscription = subscribeToBooking(bookingId, (update) => {
+      // Update status
+      setStatus(prevStatus => {
+        // Only show notification if status actually changed
+        if (!prevStatus || prevStatus.status !== update.status) {
+          showStatusNotification(update);
+        }
+        return update;
+      });
+    });
+
+    return () => {
+      if (subscription) {
+        unsubscribeFromBooking(bookingId);
+      }
+    };
+  }, [bookingId, connected, subscribeToBooking, unsubscribeFromBooking]);
+
+  // Calculate current step - when a status is achieved, that step is completed and next step becomes active
+  const getStepStatus = (status) => {
+    if (!status) return { currentStep: 0, completedSteps: [] };
+
+    const statusIndex = statusToStepIndex(status.status);
+
+    // When a status is achieved, that step and all previous steps are completed
+    // The next step becomes the current active step
+    const completedSteps = [];
+    for (let i = 0; i <= statusIndex; i++) {
+      completedSteps.push(i);
+    }
+
+    // Current active step is the next step after the completed status
+    // Unless it's the final step or cancelled
+    const currentStep = status.status === 'COMPLETED' || status.status === 'CANCELLED'
+      ? statusIndex
+      : Math.min(statusIndex + 1, steps.length - 1);
+
+    return { currentStep, completedSteps };
+  };
+
+  const { currentStep, completedSteps } = getStepStatus(status);
   const isCancelled = status && status.status === 'CANCELLED';
+
+
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center py-8 bg-gray-50">
+      {/* Status Change Notification */}
+      <StatusUpdateNotification
+        notification={notification}
+        show={showNotification}
+        onReload={handleReloadData}
+        onClose={() => setShowNotification(false)}
+      />
+
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 mx-auto mt-8">
         <button
           onClick={() => navigate(-1)}
@@ -81,17 +199,36 @@ const TrackingPage = () => {
         >
           ← Quay lại
         </button>
-        <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-          Tracking trạng thái Booking #{bookingId}
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-blue-900">
+            Tracking trạng thái Booking #{bookingId}
+          </h2>
+          <button
+            onClick={handleReloadData}
+            disabled={loading}
+            className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Đang tải...' : 'Tải lại'}
+          </button>
+        </div>
+
         <div className="mb-8 text-center text-gray-500 text-sm">
           Theo dõi tiến trình xét nghiệm của bạn realtime. Trang này sẽ tự động cập nhật khi có thay đổi.
+          {bookingData && (
+            <div className="mt-2 text-xs">
+              <span className="font-medium">Dịch vụ:</span> {bookingData.serviceName} |
+              <span className="font-medium"> Ngày tạo:</span> {new Date(bookingData.createdAt).toLocaleString('vi-VN')}
+            </div>
+          )}
+
+
         </div>
         {/* Stepper */}
         <div className="flex items-center justify-between mb-8">
           {steps.slice(0, isCancelled ? 5 : 4).map((step, idx) => {
             const isActive = idx === currentStep && (!isCancelled || step.isCancel);
-            const isCompleted = idx < currentStep && !isCancelled;
+            const isCompleted = completedSteps.includes(idx) && !isCancelled && idx !== currentStep;
             const isFuture = idx > currentStep && !isCancelled;
             return (
               <div key={step.key} className="flex-1 flex flex-col items-center relative">

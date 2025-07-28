@@ -14,7 +14,7 @@ const createTestingServiceAPI = async (serviceData) => {
 
 const updateTestingServiceAPI = async (serviceId, serviceData) => {
   try {
-    const response = await instance.put(`/api/admin/testing-services/${serviceId}`, serviceData);
+    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, serviceData);
     console.log('Update testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -70,7 +70,7 @@ const deleteConsultantAPI = async (consultantId) => {
 
 const getAllConsultantsAPI = async () => {
   try {
-    const response = await instance.get('/api/admin/consultants');
+    const response = await instance.get('/api/admin/listConsultant');
     console.log('Get all consultants success:', response.data);
     return response.data;
   } catch (error) {
@@ -90,10 +90,39 @@ const getConsultantByIdAPI = async (consultantId) => {
   }
 };
 
-// =============Admin User Management APIs============
-const getAllUsersAPI = async () => {
+const autoCreateConsultantSlotsAPI = async (consultantId, data) => {
   try {
-    const response = await instance.get('/api/admin/users');
+    const response = await instance.post(`/api/admin/consultants/${consultantId}/auto-create-slots`, data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const uploadConsultantAvatarAPI = async (consultantId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await instance.post(`/api/admin/consultants/${consultantId}/profile-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('Upload consultant avatar success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Upload consultant avatar error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Admin User Management APIs============
+const getAllUsersAPI = async (pageNumber = 1, pageSize = 10) => {
+  try {
+    const response = await instance.get('/api/admin/users', {
+      params: { pageNumber, pageSize }
+    });
     console.log('Get all users success:', response.data);
     return response.data;
   } catch (error) {
@@ -102,13 +131,22 @@ const getAllUsersAPI = async () => {
   }
 };
 
-const updateUserAPI = async (userId, userData) => {
+const getUserByIdAPI = async (userId) => {
   try {
-    const response = await instance.put(`/api/admin/users/${userId}`, userData);
-    console.log('Update user success:', response.data);
+    const response = await instance.get(`/api/admin/user/${userId}`);
+    console.log('Get user by ID success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Update user error:', error.response?.data || error.message);
+    console.error('Get user by ID error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const updateUserAPI = async (userId, data) => {
+  try {
+    const response = await instance.put(`/api/admin/users/${userId}`, data);
+    return response.data;
+  } catch (error) {
     throw error;
   }
 };
@@ -116,10 +154,19 @@ const updateUserAPI = async (userId, userData) => {
 const deleteUserAPI = async (userId) => {
   try {
     const response = await instance.delete(`/api/admin/users/${userId}`);
-    console.log('Delete user success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Delete user error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const setUserToConsultantAPI = async (userId) => {
+  try {
+    const response = await instance.put(`/api/admin/setUserToConsultant/${userId}`);
+    console.log('Set user to consultant success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Set user to consultant error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -202,6 +249,122 @@ const getServiceUtilizationReportAPI = async (period) => {
   }
 };
 
+// =============New Admin Dashboard & Reports APIs============
+// Get dashboard statistics
+const getDashboardStatsAPI = async (month, year) => {
+  try {
+    const response = await instance.get('/api/admin/dashboard-stats', {
+      params: { month, year }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Get dashboard stats error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get reports overview
+const getReportsOverviewAPI = async () => {
+  try {
+    const response = await instance.get('/api/admin/reports/overview');
+    console.log('Get reports overview success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports overview error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get bookings report
+const getReportsBookingsAPI = async (startDate, endDate, period = 'daily') => {
+  try {
+    const params = { period };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const response = await instance.get('/api/admin/reports/bookings', { params });
+    console.log('Get reports bookings success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports bookings error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get financial reports
+const getReportsFinancialsAPI = async (startDate, endDate, period = 'monthly') => {
+  try {
+    const params = { period };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const response = await instance.get('/api/admin/reports/financials', { params });
+    console.log('Get reports financials success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports financials error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get users report
+const getReportsUsersAPI = async (startDate, endDate, period = 'weekly') => {
+  try {
+    const params = { period };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const response = await instance.get('/api/admin/reports/users', { params });
+    console.log('Get reports users success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports users error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get consultants report
+const getReportsConsultantsAPI = async () => {
+  try {
+    const response = await instance.get('/api/admin/reports/consultants');
+    console.log('Get reports consultants success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports consultants error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get services report
+const getReportsServicesAPI = async () => {
+  try {
+    const response = await instance.get('/api/admin/reports/services');
+    console.log('Get reports services success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get reports services error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const autoCreateCommonSlotsAPI = async (data) => {
+  try {
+    const response = await instance.post('/api/admin/timeslots/auto-create', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const registerUserAPI = async (data) => {
+  try {
+    const response = await instance.post('/api/auth/register', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export {
   // Testing Services APIs
   createTestingServiceAPI,
@@ -214,11 +377,15 @@ export {
   deleteConsultantAPI,
   getAllConsultantsAPI,
   getConsultantByIdAPI,
+  autoCreateConsultantSlotsAPI,
+  uploadConsultantAvatarAPI,
   
   // User Management APIs
   getAllUsersAPI,
+  getUserByIdAPI,
   updateUserAPI,
   deleteUserAPI,
+  setUserToConsultantAPI,
   
   // Schedule Management APIs
   getConsultantScheduleAPI,
@@ -228,5 +395,16 @@ export {
   getDashboardReportAPI,
   getUserGrowthReportAPI,
   getRevenueReportAPI,
-  getServiceUtilizationReportAPI
-}; 
+  getServiceUtilizationReportAPI,
+
+  // New Dashboard & Reports APIs
+  getDashboardStatsAPI,
+  getReportsOverviewAPI,
+  getReportsBookingsAPI,
+  getReportsFinancialsAPI,
+  //getReportsUsersAPI,
+  getReportsConsultantsAPI,
+  getReportsServicesAPI,
+  autoCreateCommonSlotsAPI,
+  registerUserAPI
+};

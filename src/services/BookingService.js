@@ -45,18 +45,47 @@ const cancelBookingAPI = async (bookingId) => {
   }
 };
 
+const updateTestResultAPI = async (bookingId, resultData) => {
+  try {
+    const response = await instance.patch(`/api/bookings/${bookingId}/test-result`, resultData);
+    console.log('Update test result success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update test result error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const confirmBookingAPI = async (bookingId) => {
+  try {
+    const response = await instance.patch(`/api/bookings/${bookingId}/confirm`);
+    console.log('Confirm booking success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Confirm booking error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const updateBookingStatusAPI = async (bookingId, statusData) => {
+  try {
+    const response = await instance.patch(`/api/bookings/${bookingId}/status`, statusData);
+    console.log('Update booking status success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Update booking status error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // =============Booking Service Class============
 class BookingService {
   // Create a new booking
   async createBooking(bookingData) {
     try {
       const data = await createBookingAPI(bookingData);
-      // Backend trả về ApiResponse format mới
-      if (data.success === true) {
-        return { success: true, data: data.data, message: data.message };
-      } else {
-        return { success: false, message: data.message };
-      }
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Tạo lịch hẹn thành công' };
     } catch (error) {
       // Xử lý error response từ backend
       const errorMessage = error.response?.data?.message || error.message;
@@ -68,9 +97,11 @@ class BookingService {
   async getUserBookings() {
     try {
       const data = await getUserBookingsAPI();
-      return { success: true, data };
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Lấy danh sách lịch hẹn thành công' };
     } catch (error) {
-      return { success: false, message: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
@@ -78,9 +109,11 @@ class BookingService {
   async getBookingById(bookingId) {
     try {
       const data = await getBookingByIdAPI(bookingId);
-      return { success: true, data };
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Lấy thông tin lịch hẹn thành công' };
     } catch (error) {
-      return { success: false, message: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
@@ -88,9 +121,47 @@ class BookingService {
   async cancelBooking(bookingId) {
     try {
       const data = await cancelBookingAPI(bookingId);
-      return { success: true, data };
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Hủy lịch hẹn thành công' };
     } catch (error) {
-      return { success: false, message: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Update test result (for staff/admin)
+  async updateTestResult(bookingId, resultData) {
+    try {
+      const data = await updateTestResultAPI(bookingId, resultData);
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Xác nhận lịch hẹn thành công' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Update booking status (for user to confirm booking)
+  async updateBookingStatus(bookingId, statusData) {
+    try {
+      const data = await updateBookingStatusAPI(bookingId, statusData);
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Cập nhật trạng thái lịch hẹn thành công' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Confirm booking (for user)
+  async confirmBooking(bookingId) {
+    try {
+      const data = await confirmBookingAPI(bookingId);
+      // Interceptor đã extract data từ ApiResponse
+      return { success: true, data: data, message: 'Xác nhận lịch hẹn thành công' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 }

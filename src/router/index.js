@@ -4,19 +4,23 @@ import LoginRouters from './LoginRoutes';
 import RegisterRouters from './RegisterRoutes';
 import DashboardRoutes from './DashboardRoutes';
 import AdminRoutes from './AdminRoutes';
+import StaffRoutes from './StaffRoutes';
 import ConsultantRoutes from './ConsultantRoutes';
-import UnauthorizedRoutes from './UnauthorizedRoutes';
 import { createBrowserRouter } from 'react-router-dom';
 
 const AppRoutes=[
-    ...HomePageRoutes,
     ...LoginRouters,
     ...RegisterRouters,
-    ...DashboardRoutes,
+    ...DashboardRoutes,  // Dashboard routes trước HomePageRoutes
     ...AdminRoutes,
+    ...StaffRoutes,
     ...ConsultantRoutes,
-    ...UnauthorizedRoutes,
+    ...HomePageRoutes,   // HomePageRoutes cuối cùng
 ]
+
+// Debug: In ra tất cả routes
+console.log('All routes:', AppRoutes.map(route => route.path));
+
 const router = createBrowserRouter(AppRoutes);
 export default router
 

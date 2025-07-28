@@ -1,344 +1,493 @@
-import React, { useEffect, useState } from "react";
-import { Card, Badge, Row, Col, List, Progress, Tooltip, Spin, DatePicker, Button, message, InputNumber, Form, Input, Select, Checkbox, Modal } from "antd";
-import { CalendarOutlined, HeartOutlined, SmileOutlined, WarningOutlined, CheckCircleOutlined } from "@ant-design/icons";
-import axios from "../../../services/customize-axios";
-import dayjs from "dayjs";
+﻿import React, { useEffect, useState } from 'react';
+import { Button, TextField, Typography, Box, Paper, InputAdornment, Stepper, Step, StepLabel } from '@mui/material';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
+import ModernCycleTracking from './modern';
 
-const moodColors = {
-  BINH_THUONG: "#52c41a",
-  BUON: "#1890ff",
-  LO_LANG: "#faad14",
-  CAU_GAT: "#f5222d",
-  HANH_PHUC: "#eb2f96",
-  CANG_THANG: "#722ed1",
-  NORMAL: "#52c41a",
-  SAD: "#1890ff",
-  ANXIOUS: "#faad14",
-  IRRITATED: "#f5222d",
-  HAPPY: "#eb2f96",
-  STRESSED: "#722ed1"
-};
-
-const moodVi = {
-  NORMAL: "Bình thường",
-  SAD: "Buồn",
-  ANXIOUS: "Lo lắng",
-  IRRITATED: "Cáu gắt",
-  HAPPY: "Hạnh phúc",
-  STRESSED: "Căng thẳng",
-};
-
-const { Option } = Select;
-const flowIntensityOptions = [
-  { label: "Nhẹ", value: "LIGHT" },
-  { label: "Vừa", value: "MEDIUM" },
-  { label: "Nặng", value: "HEAVY" },
-];
-const moodOptions = [
-  { label: "Bình thường", value: "NORMAL" },
-  { label: "Buồn", value: "SAD" },
-  { label: "Lo lắng", value: "ANXIOUS" },
-  { label: "Cáu gắt", value: "IRRITATED" },
-  { label: "Hạnh phúc", value: "HAPPY" },
-  { label: "Căng thẳng", value: "STRESSED" },
-];
-const severityOptions = [
-  { label: "Nhẹ", value: "MILD" },
-  { label: "Vừa", value: "MODERATE" },
-  { label: "Nặng", value: "SEVERE" },
-];
-
-const defaultSymptoms = [
-  { symptomId: 1, symptomName: "Đau bụng kinh" },
-  { symptomId: 2, symptomName: "Căng tức ngực" },
-  { symptomId: 3, symptomName: "Mệt mỏi" },
-  { symptomId: 4, symptomName: "Đau đầu" },
-  { symptomId: 5, symptomName: "Thay đổi tâm trạng" },
-];
-
-const CycleTrackingPage = () => {
-  const [data, setData] = useState(null);
+export default function CycleTrackingPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [ovulationDate, setOvulationDate] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [periodDuration, setPeriodDuration] = useState(null);
-  const [form] = Form.useForm();
-  const [symptoms, setSymptoms] = useState([]);
-  const [showSymptomModal, setShowSymptomModal] = useState(false);
-  const [symptomForm] = Form.useForm();
+  const [error, setError] = useState('');
+  const [genderError, setGenderError] = useState(false);
+  const [hasData, setHasData] = useState(false);
+  const [cycleData, setCycleData] = useState(null);
 
   useEffect(() => {
-    axios.get("/api/menstrual-cycle/dashboard")
-      .then((res) => setData(res.data))
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    fetch('/api/menstrual-cycle/current', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    })
+      .then(async res => {
+        const data = await res.json();
+        
+        // Check for gender validation error
+        if (data && data.message && data.message.includes('chưa chọn giới tính')) {
+          setGenderError(true);
+          return;
+        }
+        
+        if (res.status === 403) {
+          setError(data.error || 'Tính năng này chỉ dành cho nữ');
+        } else if (res.status === 204 || (data && data.success === false && data.message === 'Bạn chưa có chu kỳ nào trong hệ thống')) {
+          setHasData(false);
+        } else if (res.status === 200 && data && data.success !== false) {
+          setCycleData(data);
+          setHasData(true);
+        } else {
+          setError('Lỗi không xác định');
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching cycle data:', err);
+        setError('Không thể kết nối server');
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSaveOvulation = () => {
-    if (!ovulationDate) return;
-    setSaving(true);
-    setLoading(true); // Đặt loading ở đầu
-    axios.post("/api/menstrual-cycle/log-enhanced", {
-      ovulationDate: ovulationDate.format("YYYY-MM-DD"),
-      periodDuration: periodDuration || null,
-    })
-      .then(() => {
-        message.success("Đã lưu ngày rụng trứng/thời gian hành kinh!");
-        setOvulationDate(null);
-        setPeriodDuration(null);
-        return axios.get("/api/menstrual-cycle/dashboard");
-      })
-      .then((res) => setData(res.data))
-      .finally(() => {
-        setSaving(false);
-        setLoading(false); // Đảm bảo loading luôn về false
-      });
+  const handleGoToProfile = () => {
+    navigate('/profile');
   };
 
-  const handleSaveLog = (values) => {
-    setSaving(true);
-    setLoading(true);
-    // Chuẩn hóa dữ liệu gửi lên BE
-    const payload = {
-      logDate: values.logDate ? values.logDate.format("YYYY-MM-DDTHH:mm:ss") : null,
-      isActualPeriod: values.isActualPeriod || false,
-      flowIntensity: values.flowIntensity || null,
-      mood: values.mood || null,
-      temperature: values.temperature || null,
-      symptoms: symptoms.length > 0 ? symptoms : null,
-      notes: values.notes || null,
-      ovulationDate: values.ovulationDate ? values.ovulationDate.format("YYYY-MM-DD") : null,
-      periodDuration: values.periodDuration || null,
-    };
-    axios.post("/api/menstrual-cycle/log-enhanced", payload)
-      .then(() => {
-        message.success("Đã lưu log chu kỳ!");
-        setOvulationDate(null);
-        setPeriodDuration(null);
-        setSymptoms([]);
-        form.resetFields();
-        setLoading(true);
-        return axios.get("/api/menstrual-cycle/dashboard");
-      })
-      .then((res) => setData(res.data))
-      .finally(() => {
-        setSaving(false);
-        setLoading(false);
-      });
-  };
-
-  // Thêm triệu chứng
-  const handleAddSymptom = (values) => {
-    setSymptoms([...symptoms, values]);
-    setShowSymptomModal(false);
-    symptomForm.resetFields();
-  };
-  // Xóa triệu chứng
-  const handleRemoveSymptom = (idx) => {
-    setSymptoms(symptoms.filter((_, i) => i !== idx));
-  };
-
-  if (loading) return <Spin size="large" style={{ display: "block", margin: "80px auto" }} />;
-  if (!data) return <div>Không có dữ liệu</div>;
-
-  // Thêm fallback cho các field
-  const { periodPrediction = {}, fertilityWindow = {}, cycleAnalytics = {} } = data || {};
-  if (!periodPrediction.nextPeriodDate || !fertilityWindow.ovulationDate || !cycleAnalytics.averageCycleLength) {
-    return <div>Không có dữ liệu chu kỳ</div>;
+  if (loading) return <div>Đang tải...</div>;
+  
+  if (genderError) {
+    return (
+      <Box sx={{
+        minHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5fafd'
+      }}>
+        <Paper elevation={8} sx={{
+          maxWidth: 500,
+          width: '100%',
+          p: { xs: 3, sm: 4 },
+          borderRadius: 4,
+          bgcolor: '#fff',
+          textAlign: 'center',
+          boxShadow: '0 16px 64px 0 rgba(143,92,247,0.18)'
+        }}>
+          <Typography variant="h4" color="#ff6b6b" gutterBottom sx={{ fontWeight: 'bold' }}>
+            ⚠️ Bạn chưa chọn giới tính
+          </Typography>
+          <Typography variant="body1" color="#7f8c8d" sx={{ mb: 3, fontSize: '16px' }}>
+            Vui lòng điền giới tính trong trang cá nhân để theo dõi chu kỳ sinh sản.
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={handleGoToProfile}
+            sx={{
+              bgcolor: '#8F5CF7',
+              color: '#fff',
+              fontSize: '16px',
+              fontWeight: 600,
+              borderRadius: 2,
+              px: 4,
+              py: 1.5,
+              boxShadow: '0 4px 16px 0 rgba(143,92,247,0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': { 
+                bgcolor: '#651FFF', 
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px 0 rgba(143,92,247,0.4)'
+              }
+            }}
+          >
+            Đi đến trang cá nhân
+          </Button>
+        </Paper>
+      </Box>
+    );
   }
+  
+  if (error) return <div style={{ color: 'red', fontWeight: 'bold' }}>{error}</div>;
+  if (!hasData) return <FirstCycleSetup onSuccess={() => window.location.reload()} />;
+  return <ModernCycleTracking data={cycleData} />;
+}
+
+const steps = [
+  'Chào mừng',
+  'Ngày bắt đầu kỳ kinh',
+  'Các kỳ kinh trước',
+  'Thiết lập chu kỳ',
+  'Xác nhận'
+];
+
+function FirstCycleSetup({ onSuccess }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const [recentDate, setRecentDate] = useState('');
+  const [historyDates, setHistoryDates] = useState(['']);
+  const [cycleLength, setCycleLength] = useState(28);
+  const [periodDuration, setPeriodDuration] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleNext = () => setActiveStep((prev) => prev + 1);
+  const handleBack = () => setActiveStep((prev) => prev - 1);
+
+  const handleAddHistory = () => setHistoryDates([...historyDates, '']);
+  const handleHistoryChange = (idx, value) => {
+    const arr = [...historyDates];
+    arr[idx] = value;
+    setHistoryDates(arr);
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!recentDate) {
+      setError('Vui lòng nhập ngày bắt đầu kỳ kinh gần nhất!');
+      setActiveStep(1);
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+      
+      // Tạo danh sách cycles để gửi
+      const cycles = [];
+      
+      // Thêm kỳ kinh gần nhất
+      cycles.push({
+        startDate: recentDate,
+        cycleLength: cycleLength,
+        periodDuration: periodDuration
+      });
+      
+      // Thêm các kỳ kinh trước đó
+      historyDates.filter(d => d).forEach(date => {
+        cycles.push({
+          startDate: date,
+          cycleLength: cycleLength,
+          periodDuration: periodDuration
+        });
+      });
+      
+      const response = await fetch('/api/menstrual-cycle/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(cycles)
+      });
+      
+      if (response.ok) {
+        onSuccess();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Lỗi khi lưu dữ liệu!');
+      }
+    } catch (e) {
+      setError('Lỗi khi lưu dữ liệu!');
+    }
+    setLoading(false);
+  };
 
   return (
-    <div style={{ padding: 32 }}>
-      {/* Form nhập đầy đủ các trường log chu kỳ */}
-      <Card style={{ marginBottom: 24 }}>
-        <h3>Nhật ký chu kỳ kinh nguyệt</h3>
-        <Form layout="vertical" form={form} onFinish={handleSaveLog}>
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item label="Ngày log chu kỳ" name="logDate">
-                <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Có phải ngày hành kinh thực tế?" name="isActualPeriod" valuePropName="checked">
-                <Checkbox />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Mức độ ra máu" name="flowIntensity">
-                <Select allowClear options={flowIntensityOptions} placeholder="Chọn mức độ" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Tâm trạng" name="mood">
-                <Select allowClear options={moodOptions} placeholder="Chọn tâm trạng" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Nhiệt độ cơ thể (°C)" name="temperature">
-                <InputNumber min={34} max={42} step={0.1} style={{ width: '100%' }} placeholder="Nhập nhiệt độ" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Số ngày hành kinh" name="periodDuration">
-                <InputNumber min={1} max={15} style={{ width: '100%' }} placeholder="Nhập số ngày hoặc để trống" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item label="Ngày rụng trứng thực tế" name="ovulationDate">
-                <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} placeholder="Chọn ngày rụng trứng" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={16}>
-              <Form.Item label="Ghi chú" name="notes">
-                <Input.TextArea rows={1} placeholder="Nhập ghi chú (nếu có)" />
-              </Form.Item>
-            </Col>
-          </Row>
-          {/* Triệu chứng */}
-          <div style={{ marginBottom: 12 }}>
-            <b>Triệu chứng:</b>
-            <Button type="dashed" size="small" style={{ marginLeft: 8 }} onClick={() => setShowSymptomModal(true)}>+ Thêm triệu chứng</Button>
-            <List
-              size="small"
-              dataSource={symptoms}
-              renderItem={(item, idx) => (
-                <List.Item actions={[<a onClick={() => handleRemoveSymptom(idx)}>Xóa</a>]}> 
-                  {item.symptomName} ({item.severity}) {item.notes && `- ${item.notes}`}
-                </List.Item>
-              )}
-              locale={{ emptyText: 'Chưa có triệu chứng' }}
-              style={{ marginTop: 8 }}
-            />
-          </div>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={saving}>Lưu nhật ký chu kỳ</Button>
-          </Form.Item>
-        </Form>
-        {/* Modal thêm triệu chứng */}
-        <Modal open={showSymptomModal} onCancel={() => setShowSymptomModal(false)} onOk={() => symptomForm.submit()} title="Thêm triệu chứng" okText="Thêm" cancelText="Hủy">
-          <Form form={symptomForm} layout="vertical" onFinish={handleAddSymptom}>
-            <Form.Item label="Tên triệu chứng" name="symptomName" rules={[{ required: true, message: 'Nhập tên triệu chứng' }]}> 
-              <Select showSearch placeholder="Chọn hoặc nhập triệu chứng" allowClear>
-                {defaultSymptoms.map(s => <Option key={s.symptomId} value={s.symptomName}>{s.symptomName}</Option>)}
-              </Select>
-            </Form.Item>
-            <Form.Item label="Mức độ" name="severity" rules={[{ required: true, message: 'Chọn mức độ' }]}> 
-              <Select options={severityOptions} placeholder="Chọn mức độ" />
-            </Form.Item>
-            <Form.Item label="Ghi chú" name="notes">
-              <Input placeholder="Nhập ghi chú (nếu có)" />
-            </Form.Item>
-          </Form>
-        </Modal>
-      </Card>
-      {/* XÓA block nhập ngày rụng trứng thực tế & số ngày hành kinh ở dưới */}
-      {/* <Card style={{ marginBottom: 24 }}> ... </Card> */}
-      <h2 style={{ marginBottom: 24 }}>Theo dõi chu kỳ kinh nguyệt</h2>
-      <Row gutter={[24, 24]}>
-        {/* Kỳ kinh tiếp theo */}
-        <Col xs={24} md={12}>
-          <Card>
-            <h3><CalendarOutlined /> Kỳ kinh tiếp theo</h3>
-            <div style={{ fontSize: 24, fontWeight: 600 }}>{periodPrediction.nextPeriodDate}</div>
-            <div style={{ margin: "8px 0" }}>
-              <Badge color={periodPrediction.confidence > 0.7 ? "#52c41a" : "#faad14"} text={`Độ tin cậy: ${Math.round(periodPrediction.confidence * 100)}%`} />
-            </div>
-            <div>Phương pháp dự đoán: <b>{periodPrediction.predictionMethod === 'default' ? 'Trung bình cộng' : periodPrediction.predictionMethod}</b></div>
-            <div style={{ color: "#888" }}>{periodPrediction.reliabilityNote}</div>
-          </Card>
-        </Col>
-        {/* Rụng trứng */}
-        <Col xs={24} md={12}>
-          <Card>
-            <h3><HeartOutlined /> Ngày rụng trứng dự kiến</h3>
-            <div style={{ fontSize: 20 }}>
-              {fertilityWindow.ovulationDate || "Chưa thiết lập"}
-              <Badge
-                color={
-                  fertilityWindow.fertilityStatus === "HIGH"
-                    ? "#f5222d"
-                    : fertilityWindow.fertilityStatus === "MEDIUM"
-                    ? "#faad14"
-                    : "#d9d9d9"
-                }
-                style={{ marginLeft: 8 }}
-                text={
-                  fertilityWindow.fertilityStatus === "HIGH"
-                    ? "Khả năng cao"
-                    : fertilityWindow.fertilityStatus === "MEDIUM"
-                    ? "Trung bình"
-                    : "Thấp"
-                }
-              />
-            </div>
-            <div>Thời kỳ dễ thụ thai: <b>{fertilityWindow.fertileWindowStart}</b> - <b>{fertilityWindow.fertileWindowEnd}</b></div>
-            <div style={{ color: "#888" }}>{fertilityWindow.notes}</div>
-          </Card>
-        </Col>
-        {/* Độ dài chu kỳ */}
-        <Col xs={24} md={12}>
-          <Card>
-            <h3>Độ dài chu kỳ</h3>
-            <div style={{ fontSize: 24 }}>{cycleAnalytics.averageCycleLength || "--"} ngày</div>
-            <div>Thời gian hành kinh trung bình: <b>{cycleAnalytics.averagePeriodDuration || "--"} ngày</b></div>
-            <div style={{ margin: "8px 0" }}>
-              <Badge
-                color={cycleAnalytics.isRegular ? "#52c41a" : "#f5222d"}
-                text={cycleAnalytics.regularityStatus === "REGULAR" ? "Chu kỳ đều" : "Chu kỳ không đều"}
-                icon={cycleAnalytics.isRegular ? <CheckCircleOutlined /> : <WarningOutlined />}
-              />
-            </div>
-          </Card>
-        </Col>
-        {/* Cảm xúc & triệu chứng */}
-        <Col xs={24} md={12}>
-          <Card>
-            <h3><SmileOutlined /> Thống kê cảm xúc</h3>
-            <List
-              locale={{emptyText: 'Không có dữ liệu'}}
-              dataSource={Object.entries(cycleAnalytics.moodPatterns || {})}
-              renderItem={([mood, value]) => (
-                <List.Item>
-                  <Badge color={moodColors[mood] || "#d9d9d9"} text={<b>{moodVi[mood] || mood}</b>} />
-                  <Progress percent={parseFloat(value)} size="small" style={{ width: 120, marginLeft: 16 }} />
-                </List.Item>
-              )}
-            />
-            <h3 style={{ marginTop: 16 }}>Tần suất triệu chứng</h3>
-            <List
-              locale={{emptyText: 'Không có dữ liệu'}}
-              dataSource={Object.entries(cycleAnalytics.symptomFrequency || {})}
-              renderItem={([symptom, count]) => (
-                <List.Item>
-                  <Badge color="#722ed1" text={symptom} />
-                  <span style={{ marginLeft: 16 }}>{count} lần</span>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-        {/* Xu hướng & gợi ý sức khỏe */}
-        <Col xs={24}>
-          <Card>
-            <h3>Xu hướng chu kỳ</h3>
-            <List
-              locale={{emptyText: 'Không có dữ liệu'}}
-              dataSource={cycleAnalytics.trends || []}
-              renderItem={trend => <List.Item>{trend}</List.Item>}
-            />
-            <h3 style={{ marginTop: 16 }}>Gợi ý sức khỏe</h3>
-            <List
-              locale={{emptyText: 'Không có dữ liệu'}}
-              dataSource={cycleAnalytics.recommendations || []}
-              renderItem={tip => (
-                <List.Item><CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />{tip}</List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </div>
-  );
-};
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box sx={{
+        minHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5fafd'
+      }}>
+        <Paper elevation={8} sx={{
+          maxWidth: 600,
+          width: '100%',
+          p: { xs: 2, sm: 6 },
+          borderRadius: 6,
+          bgcolor: '#fff',
+          boxShadow: '0 16px 64px 0 rgba(143,92,247,0.18)',
+          transition: 'box-shadow 0.3s cubic-bezier(.25,.8,.25,1)'
+        }}>
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel
+            sx={{
+              mb: 5,
+              '& .MuiStepLabel-label': {
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#B39DDB',
+                transition: 'color 0.2s'
+              },
+              '& .MuiStepIcon-root': {
+                fontSize: 38,
+                color: '#E1BEE7'
+              },
+              '& .Mui-active .MuiStepIcon-root': {
+                color: '#8F5CF7'
+              },
+              '& .Mui-active .MuiStepLabel-label': {
+                color: '#8F5CF7'
+              },
+              '& .Mui-completed .MuiStepIcon-root': {
+                color: '#B39DDB'
+              },
+              '& .Mui-completed .MuiStepLabel-label': {
+                color: '#B39DDB',
+                fontWeight: 700
+              },
+              '& .MuiStepConnector-line': { borderColor: '#E1BEE7' }
+            }}
+          >
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
 
-export default CycleTrackingPage;
+          {activeStep === 0 && (
+            <>
+              <Typography variant="h3" fontWeight="bold" color="#8F5CF7" mb={2} align="center">
+                Chào mừng bạn!
+              </Typography>
+              <Typography variant="h5" color="#B39DDB" mb={4} align="center" fontWeight={600}>
+                Bắt đầu theo dõi chu kỳ kinh nguyệt
+              </Typography>
+              <Typography mb={4} color="#7C4DFF" align="center" fontSize={18}>
+                Hãy nhập thông tin để hệ thống dự đoán và nhắc nhở chính xác hơn.
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Button variant="contained" sx={{
+                  bgcolor: '#8F5CF7',
+                  color: '#fff',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  borderRadius: 4,
+                  px: 5,
+                  py: 1.5,
+                  boxShadow: '0 4px 24px 0 rgba(143,92,247,0.12)',
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: '#651FFF', transform: 'scale(1.04)' }
+                }} onClick={handleNext}>
+                  Bắt đầu
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {activeStep === 1 && (
+            <>
+              <Typography fontWeight="bold" mb={3} color="#8F5CF7" align="center" fontSize={22}>
+                Ngày bắt đầu kỳ kinh gần nhất của bạn là?
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <Box
+                  sx={{
+                    border: '2px solid #8F5CF7',
+                    borderRadius: 4,
+                    p: 2,
+                    bgcolor: '#fff',
+                    boxShadow: '0 4px 24px 0 rgba(143,92,247,0.10)',
+                    display: 'inline-block'
+                  }}
+                >
+                  <StaticDatePicker
+                    displayStaticWrapperAs="desktop"
+                    value={recentDate ? dayjs(recentDate) : null}
+                    onChange={val => setRecentDate(val ? val.format('YYYY-MM-DD') : '')}
+                    format="DD/MM/YYYY"
+                    slotProps={{
+                      actionBar: { actions: [] },
+                    }}
+                    sx={{
+                      '& .MuiPickersDay-root': {
+                        color: '#8F5CF7',
+                        '&.Mui-selected': {
+                          backgroundColor: '#8F5CF7',
+                        }
+                      },
+                      '& .MuiPickersDay-today': {
+                        borderColor: '#8F5CF7'
+                      },
+                      '& .MuiPickersCalendarHeader-label': {
+                        color: '#8F5CF7',
+                        fontWeight: 700
+                      },
+                      '& .MuiPickersArrowSwitcher-root button': {
+                        color: '#8F5CF7'
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                <Button onClick={handleBack} sx={{ fontSize: 18 }}>Quay lại</Button>
+                <Button variant="contained" sx={{
+                  bgcolor: '#8F5CF7', color: '#fff', fontSize: 18, fontWeight: 700, borderRadius: 3, px: 4, py: 1.2,
+                  boxShadow: '0 4px 16px 0 rgba(143,92,247,0.10)', transition: 'all 0.2s',
+                  '&:hover': { bgcolor: '#651FFF', transform: 'scale(1.04)' }
+                }} onClick={handleNext} disabled={!recentDate}>
+                  Tiếp tục
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {activeStep === 2 && (
+            <>
+              <Typography fontWeight="bold" mb={3} color="#8F5CF7" align="center" fontSize={22}>
+                Bạn có nhớ các kỳ kinh trước không? (Không bắt buộc)
+              </Typography>
+              {historyDates.map((date, idx) => (
+                <DatePicker
+                  key={idx}
+                  label={`Kỳ kinh trước #${idx + 1}`}
+                  value={date ? dayjs(date) : null}
+                  onChange={val => handleHistoryChange(idx, val ? val.format('YYYY-MM-DD') : '')}
+                  format="DD/MM/YYYY"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        mb: 2,
+                        bgcolor: '#fff',
+                        borderRadius: 2,
+                        fontSize: 18,
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#8F5CF7'
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#651FFF'
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#8F5CF7'
+                          }
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#8F5CF7'
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: '#8F5CF7'
+                        }
+                      }
+                    }
+                  }}
+                />
+              ))}
+              <Button
+                onClick={handleAddHistory}
+                variant="outlined"
+                sx={{
+                  mb: 3,
+                  color: '#8F5CF7',
+                  borderColor: '#8F5CF7',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  fontSize: 18,
+                  px: 3,
+                  '&:hover': { bgcolor: '#E1BEE7', borderColor: '#7C4DFF', color: '#7C4DFF' }
+                }}
+              >
+                + Thêm kỳ kinh
+              </Button>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                <Button onClick={handleBack} sx={{ fontSize: 18 }}>Quay lại</Button>
+                <Button variant="contained" sx={{
+                  bgcolor: '#8F5CF7', color: '#fff', fontSize: 18, fontWeight: 700, borderRadius: 3, px: 4, py: 1.2,
+                  boxShadow: '0 4px 16px 0 rgba(143,92,247,0.10)', transition: 'all 0.2s',
+                  '&:hover': { bgcolor: '#651FFF', transform: 'scale(1.04)' }
+                }} onClick={handleNext}>
+                  Tiếp tục
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {activeStep === 3 && (
+            <>
+              <Typography fontWeight="bold" mb={3} color="#8F5CF7" align="center" fontSize={22}>
+                Thiết lập chu kỳ của bạn
+              </Typography>
+              <TextField
+                label="Chu kỳ trung bình (ngày)"
+                type="number"
+                value={cycleLength}
+                onChange={e => setCycleLength(e.target.value)}
+                fullWidth
+                sx={{ mb: 3, bgcolor: '#fff', borderRadius: 2, fontSize: 18 }}
+              />
+              <TextField
+                label="Số ngày hành kinh trung bình"
+                type="number"
+                value={periodDuration}
+                onChange={e => setPeriodDuration(e.target.value)}
+                fullWidth
+                sx={{ mb: 3, bgcolor: '#fff', borderRadius: 2, fontSize: 18 }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                <Button onClick={handleBack} sx={{ fontSize: 18 }}>Quay lại</Button>
+                <Button variant="contained" sx={{
+                  bgcolor: '#8F5CF7', color: '#fff', fontSize: 18, fontWeight: 700, borderRadius: 3, px: 4, py: 1.2,
+                  boxShadow: '0 4px 16px 0 rgba(143,92,247,0.10)', transition: 'all 0.2s',
+                  '&:hover': { bgcolor: '#651FFF', transform: 'scale(1.04)' }
+                }} onClick={handleNext}>
+                  Tiếp tục
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {activeStep === 4 && (
+            <>
+              <Typography fontWeight="bold" mb={3} color="#8F5CF7" align="center" fontSize={22}>
+                Xác nhận thông tin
+              </Typography>
+              <Typography mb={2} fontSize={18}>Ngày bắt đầu kỳ kinh gần nhất: <b>{recentDate}</b></Typography>
+              <Typography mb={2} fontSize={18}>Các kỳ kinh trước: <b>{historyDates.filter(d => d).join(', ') || 'Không có'}</b></Typography>
+              <Typography mb={2} fontSize={18}>Chu kỳ trung bình: <b>{cycleLength} ngày</b></Typography>
+              <Typography mb={3} fontSize={18}>Số ngày hành kinh trung bình: <b>{periodDuration} ngày</b></Typography>
+              {error && <Typography color="error" mb={2} align="center">{error}</Typography>}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                <Button onClick={handleBack} sx={{ fontSize: 18 }}>Quay lại</Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  sx={{
+                    ml: 2,
+                    py: 1.5,
+                    fontWeight: 700,
+                    fontSize: 20,
+                    borderRadius: 4,
+                    bgcolor: '#8F5CF7',
+                    color: '#fff',
+                    boxShadow: '0 4px 24px 0 rgba(143,92,247,0.12)',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: '#651FFF', transform: 'scale(1.04)' }
+                  }}
+                >
+                  {loading ? 'Đang lưu...' : 'Hoàn tất'}
+                </Button>
+              </Box>
+            </>
+          )}
+        </Paper>
+      </Box>
+    </LocalizationProvider>
+  );
+}
+
+// TODO: Bạn giữ nguyên hoặc import lại CycleDashboard như cũ ở đây
+// import CycleDashboard from './CycleDashboard';
