@@ -415,6 +415,35 @@ select:focus {
   }
 }
 
+/* Avatar and image size constraints */
+img[alt*="Avatar"], img[alt*="avatar"], img[src*="avatar"] {
+  max-width: 200px !important;
+  max-height: 200px !important;
+}
+
+/* Prevent any image from being too large */
+img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Specific constraints for common avatar containers */
+.avatar-preview img, .consultant-avatar, .profile-avatar, .chat-avatar img {
+  max-width: 200px !important;
+  max-height: 200px !important;
+}
+
+/* Material-UI Avatar constraints */
+.MuiAvatar-root {
+  max-width: 200px !important;
+  max-height: 200px !important;
+}
+
+.MuiAvatar-root img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .health-card {

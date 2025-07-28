@@ -30,38 +30,11 @@ const Login = () => {
     }
   }, []);
 
-  // Redirect user đã đăng nhập
+  // Redirect user đã đăng nhập - chỉ forward về trang chủ
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('User already logged in, redirecting...', user);
-      let targetPath = '/dashboard'; // Default path
-
-      // Kiểm tra role và chuyển đổi nếu cần
-      let userRole = user.role;
-      if (userRole && userRole.includes('ROLE_')) {
-        userRole = userRole.replace('ROLE_', '').toLowerCase();
-      }
-
-      console.log('User role for redirect:', userRole);
-
-      switch (userRole) {
-        case 'admin':
-          targetPath = '/admin/dashboard';
-          break;
-        case 'consultant':
-        case 'counselor':
-          targetPath = '/consultant/dashboard';
-          break;
-        case 'staff':
-          targetPath = '/staff';
-          break;
-        default:
-          targetPath = '/dashboard';
-          break;
-      }
-
-      console.log('Redirecting to:', targetPath);
-      navigate(targetPath, { replace: true });
+      // Chỉ forward về trang chủ, không tự động vào dashboard
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -88,99 +61,40 @@ const Login = () => {
 
       if (result.success) {
         toast.success('Đăng nhập thành công!');
-        const { user } = result;
-        let targetPath = '/dashboard'; // Default path
-
-        // Kiểm tra role và chuyển đổi nếu cần
-        let userRole = user.role;
-        if (userRole && userRole.includes('ROLE_')) {
-          userRole = userRole.replace('ROLE_', '').toLowerCase();
-        }
-        
-        console.log('User role after login:', userRole);
-        console.log('Original user.role:', user.role);
-        console.log('Target path:', targetPath);
-        
-        switch (userRole) {
-          case 'admin':
-            targetPath = '/admin/dashboard';
-            break;
-          case 'consultant':
-          case 'counselor':
-            targetPath = '/consultant/dashboard';
-            break;
-          case 'staff':
-            targetPath = '/staff';
-            break;
-          default:
-            targetPath = '/dashboard';
-            break;
-        }
-
-        // Navigate and then reload the window to ensure state is updated.
-        console.log('Navigating to:', targetPath);
-        navigate(targetPath, { replace: true });
+        // Chỉ forward về trang chủ, không tự động vào dashboard
+        navigate('/', { replace: true });
       } else {
+        // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập thất bại');
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập'
-      );
+      // Fallback error handling nếu có lỗi không mong muốn
+      console.error('Unexpected login error:', error);
+      toast.error('Có lỗi xảy ra khi đăng nhập');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLoginSuccess = async codeResponse => {
-    console.log('🔍 Google login response received:', codeResponse);
+    
     setLoading(true);
     try {
-      console.log('🔍 Calling loginGoogle with code:', codeResponse.code?.substring(0, 30) + '...');
+      
       const result = await loginGoogle(codeResponse.code);
 
       if (result.success) {
         toast.success('Đăng nhập bằng Google thành công!');
-        const { user } = result;
-        let targetPath = '/dashboard'; // Default path
-
-        // Kiểm tra role và chuyển đổi nếu cần
-        let userRole = user.role;
-        if (userRole && userRole.includes('ROLE_')) {
-          userRole = userRole.replace('ROLE_', '').toLowerCase();
-        }
-        
-        console.log('User role after Google login:', userRole);
-        console.log('Original user.role:', user.role);
-        console.log('Target path:', targetPath);
-        
-        switch (userRole) {
-          case 'admin':
-            targetPath = '/admin/dashboard';
-            break;
-          case 'consultant':
-          case 'counselor':
-            targetPath = '/consultant/dashboard';
-            break;
-          case 'staff':
-            targetPath = '/staff';
-            break;
-          default:
-            targetPath = '/dashboard';
-            break;
-        }
-
-        // Navigate and then reload the window to ensure state is updated.
-        console.log('Navigating to (Google):', targetPath);
-        navigate(targetPath, { replace: true });
+        // Chỉ forward về trang chủ, không tự động vào dashboard
+        navigate('/', { replace: true });
       } else {
+        // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập bằng Google thất bại.');
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          'Có lỗi xảy ra khi đăng nhập bằng Google.'
-      );
+      // Fallback error handling nếu có lỗi không mong muốn
+      console.error('Unexpected Google login error:', error);
+      toast.error('Có lỗi xảy ra khi đăng nhập bằng Google.');
     } finally {
       setLoading(false);
     }
@@ -275,7 +189,7 @@ const Login = () => {
               type="button"
               className="google-login"
               onClick={() => {
-                console.log('🔍 Google login button clicked');
+            
                 googleLogin();
               }}
               disabled={loading}

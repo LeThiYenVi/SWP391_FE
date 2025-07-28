@@ -91,6 +91,7 @@ const ModernCycleTracking = () => {
   const [updatingSettings, setUpdatingSettings] = useState(false);
 
   useEffect(() => {
+    console.log('useEffect 1: Initial fetch');
     fetchCycleData();
   }, []);
 
@@ -105,65 +106,22 @@ const ModernCycleTracking = () => {
 
   useEffect(() => {
     if (cycleData) {
-      console.log('Cycle data changed, fetching phases for:', currentDate.format('YYYY-MM'));
       fetchPhasesForCurrentMonth();
     }
   }, [currentDate, cycleData]);
 
-  const fetchCycleData = async () => {
-    try {
-      setLoading(true);
-      setGenderError(false);
-      const response = await MenstrualCycleService.getCurrentMenstrualCycle();
-      
-      // Check if the response indicates a gender validation error
-      if (!response.success && response.message && 
-          response.message.includes('chưa chọn giới tính')) {
-        setGenderError(true);
-        return;
-      }
-      
-      if (response.success) {
-        setCycleData(response.data);
-        // Gọi API phases ngay sau khi có dữ liệu chu kỳ
-        await fetchPhasesForCurrentMonth();
-      } else {
-        message.warning(response.message || 'Chưa có dữ liệu chu kỳ');
-      }
-    } catch (error) {
-      console.error('Error fetching cycle data:', error);
-      
-      // Check if the error response contains the gender validation message
-      if (error.response?.data?.message && 
-          error.response.data.message.includes('chưa chọn giới tính')) {
-        setGenderError(true);
-      } else {
-        message.error('Lỗi khi tải dữ liệu chu kỳ');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoToProfile = () => {
-    navigate('/profile');
-  };
-
   const fetchPhasesForCurrentMonth = async () => {
     try {
       const year = currentDate.year();
-      const month = currentDate.month() + 1; // dayjs month is 0-based
-      console.log('Fetching detailed phases for:', year, month);
+      const month = currentDate.month() + 1;
       const response = await MenstrualCycleService.getDetailedPhasesForMonth(year, month);
-      console.log('Detailed phases response:', response);
-      if (response.success) {
-        const phasesData = response.data;
-        console.log('Detailed phases data:', phasesData);
+      if (response && typeof response === 'object') {
+        const phasesData = response;
         const periodDays = [];
         const ovulationDays = [];
         const fertileDays = [];
         const predictedDays = [];
-        const phaseInfo = {}; // Store detailed info for each day
+        const phaseInfo = {};
 
         Object.entries(phasesData).forEach(([dateStr, phaseDetail]) => {
           const phase = phaseDetail.phase;
@@ -181,13 +139,10 @@ const ModernCycleTracking = () => {
               predictedDays.push(dateStr);
               break;
             case 'NORMAL':
-              // Không thêm vào array nào cả - ngày bình thường
               break;
             default:
-              console.log('Unknown phase:', phase, 'for date:', dateStr);
               break;
           }
-          // Store detailed info for this date
           phaseInfo[dateStr] = phaseDetail;
         });
 
@@ -196,20 +151,17 @@ const ModernCycleTracking = () => {
           ovulation: ovulationDays.length > 0 ? ovulationDays[0] : '',
           fertile: fertileDays,
           predictedPeriod: predictedDays,
-          phaseInfo: phaseInfo // Add detailed info
+          phaseInfo: phaseInfo
         };
-        console.log('Setting detailed phases:', newPhases);
         setPhases(newPhases);
       }
     } catch (error) {
-      console.error('Error fetching detailed phases:', error);
-      // Fallback to basic phases if API fails
       try {
         const year = currentDate.year();
         const month = currentDate.month() + 1;
         const response = await MenstrualCycleService.getPhasesForMonth(year, month);
-        if (response.success) {
-          const phasesData = response.data;
+        if (response && typeof response === 'object') {
+          const phasesData = response;
           const periodDays = [];
           const ovulationDays = [];
           const fertileDays = [];
@@ -232,7 +184,6 @@ const ModernCycleTracking = () => {
               case 'NORMAL':
                 break;
               default:
-                console.log('Unknown phase:', phase, 'for date:', dateStr);
                 break;
             }
           });
@@ -243,18 +194,46 @@ const ModernCycleTracking = () => {
             fertile: fertileDays,
             predictedPeriod: predictedDays
           };
-          console.log('Setting fallback phases:', newPhases);
           setPhases(newPhases);
         }
       } catch (fallbackError) {
-        console.error('Fallback phases also failed:', fallbackError);
         if (cycleData) {
-          console.log('Falling back to calculated phases');
           calculatePhases(cycleData);
         }
       }
     }
   };
+
+  const fetchCycleData = async () => {
+    try {
+      setLoading(true);
+      setGenderError(false);
+      const response = await MenstrualCycleService.getCurrentMenstrualCycle();
+
+      if (response && response.startDate) {
+        setCycleData(response);
+        await fetchPhasesForCurrentMonth();
+      } else {
+        message.warning('Chưa có dữ liệu chu kỳ');
+      }
+    } catch (error) {
+      // Check if the error response contains the gender validation message
+      if (error.response?.data?.message &&
+          error.response.data.message.includes('chưa chọn giới tính')) {
+        setGenderError(true);
+      } else {
+        message.error('Lỗi khi tải dữ liệu chu kỳ');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoToProfile = () => {
+    navigate('/profile');
+  };
+
+
 
   const calculatePhases = (data) => {
     if (!data) return;
@@ -263,23 +242,19 @@ const ModernCycleTracking = () => {
     const periodDuration = data.periodDuration || 5;
     const cycleLength = data.cycleLength || 28;
 
-    // Calculate period days
     const periodDays = [];
     for (let i = 0; i < periodDuration; i++) {
       periodDays.push(startDate.add(i, 'day').format('YYYY-MM-DD'));
     }
 
-    // Calculate ovulation (14 days before next period)
     const ovulationDate = startDate.add(cycleLength - 14, 'day').format('YYYY-MM-DD');
 
-    // Calculate fertile window (5 days before ovulation + 1 day after)
     const fertileDays = [];
     const ovulation = dayjs(ovulationDate);
     for (let i = -5; i <= 1; i++) {
       fertileDays.push(ovulation.add(i, 'day').format('YYYY-MM-DD'));
     }
 
-    // Calculate predicted period
     const predictedPeriodDays = [];
     const nextPeriodStart = startDate.add(cycleLength, 'day');
     for (let i = 0; i < periodDuration; i++) {
@@ -465,13 +440,11 @@ const ModernCycleTracking = () => {
         message.success('Ghi nhận thành công');
         setQuickLogModal(false);
         setQuickLogContent('');
-        // Refresh cycle data
         await fetchCycleData();
       } else {
         message.error(response.message || 'Ghi nhận thất bại');
       }
     } catch (error) {
-      console.error('Error quick logging:', error);
       message.error('Lỗi khi ghi nhận');
     } finally {
       setModalLoading(false);
@@ -564,8 +537,14 @@ const ModernCycleTracking = () => {
             <div className="cycle-card-info">
               <p>Kỳ kinh tiếp theo</p>
               <p className="cycle-card-value">
-                {cycleData ? dayjs(cycleData.nextPredictedPeriod).diff(dayjs(), 'day') : '--'} ngày
+                {cycleData ? (() => {
+                  console.log('Calculating days diff for:', cycleData.nextPredictedPeriod);
+                  const diff = dayjs(cycleData.nextPredictedPeriod).diff(dayjs(), 'day');
+                  console.log('Days diff result:', diff);
+                  return diff;
+                })() : '--'} ngày
               </p>
+              {console.log('Current cycleData in render:', cycleData)}
             </div>
           </div>
 

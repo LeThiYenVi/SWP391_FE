@@ -16,7 +16,7 @@ const StaffHistory = () => {
   useEffect(() => {
     if (searchTerm) {
       const filtered = completedBookings.filter(booking =>
-        booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.customerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.bookingId?.toString().includes(searchTerm)
       );

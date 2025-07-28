@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User, Tag, Eye, MessageCircle, Heart } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Tag, Eye, MessageCircle, Heart, Home } from 'lucide-react';
 import BlogService from '../services/BlogService';
 import { toast } from 'react-toastify';
 
@@ -21,7 +21,14 @@ const BlogDetailPage = () => {
       // Thử load từ API trước
       try {
         const response = await BlogService.getBlogPostById(id);
-        setBlogPost(response);
+        
+        // Kiểm tra và xử lý response
+        if (response) {
+          setBlogPost(response);
+        } else {
+          // Fallback to mock data
+          setBlogPost(getMockBlogPost(id));
+        }
       } catch (error) {
         console.error('Error loading blog post from API:', error);
         // Fallback to mock data
@@ -42,7 +49,42 @@ const BlogDetailPage = () => {
   const loadRelatedPosts = async () => {
     try {
       const response = await BlogService.getAllBlogPosts(1, 3);
-      setRelatedPosts(response.content?.slice(0, 3) || []);
+      
+      // Kiểm tra và xử lý response
+      if (response && response.content && Array.isArray(response.content)) {
+        setRelatedPosts(response.content.slice(0, 3));
+      } else if (response && Array.isArray(response)) {
+        // Nếu response là array trực tiếp
+        setRelatedPosts(response.slice(0, 3));
+      } else {
+        // Fallback to mock related posts
+        setRelatedPosts([
+          {
+            id: 1,
+            title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
+            content: 'Chăm sóc sức khỏe phụ nữ đòi hỏi sự quan tâm đặc biệt...',
+            author: { name: 'Dr. Lê Văn Minh' },
+            createdAt: '2024-01-14T14:20:00',
+            categories: [{ name: 'Chăm sóc sức khỏe' }]
+          },
+          {
+            id: 2,
+            title: 'Tầm quan trọng của việc xét nghiệm STI định kỳ',
+            content: 'Xét nghiệm STI định kỳ là một phần quan trọng...',
+            author: { name: 'Dr. Đỗ Phạm Nguyệt Thanh' },
+            createdAt: '2024-01-13T09:15:00',
+            categories: [{ name: 'STIs' }]
+          },
+          {
+            id: 3,
+            title: 'Lời khuyên từ chuyên gia về sức khỏe sinh sản',
+            content: 'Sức khỏe sinh sản là một vấn đề quan trọng...',
+            author: { name: 'Dr. Vũ Thị Thu Hiền' },
+            createdAt: '2024-01-12T16:45:00',
+            categories: [{ name: 'Tư vấn sức khỏe' }]
+          }
+        ]);
+      }
     } catch (error) {
       console.error('Error loading related posts:', error);
       // Fallback to mock related posts
@@ -345,21 +387,63 @@ const BlogDetailPage = () => {
         padding: '40px 20px'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <Link 
-            to="/blog"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '20px',
-              fontSize: '16px'
-            }}
-          >
-            <ArrowLeft size={20} />
-            Quay lại trang blog
-          </Link>
+          {/* Navigation buttons */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '15px', 
+            marginBottom: '20px',
+            flexWrap: 'wrap'
+          }}>
+            <Link 
+              to="/"
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                padding: '8px 16px',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              <Home size={18} />
+              Trang chủ
+            </Link>
+            
+            <Link 
+              to="/blog"
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                padding: '8px 16px',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              <ArrowLeft size={18} />
+              Quay lại trang blog
+            </Link>
+          </div>
           
           <div style={{ marginBottom: '20px' }}>
             {blogPost.categories?.map(category => (

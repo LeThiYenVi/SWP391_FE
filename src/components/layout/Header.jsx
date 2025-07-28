@@ -58,6 +58,65 @@ const navigationItems = [
     href: '/qa',
     icon: <MessageCircle className="w-5 h-5" />,
   },
+  {
+    label: 'Chat',
+    href: '/chat',
+    icon: <MessageCircle className="w-5 h-5" />,
+  },
+];
+
+// Navigation items for authenticated users (includes Dashboard)
+const authenticatedNavigationItems = [
+  {
+    label: 'Trang chủ',
+    href: '/',
+    icon: <Home className="w-5 h-5" />,
+  },
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: <User className="w-5 h-5" />,
+  },
+  {
+    label: 'Dịch vụ',
+    href: '/services',
+    icon: <Heart className="w-5 h-5" />,
+    children: [
+      {
+        label: 'Tư vấn trực tuyến',
+        href: '/consultation',
+        icon: <MessageCircle className="w-4 h-4" />,
+        description: 'Tư vấn với chuyên gia qua video call',
+      },
+      {
+        label: 'Theo dõi chu kỳ',
+        href: '/theo-doi-chu-ky',
+        icon: <Calendar className="w-4 h-4" />,
+        description: 'Theo dõi và dự đoán chu kỳ sinh lý',
+      },
+      {
+        label: 'Xét nghiệm STIs',
+        href: '/xet-nghiem-sti',
+        icon: <TestTube className="w-4 h-4" />,
+        description: 'Đặt lịch và xem kết quả xét nghiệm',
+      },
+    ],
+  },
+  {
+    label: 'Đặt lịch',
+    href: '/consultation',
+    icon: <Calendar className="w-5 h-5" />,
+  },
+  {
+    label: 'Hỏi đáp',
+    href: '/qa',
+    icon: <MessageCircle className="w-5 h-5" />,
+  },
+  {
+    label: 'Chat',
+    href: '/chat',
+    icon: <MessageCircle className="w-5 h-5" />,
+  },
 ];
 
 export const Header = () => {
@@ -88,12 +147,8 @@ export const Header = () => {
     };
   }, [activeDropdown]);
 
-  const handleDropdownEnter = (href) => {
-    setActiveDropdown(href);
-  };
-
-  const handleDropdownLeave = () => {
-    setActiveDropdown(null);
+  const handleDropdownToggle = (href) => {
+    setActiveDropdown(activeDropdown === href ? null : href);
   };
 
   const handleLogout = async () => {
@@ -139,43 +194,40 @@ export const Header = () => {
             </Link>
           </motion.div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navigationItems.map(item => (
-              <div
-                key={item.href}
-                className="relative dropdown-container"
-                onMouseEnter={() =>
-                  item.children && handleDropdownEnter(item.href)
-                }
-                onMouseLeave={handleDropdownLeave}
-              >
-                {item.children ? (
-                  <button
-                    type="button"
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 ${
-                      isActivePath(item.href)
-                        ? 'bg-gray-100'
-                        : 'text-gray-700 hover:text-gray-900'
-                    }`}
-                    style={{
-                      color: isActivePath(item.href) ? '#3a99b7' : undefined,
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() =>
-                      setActiveDropdown(
-                        activeDropdown === item.href ? null : item.href
-                      )
-                    }
-                    aria-haspopup="true"
-                    aria-expanded={activeDropdown === item.href}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                    <ChevronDown className="w-4 h-4 ml-1" />
-                  </button>
+                     {/* Desktop Navigation */}
+           <nav className="hidden md:flex items-center space-x-1">
+             {(isAuthenticated ? authenticatedNavigationItems : navigationItems).map(item => (
+                             <div
+                 key={item.href}
+                 className="relative dropdown-container"
+               >
+                                 {item.children ? (
+                   <button
+                     type="button"
+                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-gray-100 ${
+                       isActivePath(item.href)
+                         ? 'bg-gray-100'
+                         : 'text-gray-700 hover:text-gray-900'
+                     }`}
+                     style={{
+                       color: isActivePath(item.href) ? '#3a99b7' : undefined,
+                       background: 'none',
+                       border: 'none',
+                       cursor: 'pointer',
+                     }}
+                     onClick={() => handleDropdownToggle(item.href)}
+                     aria-haspopup="true"
+                     aria-expanded={activeDropdown === item.href}
+                   >
+                     {item.icon}
+                     <span>{item.label}</span>
+                     <ChevronDown 
+                       className="w-4 h-4 ml-1 transition-transform duration-200" 
+                       style={{ 
+                         transform: activeDropdown === item.href ? 'rotate(180deg)' : 'rotate(0deg)' 
+                       }} 
+                     />
+                   </button>
                 ) : (
                   <Link
                     to={item.href}
@@ -193,49 +245,41 @@ export const Header = () => {
                   </Link>
                 )}
 
-                {/* Dropdown Menu */}
-                <AnimatePresence>
-                  {item.children && activeDropdown === item.href && (
-                    <>
-                      {/* Invisible bridge to prevent dropdown from closing */}
-                      <div 
-                        className="absolute top-full left-0 w-full h-4 bg-transparent"
-                        style={{ marginTop: '-4px' }}
-                      />
-                      <motion.div
-                        className="absolute top-full left-0 mt-1 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        style={{ marginTop: '4px' }}
-                      >
-                      <div className="p-2">
-                        {item.children.map(child => (
-                          <Link
-                            key={child.href}
-                            to={child.href}
-                            className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                            onClick={() => setActiveDropdown(null)}
-                          >
-                            <div className="mt-0.5">{child.icon}</div>
-                            <div className="flex-1">
-                              <div className="font-medium text-gray-900">
-                                {child.label}
-                              </div>
-                              {child.description && (
-                                <div className="text-sm text-gray-500 mt-1">
-                                  {child.description}
-                                </div>
-                              )}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                                 {/* Dropdown Menu */}
+                 <AnimatePresence>
+                   {item.children && activeDropdown === item.href && (
+                     <motion.div
+                       className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                       animate={{ opacity: 1, y: 0, scale: 1 }}
+                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                       transition={{ duration: 0.15, ease: "easeOut" }}
+                     >
+                       <div className="p-2">
+                         {item.children.map(child => (
+                           <Link
+                             key={child.href}
+                             to={child.href}
+                             className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                             onClick={() => setActiveDropdown(null)}
+                           >
+                             <div className="mt-0.5">{child.icon}</div>
+                             <div className="flex-1">
+                               <div className="font-medium text-gray-900">
+                                 {child.label}
+                               </div>
+                               {child.description && (
+                                 <div className="text-sm text-gray-500 mt-1">
+                                   {child.description}
+                                 </div>
+                               )}
+                             </div>
+                           </Link>
+                         ))}
+                       </div>
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
               </div>
             ))}
           </nav>
@@ -267,15 +311,18 @@ export const Header = () => {
                         'linear-gradient(135deg, #3a99b7 0%, #2d7a91 100%)',
                     }}
                   >
-                    {user?.avatar ? (
+                    {user?.avatar && user.avatar.trim() !== '' ? (
                       <img
                         src={user.avatar}
                         alt={user.name}
                         className="w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <User className="w-4 h-4 text-white" />
-                    )}
+                    ) : null}
+                    <User className="w-4 h-4 text-white" style={{ display: user?.avatar && user.avatar.trim() !== '' ? 'none' : 'flex' }} />
                   </div>
                   <div className="hidden sm:flex flex-col justify-center items-start max-w-[150px]">
                     <div className="text-sm font-medium text-gray-900 truncate w-full">
@@ -340,18 +387,30 @@ export const Header = () => {
                         </div>
                       </div>
                       <div className="p-2">
-                        <Link
-                          to="/dashboard"
-                          className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <User className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Dashboard
-                          </span>
-                        </Link>
+                                                 <Link
+                           to="/dashboard"
+                           className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                           onClick={() => setIsUserMenuOpen(false)}
+                         >
+                           <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                             <User className="w-4 h-4 text-blue-600" />
+                           </div>
+                           <span className="text-sm font-medium text-gray-700">
+                             Dashboard
+                           </span>
+                         </Link>
+                         <Link
+                           to="/"
+                           className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                           onClick={() => setIsUserMenuOpen(false)}
+                         >
+                           <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                             <Home className="w-4 h-4 text-green-600" />
+                           </div>
+                           <span className="text-sm font-medium text-gray-700">
+                             Trang chủ
+                           </span>
+                         </Link>
                         <Link
                           to="/user/profile"
                           className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
@@ -445,8 +504,8 @@ export const Header = () => {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="px-4 py-6 space-y-4">
-              {navigationItems.map(item => (
+                         <div className="px-4 py-6 space-y-4">
+               {(isAuthenticated ? authenticatedNavigationItems : navigationItems).map(item => (
                 <div key={item.href}>
                   {item.children ? (
                     <>
@@ -503,15 +562,18 @@ export const Header = () => {
                           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{ background: '#3a99b7' }}
                         >
-                          {user?.avatar ? (
-                            <img
-                              src={user.avatar}
-                              alt={user.name}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-5 h-5 text-white" />
-                          )}
+                                              {user?.avatar && user.avatar.trim() !== '' ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <User className="w-5 h-5 text-white" style={{ display: user?.avatar && user.avatar.trim() !== '' ? 'none' : 'flex' }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">

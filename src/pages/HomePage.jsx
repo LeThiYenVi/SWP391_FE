@@ -24,13 +24,15 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer/Footer';
+import { HomePageHeader } from '../components/layout/HomePageHeader';
+import ConsultantRating from '../components/ConsultantRating';
 import styles from './HomePage.module.css';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import BlogService from '../services/BlogService';
+import axios from 'axios'; // Added axios import
 
 const HomePage = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -44,10 +46,15 @@ const HomePage = () => {
   });
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [blogPosts, setBlogPosts] = useState([]);
   const [blogLoading, setBlogLoading] = useState(true);
   const [blogApiMessage, setBlogApiMessage] = useState('');
+  const [consultants, setConsultants] = useState([]);
+  const [consultantsLoading, setConsultantsLoading] = useState(true);
+  const [selectedConsultant, setSelectedConsultant] = useState(null);
+  const [showConsultantModal, setShowConsultantModal] = useState(false);
+  const [consultantFeedback, setConsultantFeedback] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   // Kiểm tra session expired
   useEffect(() => {
@@ -58,40 +65,92 @@ const HomePage = () => {
     }
   }, []);
 
-  // Load blog posts
   useEffect(() => {
     loadBlogPosts();
+    loadConsultants();
   }, []);
 
   const loadBlogPosts = async () => {
     try {
       setBlogLoading(true);
-      const response = await BlogService.getAllBlogPosts(1, 3);
-      if (response.success && response.data && response.data.content.length > 0) {
-        setBlogPosts(response.data.content);
+      const response = await axios.get('/api/homepage/latest-blog-posts', {
+        params: { limit: 3 }
+      });
+
+      if (response.data && response.data.success && response.data.data && response.data.data.length > 0) {
+        setBlogPosts(response.data.data);
         setBlogApiMessage('');
       } else {
         setBlogPosts([]);
-        setBlogApiMessage(response.message || 'Chưa có bài viết nào.');
+        setBlogApiMessage(response.data?.message || 'Chưa có bài viết nào.');
       }
     } catch (error) {
       setBlogPosts([]);
       setBlogApiMessage('Lỗi khi tải bài viết.');
-      console.error('Error loading blog posts:', error);
     } finally {
       setBlogLoading(false);
     }
+  };
+
+  const loadConsultants = async () => {
+    try {
+      setConsultantsLoading(true);
+      const response = await axios.get('/api/homepage/featured-doctors');
+      
+      if (response.data && response.data.success && response.data.data && response.data.data.length > 0) {
+        setConsultants(response.data.data);
+      } else {
+        // Fallback to hardcoded data if API fails
+        setConsultants(doctors);
+      }
+    } catch (error) {
+      console.error('Error loading consultants:', error);
+      // Fallback to hardcoded data
+      setConsultants(doctors);
+    } finally {
+      setConsultantsLoading(false);
+    }
+  };
+
+  const handleViewConsultantDetails = async (consultant) => {
+    try {
+      setSelectedConsultant(consultant);
+      setShowConsultantModal(true);
+      setFeedbackLoading(true);
+      
+      // Lấy consultant ID từ nhiều field có thể có
+      const consultantId = consultant.consultantID || consultant.id || consultant.user?.id;
+      console.log('Consultant object:', consultant);
+      console.log('Consultant ID:', consultantId);
+      
+      const response = await axios.get(`/api/feedback/consultant/${consultantId}`);
+      console.log('Feedback API response:', response.data);
+      
+      if (response.data && response.data.success) {
+        setConsultantFeedback(response.data.data || []);
+      } else {
+        setConsultantFeedback([]);
+      }
+    } catch (error) {
+      console.error('Error loading consultant feedback:', error);
+      console.error('Error details:', error.response?.data);
+      setConsultantFeedback([]);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const closeConsultantModal = () => {
+    setShowConsultantModal(false);
+    setSelectedConsultant(null);
+    setConsultantFeedback([]);
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    navigate('/');
-  };
+
 
   // Hàm kiểm tra authentication và redirect nếu cần
   const handleAuthAction = targetPath => {
@@ -247,133 +306,14 @@ const HomePage = () => {
     return `${dayName}, ${day}/${month}/${year}`;
   };
 
+  
+
+
+
   return (
     <div className={styles.homepage}>
       {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.container}>
-          <div className={styles.headerContent}>
-            <Link to="/" className={styles.logo}>
-              <Heart className={styles.logoIcon} />
-              <span className={styles.logoText}>Gynexa</span>
-            </Link>
-
-            <nav
-              className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ''}`}
-            >
-              <a href="#home" className={styles.navLink}>
-                Trang chủ
-              </a>
-              <a href="#services" className={styles.navLink}>
-                Dịch vụ
-              </a>
-              <a href="#doctors" className={styles.navLink}>
-                Đội ngũ
-              </a>
-              <Link to="/blog" className={styles.navLink}>
-                Blog
-              </Link>
-              <a href="#contact" className={styles.navLink}>
-                Liên hệ
-              </a>
-            </nav>
-
-            <div className={styles.headerActions}>
-              {!isAuthenticated ? (
-                <>
-                  <Link to="/login" className={styles.btnOutline}>
-                    Đăng nhập
-                  </Link>
-                  <Link to="/register" className={styles.btnPrimary}>
-                    Đăng ký
-                  </Link>
-                </>
-              ) : (
-                <div style={{ position: 'relative' }}>
-                  <button
-                    className={styles.btnOutline}
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                    <User size={18} style={{ marginRight: 4 }} />
-                    {user?.name || 'Tài khoản'}
-                  </button>
-                  {showUserMenu && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '110%',
-                        background: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 8,
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                        minWidth: 180,
-                        zIndex: 100,
-                      }}
-                    >
-                      <Link
-                        to="/dashboard"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: 12,
-                          textDecoration: 'none',
-                          color: '#222',
-                          fontWeight: 500,
-                        }}
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <User size={16} /> Dashboard
-                      </Link>
-                      <Link
-                        to="/user/profile"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: 12,
-                          textDecoration: 'none',
-                          color: '#222',
-                          fontWeight: 500,
-                        }}
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <User size={16} /> Hồ sơ cá nhân
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: 12,
-                          width: '100%',
-                          background: 'none',
-                          border: 'none',
-                          color: '#d32f2f',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <LogOut size={16} /> Đăng xuất
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              <button
-                className={styles.menuToggle}
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label={isMenuOpen ? 'Đóng menu' : 'Mở menu'}
-              >
-                {isMenuOpen ? <X /> : <Menu />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <HomePageHeader />
 
       {/* Hero Section */}
       <section id="home" className={styles.hero}>
@@ -680,28 +620,62 @@ const HomePage = () => {
             <p>Đội ngũ bác sĩ chuyên nghiệp và giàu kinh nghiệm</p>
           </div>
 
-          <div className={styles.doctorsGrid}>
-            {doctors.map((doctor, index) => (
-              <div key={index} className={styles.doctorCard}>
-                <div className={styles.doctorImage}>
-                  <img src={doctor.image} alt={doctor.name} />
-                </div>
-                <div className={styles.doctorInfo}>
-                  <h3>{doctor.name}</h3>
-                  <p>{doctor.specialty}</p>
-                  <div className={styles.doctorRating}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill="#ffd700" color="#ffd700" />
-                    ))}
-                    <span>{doctor.rating}</span>
+          {consultantsLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                border: '4px solid #e1e5e9',
+                borderTop: '4px solid #3a99b7',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 20px'
+              }}></div>
+              <p style={{ color: '#666' }}>Đang tải đội ngũ y tế...</p>
+            </div>
+          ) : (
+            <div className={styles.doctorsGrid}>
+              {consultants.map((consultant, index) => (
+                <div key={consultant.consultantID || index} className={styles.doctorCard}>
+                  <div className={styles.doctorImage}>
+                    <img 
+                      src={consultant.profileImageUrl || 'https://via.placeholder.com/200x200?text=Doctor'} 
+                      alt={consultant.user?.fullName || consultant.fullName || 'Doctor'} 
+                    />
                   </div>
-                  <Link to="/doi-ngu" className={styles.btnOutline}>
-                    Xem hồ sơ
-                  </Link>
+                  <div className={styles.doctorInfo}>
+                    <h3>{consultant.user?.fullName || consultant.fullName || 'Dr. Consultant'}</h3>
+                    <p>{consultant.specialization || consultant.qualifications || 'Tư vấn viên'}</p>
+                    <div className={styles.doctorRating}>
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={16} fill="#ffd700" color="#ffd700" />
+                      ))}
+                      <span>{consultant.experienceYears ? `${consultant.experienceYears} năm kinh nghiệm` : '4.8'}</span>
+                    </div>
+                    <div className={styles.doctorActions}>
+                      <Link to="/doi-ngu" className={styles.btnOutline}>
+                        Xem hồ sơ
+                      </Link>
+                      <button 
+                        className={styles.btnPrimary}
+                        onClick={() => handleViewConsultantDetails(consultant)}
+                      >
+                        Xem chi tiết
+                      </button>
+                    </div>
+                    <ConsultantRating 
+                      consultantId={consultant.consultantID || consultant.id}
+                      consultantName={consultant.user?.fullName || consultant.fullName || 'Tư vấn viên'}
+                      onRatingChange={(feedback) => {
+                        // Có thể cập nhật UI nếu cần
+                        console.log('Rating changed:', feedback);
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -728,7 +702,7 @@ const HomePage = () => {
               }}></div>
               <p style={{ color: '#666' }}>Đang tải bài viết...</p>
             </div>
-          ) : blogPosts.length === 0 ? (
+          ) : (!blogPosts || blogPosts.length === 0) ? (
             <div style={{ textAlign: 'center', color: '#888', padding: 32 }}>
               {blogApiMessage}
             </div>
@@ -736,23 +710,45 @@ const HomePage = () => {
             <div className={styles.blogGrid}>
               {blogPosts.map((post, index) => (
                 <Link
-                  key={post.id || index}
-                  to={`/blog/${post.id || index + 1}`}
+                  key={post.postID || post.id || index}
+                  to={`/blog/${post.postID || post.id || index + 1}`}
                   className={styles.blogCard}
                 >
                   <div className={styles.blogImage}>
-                    <div style={{
-                      width: '100%',
-                      height: '200px',
-                      background: 'linear-gradient(135deg, #3a99b7 0%, #2d7a91 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '48px'
-                    }}>
-                      📝
-                    </div>
+                    {post.coverImageUrl ? (
+                      <img 
+                        src={post.coverImageUrl} 
+                        alt={post.title}
+                        style={{
+                          width: '100%',
+                          height: '200px',
+                          objectFit: 'cover'
+                        }}
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          console.error('❌ Image load error for:', post.coverImageUrl);
+                          console.error('❌ Error details:', e.target.error);
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                        onLoad={() => {
+                          // Image loaded successfully
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '200px',
+                        background: 'linear-gradient(135deg, #3a99b7 0%, #2d7a91 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '48px'
+                      }}>
+                        📝
+                      </div>
+                    )}
                   </div>
                   <div className={styles.blogContent}>
                     <div className={styles.blogMeta}>
@@ -825,6 +821,78 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Consultant Details Modal */}
+      {showConsultantModal && selectedConsultant && (
+        <div className={styles.modalOverlay} onClick={closeConsultantModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Chi tiết tư vấn viên</h2>
+              <button className={styles.modalClose} onClick={closeConsultantModal}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.consultantInfo}>
+                <div className={styles.consultantImage}>
+                  <img 
+                    src={selectedConsultant.profileImageUrl || 'https://via.placeholder.com/200x200?text=Doctor'} 
+                    alt={selectedConsultant.user?.fullName || selectedConsultant.fullName || 'Doctor'} 
+                  />
+                </div>
+                <div className={styles.consultantDetails}>
+                  <h3>{selectedConsultant.user?.fullName || selectedConsultant.fullName || 'Dr. Consultant'}</h3>
+                  <p className={styles.specialization}>{selectedConsultant.specialization || selectedConsultant.qualifications || 'Tư vấn viên'}</p>
+                  <p className={styles.experience}>{selectedConsultant.experienceYears ? `${selectedConsultant.experienceYears} năm kinh nghiệm` : '4.8'}</p>
+                  {selectedConsultant.biography && (
+                    <p className={styles.biography}>{selectedConsultant.biography}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.feedbackSection}>
+                <h3>Đánh giá từ khách hàng</h3>
+                {feedbackLoading ? (
+                  <div className={styles.loadingFeedback}>
+                    <div className={styles.spinner}></div>
+                    <p>Đang tải đánh giá...</p>
+                  </div>
+                ) : consultantFeedback.length > 0 ? (
+                  <div className={styles.feedbackList}>
+                    {consultantFeedback.map((feedback, index) => (
+                      <div key={index} className={styles.feedbackItem}>
+                        <div className={styles.feedbackHeader}>
+                          <div className={styles.feedbackRating}>
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                size={16} 
+                                fill={i < (feedback.rating || 0) ? "#ffd700" : "#e1e5e9"} 
+                                color="#ffd700" 
+                              />
+                            ))}
+                          </div>
+                          <span className={styles.feedbackDate}>
+                            {feedback.createdAt ? formatDate(feedback.createdAt) : 'Gần đây'}
+                          </span>
+                        </div>
+                        {feedback.comment && (
+                          <p className={styles.feedbackComment}>{feedback.comment}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.noFeedback}>
+                    <p>Chưa có đánh giá nào cho tư vấn viên này.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />

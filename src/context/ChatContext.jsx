@@ -18,135 +18,68 @@ export const useChat = () => {
 
 export const ChatProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const { connected: wsConnected } = useWebSocket();
+  const { connected: wsConnected, sendMessage: wsSendMessage } = useWebSocket();
   
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set());
   
-  const clientRef = useRef(null);
-  const subscriptionsRef = useRef({});
+  // Sử dụng ref để tránh infinite loop
+  const hasLoadedRef = useRef(false);
 
-  // Kết nối WebSocket cho chat
+  // ✅ TẠMTHỜI DISABLE CHAT CONTEXT ĐỂ TRÁNH INFINITE LOOP
+  // Load conversations khi user thay đổi - chỉ load một lần
   useEffect(() => {
-    if (isAuthenticated && user && wsConnected) {
-      connectChatWebSocket();
-    } else if (!isAuthenticated) {
-      disconnectChatWebSocket();
+    // ❌ Tạm thời disable để tránh gọi API chat
+    console.log('🚫 ChatContext disabled - không load conversations');
+
+    if (!isAuthenticated) {
+      hasLoadedRef.current = false;
+      setConversations([]);
+      setMessages([]);
     }
 
     return () => {
-      disconnectChatWebSocket();
-    };
-  }, [isAuthenticated, user, wsConnected]);
-
-  // Load conversations khi user thay đổi
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadConversations();
-      loadUnreadCount();
-    }
-  }, [isAuthenticated, user]);
-
-  const connectChatWebSocket = () => {
-    if (clientRef.current) return;
-
-    console.log('🔌 Connecting to Chat WebSocket...');
-    
-    const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      debug: (str) => {
-        console.log('Chat STOMP Debug:', str);
-      },
-      onConnect: (frame) => {
-        console.log('✅ Chat WebSocket connected:', frame);
-        subscribeToChatTopics();
-      },
-      onStompError: (frame) => {
-        console.error('❌ Chat STOMP error:', frame.headers['message']);
-      },
-      onWebSocketError: (event) => {
-        console.error('❌ Chat WebSocket error:', event);
-      },
-      onDisconnect: () => {
-        console.log('🔌 Chat WebSocket disconnected');
+      if (!isAuthenticated) {
+        hasLoadedRef.current = false;
       }
-    });
+    };
+  }, [isAuthenticated]); // ✅ Chỉ phụ thuộc vào isAuthenticated để tránh re-render khi user object thay đổi
 
-    clientRef.current = client;
-    client.activate();
-  };
-
-  const disconnectChatWebSocket = () => {
-    if (clientRef.current) {
-      console.log('🔌 Disconnecting Chat WebSocket...');
-      
-      Object.values(subscriptionsRef.current).forEach(subscription => {
-        subscription.unsubscribe();
-      });
-      subscriptionsRef.current = {};
-      
-      clientRef.current.deactivate();
-      clientRef.current = null;
+  // Subscribe tới chat topics khi WebSocket connected
+  useEffect(() => {
+    if (wsConnected && user) {
+      subscribeToChatTopics();
     }
-  };
+  }, [wsConnected, user?.id]);
 
   const subscribeToChatTopics = () => {
-    if (!clientRef.current || !user) return;
-
-    const client = clientRef.current;
-
-    // Subscribe tới tin nhắn chat
-    subscriptionsRef.current.chat = client.subscribe(`/user/${user.id}/queue/chat`, (message) => {
-      const chatMessage = JSON.parse(message.body);
-      handleNewMessage(chatMessage);
-    });
-
-    // Subscribe tới xác nhận tin nhắn
-    subscriptionsRef.current.confirm = client.subscribe(`/user/${user.id}/queue/chat/confirm`, (message) => {
-      const chatMessage = JSON.parse(message.body);
-      handleMessageConfirmation(chatMessage);
-    });
-
-    // Subscribe tới thông báo typing
-    subscriptionsRef.current.typing = client.subscribe(`/user/${user.id}/queue/chat/typing`, (message) => {
-      const typingUser = message.body;
-      handleTypingNotification(typingUser);
-    });
-
-    // Subscribe tới thông báo đã đọc
-    subscriptionsRef.current.read = client.subscribe(`/user/${user.id}/queue/chat/read`, (message) => {
-      const readNotification = message.body;
-      handleReadNotification(readNotification);
-    });
-
-    // Subscribe tới lỗi
-    subscriptionsRef.current.error = client.subscribe(`/user/${user.id}/queue/chat/error`, (message) => {
-      const error = message.body;
-      toast.error(error);
-    });
-
-    console.log('📱 Subscribed to chat topics');
+    // Sử dụng WebSocketContext thay vì tạo connection riêng
+    console.log('📱 Subscribing to chat topics via WebSocketContext');
+    
+    // Chat topics sẽ được handle qua WebSocketContext
+    // Không cần tạo connection riêng nữa
   };
 
   const handleNewMessage = (message) => {
     console.log('📨 New chat message:', message);
     
-    // Thêm tin nhắn vào state
-    setMessages(prev => [...prev, message]);
+    // Kiểm tra xem tin nhắn đã tồn tại chưa (tránh duplicate)
+    setMessages(prev => {
+      const exists = prev.some(msg => msg.id === message.id);
+      if (!exists) {
+        return [...prev, message];
+      }
+      return prev;
+    });
     
     // Cập nhật conversation
     updateConversationWithMessage(message);
     
-    // Tăng unread count nếu không phải tin nhắn của mình
+    // Hiển thị thông báo nếu không phải tin nhắn của mình
     if (message.senderId !== user.id) {
-      setUnreadCount(prev => prev + 1);
       toast.info(`Tin nhắn mới từ ${message.senderName}`);
     }
   };
@@ -197,27 +130,22 @@ export const ChatProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await ChatService.getConversations();
-      if (response.success) {
-        setConversations(response.data);
+      
+      // Interceptor đã extract data từ ApiResponse, nên response bây giờ là mảng trực tiếp
+      if (Array.isArray(response) && response.length > 0) {
+        setConversations(response);
+      } else {
+        setConversations([]);
       }
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error('❌ Error loading conversations:', error);
       toast.error('Không thể tải danh sách chat');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadUnreadCount = async () => {
-    try {
-      const response = await ChatService.getUnreadMessageCount();
-      if (response.success) {
-        setUnreadCount(response.data);
-      }
-    } catch (error) {
-      console.error('Error loading unread count:', error);
-    }
-  };
+
 
   const loadMessages = async (otherUserId) => {
     try {
@@ -228,9 +156,6 @@ export const ChatProvider = ({ children }) => {
         
         // Đánh dấu tin nhắn đã đọc
         await ChatService.markMessagesAsRead(otherUserId);
-        
-        // Cập nhật unread count
-        loadUnreadCount();
       }
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -242,10 +167,39 @@ export const ChatProvider = ({ children }) => {
 
   const sendMessage = async (receiverId, content) => {
     try {
-      const response = await ChatService.sendMessage(receiverId, content);
-      if (response.success) {
-        // Tin nhắn sẽ được thêm qua WebSocket
-        return response.data;
+      // Gửi tin nhắn qua WebSocket
+      if (wsConnected) {
+        const message = {
+          receiverId: receiverId,
+          content: content,
+          messageType: 'TEXT'
+        };
+        
+        wsSendMessage(message);
+        
+        // Tạo tin nhắn tạm thời để hiển thị ngay lập tức
+        const tempMessage = {
+          id: Date.now(),
+          senderId: user.id,
+          senderName: user.fullName,
+          senderRole: user.role,
+          receiverId: receiverId,
+          content: content,
+          messageType: 'TEXT',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Thêm tin nhắn vào state ngay lập tức
+        setMessages(prev => [...prev, tempMessage]);
+        
+        return true;
+      } else {
+        // Fallback: gửi qua REST API nếu WebSocket không kết nối
+        const response = await ChatService.sendMessage(receiverId, content);
+        if (response.success) {
+          return response.data;
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -255,8 +209,8 @@ export const ChatProvider = ({ children }) => {
   };
 
   const sendTypingNotification = (receiverId) => {
-    if (clientRef.current && clientRef.current.connected) {
-      clientRef.current.publish({
+    if (wsConnected) {
+      wsSendMessage({
         destination: '/app/chat.typing',
         body: receiverId.toString()
       });
@@ -268,15 +222,12 @@ export const ChatProvider = ({ children }) => {
       await ChatService.markMessagesAsRead(senderId);
       
       // Gửi thông báo đã đọc qua WebSocket
-      if (clientRef.current && clientRef.current.connected) {
-        clientRef.current.publish({
+      if (wsConnected) {
+        wsSendMessage({
           destination: '/app/chat.read',
           body: senderId.toString()
         });
       }
-      
-      // Cập nhật unread count
-      loadUnreadCount();
     } catch (error) {
       console.error('Error marking as read:', error);
     }
@@ -300,12 +251,11 @@ export const ChatProvider = ({ children }) => {
       const response = await ChatService.getOrCreateConversation(consultantId);
       if (response.success) {
         const conversation = response.data;
-        setConversations(prev => [conversation, ...prev]);
-        await selectConversation(conversation);
+        // Gọi loadConversations để cập nhật sidebar
+        await loadConversations();
         return conversation;
       }
     } catch (error) {
-      console.error('Error creating conversation:', error);
       toast.error('Không thể tạo cuộc trò chuyện');
       throw error;
     }
@@ -315,7 +265,6 @@ export const ChatProvider = ({ children }) => {
     conversations,
     currentConversation,
     messages,
-    unreadCount,
     loading,
     typingUsers,
     sendMessage,
@@ -323,8 +272,7 @@ export const ChatProvider = ({ children }) => {
     selectConversation,
     createConversation,
     markAsRead,
-    loadConversations,
-    loadUnreadCount
+    loadConversations
   };
 
   return (

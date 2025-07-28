@@ -2,6 +2,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { routes } from "../routes";
 import { API_BASE_URL } from "../config";
+import { setupApiResponseInterceptor } from "../utils/apiUtils";
 
 const instance = axios.create({
   baseURL: API_BASE_URL,
@@ -22,40 +23,47 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
   function (response) {
-    // Trả về toàn bộ response object để FE có thể truy cập response.data
+    if (response.data && response.data.success !== undefined) {
+      if (!response.data.success) {
+        const error = new Error(response.data.message || 'API request failed');
+        error.response = {
+          status: 400,
+          data: response.data
+        };
+        return Promise.reject(error);
+      }
+      response.data = response.data.data || response.data;
+    }
+
     return response;
   },
   function (error) {
     if (error.response) {
-      console.log('Interceptor error:', {
-        status: error.response.status,
-        url: error.config.url,
-        currentPath: window.location.pathname,
-        isLoginPage: window.location.pathname === routes.login
-      });
-      
-      if (
-        error.response.status === 401 &&
-        window.location.pathname !== routes.login &&
-        !error.config.url.includes('/api/auth/designer/login')
-      ) {
-        console.log('Redirecting to home due to 401 error');
-        localStorage.clear();
-        localStorage.setItem("sessionExpired", "true");
-        window.location.href = routes.landing;
-      } else {
-        console.error("Response error:", error.response);
+      if (error.response.data) {
+        const errorData = error.response.data;
+        if (errorData.success !== undefined && !errorData.success) {
+          error.message = errorData.message || error.message;
+        }
+      }
+
+      if (error.response.status === 401) {
+        if (
+          window.location.pathname !== routes.login &&
+          !error.config.url.includes('/api/auth/') &&
+          !error.config.url.includes('/api/chat/')
+        ) {
+          localStorage.clear();
+          localStorage.setItem("sessionExpired", "true");
+          window.location.href = routes.landing;
+        }
       }
     } else if (error.request) {
-      console.error("Request error:", error.request);
       toast.error("Không thể kết nối đến server. Vui lòng thử lại sau");
     } else {
-      console.error("Error:", error.message);
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại");
     }
     return Promise.reject(error);
   }
 );
-
 
 export default instance;

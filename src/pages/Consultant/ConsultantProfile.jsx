@@ -164,7 +164,7 @@ const ConsultantProfile = () => {
     specialty: profile.specialization,
     experience: profile.experienceYears,
     bio: profile.biography,
-    avatar: profile.avatar || 'https://i.pravatar.cc/100?u=' + profile.id,
+    avatar: profile.profileImageUrl || 'https://i.pravatar.cc/100?u=' + profile.id,
     address: profile.address,
     gender: profile.gender,
     // Có thể bổ sung các trường khác nếu backend trả về
@@ -234,9 +234,12 @@ const ConsultantProfile = () => {
               <div className="avatar-section">
                 <div className="avatar-container">
                   <img
-                    src={mappedProfile.avatar}
+                    src={mappedProfile.avatar && mappedProfile.avatar.trim() !== '' ? mappedProfile.avatar : 'https://i.pravatar.cc/100?u=default'}
                     alt="Avatar"
                     className="profile-avatar"
+                    onError={(e) => {
+                      e.target.src = 'https://i.pravatar.cc/100?u=default';
+                    }}
                   />
                 </div>
               </div>

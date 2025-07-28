@@ -219,18 +219,14 @@ export default function AdminUser() {
       // Cập nhật thông tin người dùng
       const response = await updateUserAPI(userId, updateData);
       
-      // Nếu có thay đổi vai trò thành CONSULTANT, gọi API setUserToConsultant riêng
       if (isRoleChangedToConsultant) {
-        console.log('Calling setUserToConsultantAPI for userId:', userId);
         try {
           await setUserToConsultantAPI(userId);
-          console.log('setUserToConsultantAPI called successfully');
           toast.success('Cập nhật người dùng thành công và đã set role Consultant!', {
             autoClose: 4000,
             position: "top-right"
           });
         } catch (consultantError) {
-          console.error('Lỗi khi set role Consultant:', consultantError);
           const errorMessage = consultantError.response?.data?.message || consultantError.response?.data || consultantError.message;
           toast.warning(`Cập nhật thông tin thành công nhưng có lỗi khi set role Consultant: ${errorMessage}`, {
             autoClose: 6000,
@@ -275,17 +271,14 @@ const handleConfirmRoleChange = async () => {
 
     console.log('Changing role for userId:', userId, 'to:', newRole);
 
-    // Nếu thay đổi thành CONSULTANT, gọi API setUserToConsultant
     if (newRole === 'CONSULTANT') {
       try {
         await setUserToConsultantAPI(userId);
-        console.log('setUserToConsultantAPI called successfully');
         toast.success('Thay đổi vai trò thành công và đã set role Consultant!', {
           autoClose: 4000,
           position: "top-right"
         });
       } catch (consultantError) {
-        console.error('Lỗi khi set role Consultant:', consultantError);
         const errorMessage = consultantError.response?.data?.message || consultantError.response?.data || consultantError.message;
         toast.error(`Lỗi khi set role Consultant: ${errorMessage}`, {
           autoClose: 6000,
@@ -358,8 +351,7 @@ const handleConfirmRoleChange = async () => {
   };
 
   const getStatusChip = (user) => {
-    // Giả sử status dựa trên một số điều kiện
-    const isActive = !user.isDeleted; // Logic đơn giản
+    const isActive = !user.isDeleted;
     return (
       <Chip
         label={isActive ? 'Hoạt động' : 'Đã xóa'}
@@ -476,14 +468,13 @@ const handleConfirmRoleChange = async () => {
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Email</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Số điện thoại</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Vai trò</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Trạng thái</TableCell>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             Không có dữ liệu người dùng nào
                           </Typography>
@@ -509,9 +500,6 @@ const handleConfirmRoleChange = async () => {
                             <TableCell>{user.phoneNumber || 'Chưa cập nhật'}</TableCell>
                             <TableCell>
                               {getRoleChip(user.roleName)}
-                            </TableCell>
-                            <TableCell>
-                              {getStatusChip(user)}
                             </TableCell>
                             <TableCell align="center">
                               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
@@ -658,13 +646,6 @@ const handleConfirmRoleChange = async () => {
                         Vai trò
                       </Typography>
                       {getRoleChip(selectedUser.roleName)}
-                    </Box>
-                    <Divider />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Trạng thái
-                      </Typography>
-                      {getStatusChip(selectedUser)}
                     </Box>
                     <Divider />
                     <Box>
@@ -850,7 +831,7 @@ const handleConfirmRoleChange = async () => {
               {newRole === 'CONSULTANT' && (
                 <Alert severity="info" sx={{ mt: 2, borderRadius: '8px' }}>
                   <Typography variant="body2">
-                    <strong>Lưu ý:</strong> Khi thay đổi thành "Tư vấn viên", hệ thống sẽ tự động gọi API setUserToConsultant để tạo lịch làm việc mặc định.
+                    <strong>Lưu ý:</strong> Khi thay đổi thành "Tư vấn viên", hệ thống sẽ tự động tạo lịch làm việc mặc định.
                   </Typography>
                 </Alert>
               )}

@@ -49,7 +49,6 @@ const StaffLayout = () => {
     } else if (path === '/staff/service-input') {
       return <StaffServiceInput />;
     } else {
-      // Default to appointments for /staff and /staff/appointments
       return <StaffAppointments />;
     }
   };

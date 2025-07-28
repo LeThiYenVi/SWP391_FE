@@ -175,6 +175,17 @@ const getUserProfileAPI = async () => {
   }
 };
 
+const getUserProfileWithTrendsAPI = async () => {
+  try {
+    const response = await instance.get('/api/user/profile/trends');
+    console.log('Get user profile with trends success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get user profile with trends error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 const updateUserProfileAPI = async (profileData) => {
   try {
     const response = await instance.put('/api/user/profile', profileData);
@@ -514,7 +525,7 @@ const getAllTestingServicesAPI = async (pageNumber = 1, pageSize = 100) => {
 
 const updateTestingServiceAPI = async (serviceId, updateData) => {
   try {
-    const response = await instance.put(`/api/admin/testing-services/${serviceId}`, updateData);
+    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, updateData);
     console.log('Update testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -576,7 +587,6 @@ const getAllBookingsAPI = async (pageNumber = 1, pageSize = 10) => {
 };
 
 export {
-  // Authentication APIs
   loginAPI,
   registerAPI,
   forgetPasswordAPI,
@@ -586,39 +596,24 @@ export {
   loginByGoogleAPI,
   logoutAPI,
   refreshTokenAPI,
-  
-  // User Profile APIs
   getUserProfileAPI,
+  getUserProfileWithTrendsAPI,
   updateUserProfileAPI,
   getUserBookingHistoryAPI,
-  
-  // Menstrual Cycle APIs
   addOrUpdateMenstrualCycleAPI,
   logMenstrualPeriodAPI,
   getMenstrualCycleTrackerAPI,
   getUserRemindersAPI,
-  
-
-  
-  // Dashboard APIs
   getRevenueByDayAPI,
   getAllOrdersAPI,
   getTopDesignersByRevenueAPI,
   getOrderStatusByMonthAPI,
   getCustomerGrowthAPI,
-  
-  // Product APIs
   getNewProductsAPI,
   createNewProductAPI,
-  
-  // Category APIs
   getAllCategoriesAPI,
-  
-  // Furniture APIs
   createFurnitureAPI,
   updateFurnitureAPI,
-  
-  // Design APIs
   createDesignAPI,
   updateDesignAPI,
   

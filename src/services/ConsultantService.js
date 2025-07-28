@@ -48,6 +48,23 @@ const getUnavailabilityAPI = async () => {
   }
 };
 
+const getConsultantAvailabilityAPI = async (date) => {
+  try {
+    // Lấy consultant ID từ profile hiện tại
+    const profileResponse = await instance.get('/api/consultant/getProfile');
+    const consultantId = profileResponse.data.id;
+    
+    const response = await instance.get(`/api/consultation/consultant/${consultantId}/availability`, {
+      params: { date }
+    });
+    console.log('Get consultant availability success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get consultant availability error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // =============Consultation Booking APIs============
 const getConsultationBookingsAPI = async (date = null, status = null) => {
   try {
@@ -130,24 +147,32 @@ const deleteReminderAPI = async (reminderId) => {
   }
 };
 
-// =============Dashboard APIs============
-// Lấy cuộc hẹn hôm nay
 export const getTodayAppointmentsAPI = async () => {
   const today = new Date().toISOString().slice(0, 10);
   return getConsultationBookingsAPI(today, null);
 };
-// Lấy cuộc hẹn đang chờ
+
 export const getPendingAppointmentsAPI = async () => {
   return getConsultationBookingsAPI(null, 'pending');
 };
-// Lấy cuộc hẹn sắp tới (status = scheduled hoặc ngày > hôm nay)
+
 export const getUpcomingAppointmentsAPI = async () => {
   return getConsultationBookingsAPI(null, 'scheduled');
 };
-// Lấy số tin nhắn chưa đọc (mock nếu chưa có API)
+// Lấy số tin nhắn chưa đọc
 export const getUnreadMessagesCountAPI = async () => {
-  // Nếu có API thật thì gọi, tạm mock trả về 0
-  return 0;
+  try {
+    console.log('🔍 Calling getUnreadMessagesCountAPI...');
+    const response = await instance.get('/api/chat/consultant/unread-count');
+    console.log('✅ Get unread messages count success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Get unread messages count error:', error.response?.data || error.message);
+    console.error('❌ Error status:', error.response?.status);
+    console.error('❌ Full error:', error);
+    // Trả về 0 nếu có lỗi
+    return 0;
+  }
 };
 // Lấy doanh thu
 export const getRevenueAPI = async (type = 'today') => {
@@ -168,6 +193,64 @@ const getPublicConsultantsAPI = async () => {
     return response.data;
   } catch (error) {
     console.error('Get public consultants error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getAvailableConsultantsAPI = async () => {
+  try {
+    const response = await instance.get('/api/chat/customer/available-consultants');
+    console.log('Get available consultants success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get available consultants error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// =============Consultant Create Booking APIs============
+const createBookingForUserAPI = async (bookingData) => {
+  try {
+    console.log('Making API call to create booking with data:', bookingData);
+    const response = await instance.post('/api/bookings/consultant-create', bookingData);
+    console.log('Create booking for user success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create booking for user error:', error.response?.data || error.message);
+    console.error('Full error object:', error);
+    throw error;
+  }
+};
+
+const createConsultationForUserAPI = async (consultationData) => {
+  try {
+    const response = await instance.post('/api/consultation/consultant-create', consultationData);
+    console.log('Create consultation for user success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create consultation for user error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getCustomersAPI = async () => {
+  try {
+    const response = await instance.get('/api/consultant/customers');
+    console.log('Get customers success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get customers error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const createTestCustomerAPI = async () => {
+  try {
+    const response = await instance.post('/api/consultant/create-test-customer');
+    console.log('Create test customer success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create test customer error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -206,6 +289,15 @@ class ConsultantService {
   async getUnavailability() {
     try {
       const data = await getUnavailabilityAPI();
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async getConsultantAvailability(date) {
+    try {
+      const data = await getConsultantAvailabilityAPI(date);
       return { success: true, data };
     } catch (error) {
       return { success: false, message: error.message };
@@ -254,6 +346,62 @@ class ConsultantService {
     try {
       const data = await deleteReminderAPI(reminderId);
       return { success: true, data };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Create booking for user
+  async createBookingForUser(bookingData) {
+    try {
+      const data = await createBookingForUserAPI(bookingData);
+      // Interceptor đã extract data từ ApiResponse, nên data là BookingResponseDTO
+      return { success: true, data: data, message: 'Tạo lịch hẹn thành công' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Create consultation for user
+  async createConsultationForUser(consultationData) {
+    try {
+      const data = await createConsultationForUserAPI(consultationData);
+      return { success: true, data: data, message: 'Tạo lịch tư vấn thành công' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  // Get customers list
+  async getCustomers() {
+    try {
+      const response = await getCustomersAPI();
+      console.log('Raw customers API response:', response);
+      
+      // Kiểm tra cấu trúc response
+      if (response && response.success && response.data) {
+        return { success: true, data: response.data };
+      } else if (response && Array.isArray(response)) {
+        return { success: true, data: response };
+      } else if (response && response.data && Array.isArray(response.data)) {
+        return { success: true, data: response.data };
+      } else {
+        console.warn('Unexpected customers response format:', response);
+        return { success: false, message: 'Invalid response format' };
+      }
+    } catch (error) {
+      console.error('Error in getCustomers:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Create test customer for testing
+  async createTestCustomer() {
+    try {
+      const response = await createTestCustomerAPI();
+      return { success: true, data: response.data, message: response.message };
     } catch (error) {
       return { success: false, message: error.message };
     }
@@ -314,14 +462,35 @@ class ConsultantService {
     // This should be handled by user service
     return { success: false, message: 'Use UserService.getUserProfileAPI instead' };
   }
+
+  async getAvailableConsultants() {
+    try {
+      const response = await getAvailableConsultantsAPI();
+      console.log('Raw available consultants response:', response);
+      
+      // API trả về ApiResponse wrapper với data field
+      let consultantsData;
+      if (response && response.data && Array.isArray(response.data)) {
+        consultantsData = response.data;
+      } else if (response && response.data && response.data.data && Array.isArray(response.data.data)) {
+        consultantsData = response.data.data;
+      } else if (response && Array.isArray(response)) {
+        consultantsData = response;
+      } else {
+        console.warn('Unexpected response format:', response);
+        consultantsData = [];
+      }
+      
+      return { success: true, data: consultantsData };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
 }
 
-// Export singleton instance for backward compatibility
 const consultantService = new ConsultantService();
 
 export default consultantService;
-
-// Export individual API functions
 export {
   getConsultantProfileAPI,
   updateConsultantProfileAPI,
@@ -334,5 +503,10 @@ export {
   getReminderByIdAPI,
   updateReminderAPI,
   deleteReminderAPI,
-  getPublicConsultantsAPI
+  getPublicConsultantsAPI,
+  getAvailableConsultantsAPI,
+  createBookingForUserAPI,
+  createConsultationForUserAPI,
+  getCustomersAPI,
+  createTestCustomerAPI
 };

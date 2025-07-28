@@ -9,7 +9,6 @@ import {
   Save,
   X,
   Clock,
-  TestTube,
   CheckCircle,
   AlertCircle,
   FileText,
@@ -28,15 +27,203 @@ import {
   Download,
   Share2,
   Camera,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
+import { Science as TestTubeIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import axios from '../../services/customize-axios';
+import instance from '../../services/customize-axios';
 import BookingService from '../../services/BookingService';
+import { getUserBookingsAPI } from '../../services/ConsultationService';
+import { getUserProfileWithTrendsAPI } from '../../services/UsersSevices';
 import Avatar from '../../components/Avatar';
+import notificationService from '../../services/NotificationService';
+
+// Component hiển thị các cuộc hẹn sắp tới
+const UpcomingAppointments = () => {
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [upcomingConsultations, setUpcomingConsultations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUpcomingAppointments();
+  }, []);
+
+  const loadUpcomingAppointments = async () => {
+    try {
+      setLoading(true);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Load bookings
+      const bookingResult = await BookingService.getUserBookings();
+      if (bookingResult.success) {
+        const futureBookings = bookingResult.data.filter(booking => {
+          if (!booking.timeSlot?.date) return false;
+          const bookingDate = new Date(booking.timeSlot.date);
+          return bookingDate >= today && booking.status !== 'CANCELLED';
+        });
+        setUpcomingBookings(futureBookings);
+      }
+
+      // Load consultations
+      const consultationResult = await getUserBookingsAPI();
+      if (consultationResult.success) {
+        const futureConsultations = consultationResult.data.filter(consultation => {
+          if (!consultation.consultationDate) return false;
+          const consultationDate = new Date(consultation.consultationDate);
+          return consultationDate >= today && consultation.status !== 'CANCELLED';
+        });
+        setUpcomingConsultations(futureConsultations);
+      }
+    } catch (error) {
+      console.error('Error loading upcoming appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi });
+  };
+
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    return timeString.substring(0, 5);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent"></div>
+        <span className="ml-3 text-gray-600">Đang tải lịch hẹn...</span>
+      </div>
+    );
+  }
+
+  const totalAppointments = upcomingBookings.length + upcomingConsultations.length;
+
+  if (totalAppointments === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-gray-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <Calendar className="h-10 w-10 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Không có lịch hẹn sắp tới</h3>
+        <p className="text-gray-600 mb-4">Bạn chưa có lịch hẹn nào trong thời gian tới</p>
+        <div className="text-sm text-gray-500">
+          <p>• Đặt lịch xét nghiệm STI</p>
+          <p>• Đặt lịch tư vấn với chuyên gia</p>
+          <p>• Theo dõi kết quả xét nghiệm</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Lịch hẹn sắp tới ({totalAppointments})
+        </h3>
+      </div>
+
+      {/* STI Testing Bookings */}
+      {upcomingBookings.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-md font-medium text-gray-700 flex items-center">
+            <TestTubeIcon className="h-4 w-4 mr-2 text-blue-500" />
+            Xét nghiệm STI ({upcomingBookings.length})
+          </h4>
+          {upcomingBookings.map((booking) => (
+            <div key={booking.id} className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <h4 className="font-semibold text-gray-900">
+                      {booking.testingService?.serviceName || 'Xét nghiệm STI'}
+                    </h4>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {formatDate(booking.timeSlot?.date)}
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2" />
+                      {formatTime(booking.timeSlot?.startTime)} - {formatTime(booking.timeSlot?.endTime)}
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      {booking.testingService?.location || 'Địa chỉ sẽ được thông báo'}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {booking.status === 'PENDING' ? 'Chờ xác nhận' :
+                     booking.status === 'CONFIRMED' ? 'Đã xác nhận' : booking.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Consultation Bookings */}
+      {upcomingConsultations.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-md font-medium text-gray-700 flex items-center">
+            <User className="h-4 w-4 mr-2 text-green-500" />
+            Tư vấn ({upcomingConsultations.length})
+          </h4>
+          {upcomingConsultations.map((consultation) => (
+            <div key={consultation.id} className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <h4 className="font-semibold text-gray-900">
+                      Tư vấn với {consultation.consultant?.fullName || 'Chuyên gia'}
+                    </h4>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {formatDate(consultation.consultationDate)}
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2" />
+                      {formatTime(consultation.startTime)} - {formatTime(consultation.endTime)}
+                    </div>
+                    {consultation.notes && (
+                      <div className="flex items-start">
+                        <FileText className="h-4 w-4 mr-2 mt-0.5" />
+                        <span className="text-xs">{consultation.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {consultation.status === 'PENDING' ? 'Chờ xác nhận' :
+                     consultation.status === 'CONFIRMED' ? 'Đã xác nhận' : consultation.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -50,27 +237,41 @@ const UserProfile = () => {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [deletingAvatar, setDeletingAvatar] = useState(false);
+  const [trendData, setTrendData] = useState(null);
+  const [loadingTrends, setLoadingTrends] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadProfile();
+    loadTrends();
+    loadNotifications();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'bookings' && bookings.length === 0) {
       loadBookings();
     }
+    if (activeTab === 'notifications' && notifications.length === 0) {
+      loadNotifications();
+    }
   }, [activeTab]);
 
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/user/profile');
+      const res = await instance.get('/api/user/profile');
+      
+      // API trả về format: { success: true, content: UserResponseDTO, message: "..." }
+      const userData = res.data.content || res.data.data || res.data;
+      
       const cleanData = Object.fromEntries(
-        Object.entries(res.data).map(([k, v]) => [k, v == null ? '' : v])
+        Object.entries(userData).map(([k, v]) => [k, v == null ? '' : v])
       );
 
       const mappedData = {
+        id: cleanData.id || cleanData.userId,
         username: cleanData.username || '',
         email: cleanData.email || '',
         fullName: cleanData.fullName || cleanData.fullname || cleanData.name || '',
@@ -80,6 +281,10 @@ const UserProfile = () => {
         gender: cleanData.gender || '',
         description: cleanData.description || '',
         medicalHistory: cleanData.medicalHistory || '',
+        avatarUrl: cleanData.avatarUrl || '',
+        avatarPublicId: cleanData.avatarPublicId || '',
+        roleName: cleanData.roleName || '',
+        status: cleanData.status || '',
         createdAt: cleanData.createdAt || '',
         updatedAt: cleanData.updatedAt || ''
       };
@@ -108,6 +313,40 @@ const UserProfile = () => {
     }
   };
 
+  const loadTrends = async () => {
+    setLoadingTrends(true);
+    try {
+      const result = await getUserProfileWithTrendsAPI();
+      if (result.success) {
+        setTrendData(result.content?.trendData || null);
+      } else {
+        // Không thể tải dữ liệu trends
+      }
+    } catch (error) {
+      // Không thể tải dữ liệu trends
+    } finally {
+      setLoadingTrends(false);
+    }
+  };
+
+  const loadNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const notificationsData = await notificationService.fetchUserNotifications();
+      // Xử lý trường hợp API trả về null, undefined hoặc không phải array
+      if (notificationsData && Array.isArray(notificationsData)) {
+        setNotifications(notificationsData);
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      toast.error('Không thể tải thông báo');
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     setEditProfile(prev => ({
       ...prev,
@@ -127,18 +366,29 @@ const UserProfile = () => {
         address: editProfile.address,
         gender: editProfile.gender,
         description: editProfile.description,
-        medicalHistory: editProfile.medicalHistory,
-        createdAt: editProfile.createdAt,
-        updatedAt: new Date().toISOString()
+        medicalHistory: editProfile.medicalHistory
       };
 
-      await axios.patch('/api/user/profile', requestBody);
-      toast.success('Cập nhật hồ sơ thành công!');
-      setProfile(editProfile);
-      setIsEditing(false);
+      const response = await instance.patch('/api/user/profile', requestBody);
+      console.log('Update profile response:', response);
+
+      // Kiểm tra status code thành công (200-299)
+      if (response.status >= 200 && response.status < 300) {
+        // API có thể trả về nhiều format khác nhau
+        const updatedUser = response.data.content || response.data.data || response.data;
+        const updatedProfile = {
+          ...editProfile,
+          ...updatedUser
+        };
+        setProfile(updatedProfile);
+        toast.success(response.data.message || 'Cập nhật hồ sơ thành công!');
+        setIsEditing(false);
+      } else {
+        toast.error(response.data.message || 'Cập nhật hồ sơ thất bại!');
+      }
     } catch (error) {
       console.error('Update profile error:', error);
-      toast.error('Cập nhật hồ sơ thất bại!');
+      toast.error(error.response?.data?.message || 'Cập nhật hồ sơ thất bại!');
     } finally {
       setSaving(false);
     }
@@ -154,23 +404,36 @@ const UserProfile = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('userId', profile.id); // Sử dụng ID từ profile
       
-      const response = await axios.post('/api/user/avatar', formData, {
+      const response = await instance.post('/api/user/avatar/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log('Avatar upload response:', response);
 
-      // Update profile with new avatar URL
-      setProfile(prev => ({ ...prev, avatarUrl: response.data }));
-      toast.success('Cập nhật ảnh đại diện thành công!');
-      
-      // Reload profile để lấy thông tin mới nhất
-      await loadProfile();
+      // Kiểm tra status code thành công (200-299)
+      if (response.status >= 200 && response.status < 300) {
+        const responseData = response.data.data || response.data.content || response.data;
+
+        // Update profile with new avatar information
+        if (responseData) {
+          const { user, avatarUrl, publicId } = responseData;
+          setProfile(prev => ({
+            ...prev,
+            avatarUrl: avatarUrl || responseData.avatarUrl,
+            avatarPublicId: publicId || responseData.publicId,
+            ...(user || {})
+          }));
+        }
+
+        toast.success(response.data.message || 'Cập nhật ảnh đại diện thành công!');
+      } else {
+        toast.error(response.data.message || 'Không thể cập nhật ảnh đại diện!');
+      }
     } catch (error) {
-      console.error('Upload avatar error:', error);
-      toast.error('Không thể cập nhật ảnh đại diện!');
+      console.error('Avatar upload error:', error);
+      toast.error(error.response?.data?.message || 'Không thể cập nhật ảnh đại diện!');
     } finally {
       setUploadingAvatar(false);
     }
@@ -183,42 +446,58 @@ const UserProfile = () => {
 
     setDeletingAvatar(true);
     try {
-      await axios.delete('/api/user/avatar');
-      
-      // Update profile
-      setProfile(prev => ({ ...prev, avatarUrl: null, avatarPublicId: null }));
-      toast.success('Đã xóa ảnh đại diện thành công!');
-      
-      // Reload profile
-      await loadProfile();
+      const response = await instance.delete('/api/user/avatar/delete');
+      console.log('Delete avatar response:', response);
+
+      // Kiểm tra status code thành công (200-299)
+      if (response.status >= 200 && response.status < 300) {
+        const updatedUser = response.data.content || response.data.data || response.data;
+
+        // Update profile
+        setProfile(prev => ({
+          ...prev,
+          avatarUrl: null,
+          avatarPublicId: null,
+          ...(updatedUser || {})
+        }));
+
+        toast.success(response.data.message || 'Đã xóa ảnh đại diện thành công!');
+      } else {
+        toast.error(response.data.message || 'Không thể xóa ảnh đại diện!');
+      }
     } catch (error) {
       console.error('Delete avatar error:', error);
-      toast.error('Không thể xóa ảnh đại diện!');
+      toast.error(error.response?.data?.message || 'Không thể xóa ảnh đại diện!');
     } finally {
       setDeletingAvatar(false);
     }
   };
 
-  const validateAvatarUrl = async () => {
+  const checkAvatar = async () => {
     try {
-      const response = await axios.get('/api/user/avatar/validate');
-      const validatedUrl = response.data;
+      const response = await instance.get('/api/user/avatar/check');
       
-      if (validatedUrl !== profile.avatarUrl) {
-        setProfile(prev => ({ ...prev, avatarUrl: validatedUrl }));
-        toast.info('Đã cập nhật ảnh đại diện với URL mới!');
+      // API trả về format: { success: true, content: { hasAvatar, avatarUrl }, message: "..." }
+      if (response.data.success) {
+        const responseData = response.data.content || response.data.data;
+        const { hasAvatar, avatarUrl } = responseData;
+        
+        if (hasAvatar && avatarUrl !== profile.avatarUrl) {
+          setProfile(prev => ({ ...prev, avatarUrl: avatarUrl }));
+          toast.info('Đã cập nhật ảnh đại diện!');
+        }
       }
     } catch (error) {
-      console.error('Avatar validation error:', error);
+      // Không thể kiểm tra avatar
     }
   };
 
-  // Validate avatar khi component mount
+  // Check avatar khi component mount
   useEffect(() => {
-    if (profile?.avatarUrl && profile?.avatarPublicId) {
-      validateAvatarUrl();
+    if (profile?.avatarUrl) {
+      checkAvatar();
     }
-  }, [profile?.avatarPublicId]);
+  }, [profile?.avatarUrl]);
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -319,7 +598,7 @@ const UserProfile = () => {
             <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4">
               <div className="relative group">
                 <Avatar
-                  src={profile.avatarUrl}
+                  src={profile.avatarUrl && profile.avatarUrl.trim() !== '' ? profile.avatarUrl : null}
                   alt={profile.fullName || "User Avatar"}
                   size="lg"
                   className="mx-auto"
@@ -391,7 +670,9 @@ const UserProfile = () => {
           <div className="flex space-x-1">
             {[
               { id: 'profile', label: 'Thông tin cá nhân', icon: User },
-              { id: 'bookings', label: 'Lịch sử dịch vụ', icon: FileText },
+              // { id: 'bookings', label: 'Lịch sử dịch vụ', icon: FileText }, // Hidden per user request
+              { id: 'trends', label: 'Thống kê & Xu hướng', icon: Activity },
+              { id: 'notifications', label: 'Thông báo', icon: Bell },
             ].map(tab => {
               const Icon = tab.icon;
               return (
@@ -632,8 +913,8 @@ const UserProfile = () => {
           </div>
         )}
 
-        {/* Bookings Tab */}
-        {activeTab === 'bookings' && (
+        {/* Bookings Tab - Hidden per user request */}
+        {false && activeTab === 'bookings' && (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-6">
               <div className="flex items-center justify-between">
@@ -672,7 +953,7 @@ const UserProfile = () => {
               ) : bookings.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center mx-auto mb-6">
-                    <TestTube className="h-12 w-12 text-gray-400" />
+                    <TestTubeIcon className="h-12 w-12 text-gray-400" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có lịch sử dịch vụ</h3>
                   <p className="text-gray-500 mb-6">Các dịch vụ bạn đã đặt sẽ hiển thị ở đây</p>
@@ -707,7 +988,7 @@ const UserProfile = () => {
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100">
-                              <TestTube className="h-5 w-5 text-blue-500" />
+                              <TestTubeIcon className="h-5 w-5 text-blue-500" />
                               <div>
                                 <p className="text-sm text-gray-500">Dịch vụ</p>
                                 <p className="font-semibold text-gray-900">{booking.serviceName}</p>
@@ -811,6 +1092,353 @@ const UserProfile = () => {
                           )}
                         </div>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Trends Tab */}
+        {activeTab === 'trends' && (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Thống kê & Xu hướng</h2>
+                    <p className="text-purple-100">Theo dõi hoạt động và xu hướng sử dụng dịch vụ</p>
+                  </div>
+                </div>
+                <button
+                  onClick={loadTrends}
+                  disabled={loadingTrends}
+                  className="flex items-center px-6 py-3 text-sm font-semibold text-purple-600 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  {loadingTrends ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent mr-2"></div>
+                  ) : (
+                    <Activity className="h-4 w-4 mr-2" />
+                  )}
+                  {loadingTrends ? 'Đang tải...' : 'Làm mới'}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8">
+              {loadingTrends ? (
+                <div className="flex justify-center items-center py-16">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Đang tải dữ liệu thống kê...</p>
+                  </div>
+                </div>
+              ) : !trendData ? (
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center mx-auto mb-6">
+                    <Activity className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có dữ liệu thống kê</h3>
+                  <p className="text-gray-500 mb-6">Dữ liệu thống kê sẽ hiển thị sau khi bạn sử dụng dịch vụ</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Overview Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-blue-100 text-sm">Tổng đặt lịch</p>
+                          <p className="text-2xl font-bold">{trendData.totalBookings || 0}</p>
+                        </div>
+                        <FileText className="h-8 w-8 text-blue-200" />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-green-100 text-sm">Hoàn thành</p>
+                          <p className="text-2xl font-bold">{trendData.completedBookings || 0}</p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-200" />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-purple-100 text-sm">Tư vấn</p>
+                          <p className="text-2xl font-bold">{trendData.totalConsultations || 0}</p>
+                        </div>
+                        <User className="h-8 w-8 text-purple-200" />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-orange-100 text-sm">Tổng chi tiêu</p>
+                          <p className="text-2xl font-bold">{(trendData.totalSpent || 0).toLocaleString('vi-VN')}đ</p>
+                        </div>
+                        <Award className="h-8 w-8 text-orange-200" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Monthly Trends */}
+                  {trendData.monthlyTrends && trendData.monthlyTrends.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Xu hướng theo tháng</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {trendData.monthlyTrends.slice(-6).map((trend, index) => (
+                          <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                            <h4 className="font-semibold text-gray-900 mb-2">{trend.month}</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Đặt lịch:</span>
+                                <span className="font-medium">{trend.bookings}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Tư vấn:</span>
+                                <span className="font-medium">{trend.consultations}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Chi tiêu:</span>
+                                <span className="font-medium">{trend.spending.toLocaleString('vi-VN')}đ</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Services */}
+                  {trendData.topServices && trendData.topServices.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Dịch vụ sử dụng nhiều nhất</h3>
+                      <div className="space-y-3">
+                        {trendData.topServices.map((service, index) => (
+                          <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{service.serviceName}</h4>
+                                <p className="text-sm text-gray-600">Sử dụng {service.usageCount} lần</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-green-600">{service.totalSpent.toLocaleString('vi-VN')}đ</p>
+                                <p className="text-sm text-gray-500">Tổng chi tiêu</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent Activities */}
+                  {trendData.recentActivities && trendData.recentActivities.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động gần đây</h3>
+                      <div className="space-y-3">
+                        {trendData.recentActivities.map((activity, index) => (
+                          <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold">{activity.icon === 'test-tube' ? '🧪' : activity.icon === 'user-md' ? '👨‍⚕️' : '❓'}</span>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900">{activity.title}</h4>
+                                <p className="text-sm text-gray-600">{activity.description}</p>
+                                <p className="text-xs text-gray-500">{activity.date}</p>
+                              </div>
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                activity.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                activity.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {activity.status === 'COMPLETED' ? 'Hoàn thành' :
+                                 activity.status === 'PENDING' ? 'Chờ xử lý' : activity.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Health Insights */}
+                  {trendData.healthInsights && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                      <h3 className="text-lg font-semibold text-green-900 mb-4">Thông tin sức khỏe</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-green-700 mb-1">Trạng thái chu kỳ:</p>
+                          <p className="font-semibold text-green-900">{trendData.healthInsights.cycleStatus === 'REGULAR' ? 'Đều đặn' : 'Không đều'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-green-700 mb-1">Độ dài trung bình:</p>
+                          <p className="font-semibold text-green-900">{trendData.healthInsights.averageCycleLength} ngày</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-green-700 mb-1">Dự đoán kỳ tiếp theo:</p>
+                          <p className="font-semibold text-green-900">{trendData.healthInsights.nextPeriodPrediction}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-green-700 mb-1">Điểm sức khỏe:</p>
+                          <p className="font-semibold text-green-900">{trendData.healthInsights.wellnessScore}/100</p>
+                        </div>
+                      </div>
+                      {trendData.healthInsights.healthRecommendation && (
+                        <div className="mt-4 p-3 bg-white rounded-lg">
+                          <p className="text-sm text-green-800">{trendData.healthInsights.healthRecommendation}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Bell className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Thông báo</h2>
+                    <p className="text-orange-100">Quản lý thông báo của bạn</p>
+                  </div>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={loadNotifications}
+                    disabled={loadingNotifications}
+                    className="flex items-center px-4 py-2 text-sm font-semibold text-orange-600 bg-white rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all duration-300"
+                  >
+                    {loadingNotifications ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-600 border-t-transparent mr-2"></div>
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Làm mới
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await notificationService.markAllNotificationsAsReadAPI();
+                        await loadNotifications();
+                        toast.success('Đã đánh dấu tất cả thông báo đã đọc');
+                      } catch (error) {
+                        toast.error('Không thể đánh dấu tất cả thông báo đã đọc');
+                      }
+                    }}
+                    className="flex items-center px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600 transition-all duration-300"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Đánh dấu tất cả đã đọc
+                  </button>
+
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {loadingNotifications ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent"></div>
+                  <span className="ml-3 text-gray-600">Đang tải thông báo...</span>
+                </div>
+              ) : (!notifications || notifications.length === 0) ? (
+                <UpcomingAppointments />
+
+              ) : (
+                <div className="space-y-4">
+                  {notifications.filter(notification => notification && notification.id).map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`bg-gray-50 rounded-xl p-4 border-l-4 transition-all duration-300 hover:shadow-md ${
+                        notification.isRead 
+                          ? 'border-gray-300 opacity-75' 
+                          : 'border-orange-500 bg-orange-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              notification.isRead ? 'bg-gray-400' : 'bg-orange-500'
+                            }`}></div>
+                            <h4 className="font-semibold text-gray-900">
+                              {notification.title || 'Thông báo mới'}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {notification.createdAt ? formatDateTime(notification.createdAt) : 'Vừa xong'}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 mb-2">{notification.message || 'Không có nội dung'}</p>
+                          {notification.type && (
+                            <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                              notification.type === 'CONSULTATION' ? 'bg-blue-100 text-blue-800' :
+                              notification.type === 'TEST_RESULT' ? 'bg-green-100 text-green-800' :
+                              notification.type === 'CYCLE_REMINDER' ? 'bg-purple-100 text-purple-800' :
+                              notification.type === 'QUESTION_ANSWERED' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {notification.type === 'CONSULTATION' ? 'Tư vấn' :
+                               notification.type === 'TEST_RESULT' ? 'Kết quả xét nghiệm' :
+                               notification.type === 'CYCLE_REMINDER' ? 'Nhắc nhở chu kỳ' :
+                               notification.type === 'QUESTION_ANSWERED' ? 'Câu hỏi được trả lời' :
+                               notification.type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          {!notification.isRead && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await notificationService.markNotificationAsReadAPI(notification.id);
+                                  await loadNotifications();
+                                  toast.success('Đã đánh dấu thông báo đã đọc');
+                                } catch (error) {
+                                  toast.error('Không thể đánh dấu thông báo đã đọc');
+                                }
+                              }}
+                              className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                              title="Đánh dấu đã đọc"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                          {notification.link && (
+                            <button
+                              onClick={() => {
+                                if (notification.link.startsWith('/')) {
+                                  navigate(notification.link);
+                                } else {
+                                  window.open(notification.link, '_blank');
+                                }
+                              }}
+                              className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                              title="Xem chi tiết"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

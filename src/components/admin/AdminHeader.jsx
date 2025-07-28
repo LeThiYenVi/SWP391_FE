@@ -35,7 +35,7 @@ const Header = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     console.log('TOKEN:', token);
 
     if (token) {
@@ -164,11 +164,14 @@ const Header = () => {
         >
           <Avatar
             alt="User"
-            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+            src={name ? `https://i.pravatar.cc/100?u=${name}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
             sx={{
               width: 40,
               height: 40,
               border: '2px solid #B3CCD4'
+            }}
+            onError={(e) => {
+              e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
             }}
           />
           <Box sx={{ textAlign: 'left' }}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, User, Eye, Tag } from 'lucide-react';
+import { Search, Calendar, User, Eye, Tag, Home, Heart } from 'lucide-react';
 import BlogService from '../services/BlogService';
 import { toast } from 'react-toastify';
 import styles from './BlogPage.module.css';
@@ -22,42 +22,26 @@ const BlogPage = () => {
   const loadBlogPosts = async () => {
     try {
       setLoading(true);
-      const response = await BlogService.getAllBlogPosts(currentPage, 9); // 9 bài viết mỗi trang
-      setBlogPosts(response.content || []);
-      setTotalPages(response.totalPages || 1);
+      const response = await BlogService.getAllBlogPosts(currentPage, 9);
+      
+      console.log('📊 Blog API Response:', response);
+      
+      if (response && response.content && Array.isArray(response.content)) {
+        setBlogPosts(response.content);
+        setTotalPages(response.totalPages || 1);
+      } else if (response && Array.isArray(response)) {
+        setBlogPosts(response);
+        setTotalPages(1);
+      } else {
+        console.warn('⚠️ Unexpected response format:', response);
+        setBlogPosts([]);
+        setTotalPages(1);
+      }
     } catch (error) {
-      console.error('Error loading blog posts:', error);
+      console.error('❌ Error loading blog posts:', error);
       toast.error('Không thể tải danh sách bài viết');
-      // Fallback data
-      setBlogPosts([
-        {
-          id: 1,
-          title: 'Những điều cần biết về chu kỳ kinh nguyệt của phụ nữ',
-          summary: 'Chu kỳ kinh nguyệt là một hiện tượng sinh lý bình thường của cơ thể phụ nữ. Hiểu rõ về chu kỳ kinh nguyệt giúp phụ nữ theo dõi sức khỏe sinh sản và phát hiện sớm các vấn đề bất thường.',
-          author: { name: 'Dr. Vũ Thị Thu Hiền' },
-          createdAt: '2024-01-15T10:30:00',
-          categories: [{ name: 'Sức khỏe sinh sản' }],
-          views: 1250
-        },
-        {
-          id: 2,
-          title: 'Hướng dẫn cách chăm sóc sức khỏe phụ nữ hiệu quả',
-          summary: 'Chăm sóc sức khỏe phụ nữ đòi hỏi sự quan tâm đặc biệt và kiến thức chuyên môn. Bài viết này sẽ cung cấp những lời khuyên hữu ích từ các chuyên gia y tế.',
-          author: { name: 'Dr. Lê Văn Minh' },
-          createdAt: '2024-01-14T14:20:00',
-          categories: [{ name: 'Chăm sóc sức khỏe' }],
-          views: 980
-        },
-        {
-          id: 3,
-          title: 'Tầm quan trọng của việc xét nghiệm STI định kỳ',
-          summary: 'Xét nghiệm STI định kỳ là một phần quan trọng trong việc bảo vệ sức khỏe. Việc phát hiện sớm và điều trị kịp thời có thể ngăn ngừa các biến chứng nghiêm trọng.',
-          author: { name: 'Dr. Đỗ Phạm Nguyệt Thanh' },
-          createdAt: '2024-01-13T09:15:00',
-          categories: [{ name: 'STIs' }],
-          views: 756
-        }
-      ]);
+      setBlogPosts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -65,16 +49,17 @@ const BlogPage = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await BlogService.getBlogCategories();
-      setCategories(response || []);
+      const response = await BlogService.getAllCategories();
+      
+      if (response && Array.isArray(response)) {
+        setCategories(response);
+      } else {
+        console.warn('⚠️ Unexpected categories response:', response);
+        setCategories([]);
+      }
     } catch (error) {
-      console.error('Error loading categories:', error);
-      setCategories([
-        { id: 1, name: 'Sức khỏe sinh sản' },
-        { id: 2, name: 'Chăm sóc sức khỏe' },
-        { id: 3, name: 'STIs' },
-        { id: 4, name: 'Tư vấn tâm lý' }
-      ]);
+      console.error('❌ Error loading categories:', error);
+      setCategories([]);
     }
   };
 
@@ -99,10 +84,10 @@ const BlogPage = () => {
   };
 
   const filteredPosts = blogPosts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         post.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         post.summary?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || 
-                           post.categories?.some(cat => cat.name === selectedCategory);
+                           post.categories?.some(cat => cat.categoryName === selectedCategory);
     return matchesSearch && matchesCategory;
   });
 
@@ -111,6 +96,13 @@ const BlogPage = () => {
       <div className={styles.container}>
         {/* Header */}
         <div className={styles.header}>
+          <div className={styles.navigationButtons}>
+            <Link to="/" className={styles.navButton}>
+              <Home size={20} />
+              Trang chủ
+            </Link>
+          </div>
+          
           <h1>Blog - Cập nhật tri thức</h1>
           <p>Khám phá những thông tin hữu ích về sức khỏe phụ nữ và các vấn đề sinh sản</p>
         </div>
@@ -140,8 +132,8 @@ const BlogPage = () => {
             >
               <option value="all">Tất cả danh mục</option>
               {categories.map(category => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
+                <option key={category.categoryID} value={category.categoryName}>
+                  {category.categoryName}
                 </option>
               ))}
             </select>
@@ -167,14 +159,43 @@ const BlogPage = () => {
         ) : (
           <>
             <div className={styles.blogGrid}>
+              {console.log('🔍 Debug - Rendering posts:', filteredPosts.map(p => ({ id: p.postID, title: p.title, coverImageUrl: p.coverImageUrl })))}
               {filteredPosts.map((post) => (
                 <Link
-                  key={post.id}
-                  to={`/blog/${post.id}`}
+                  key={post.postID}
+                  to={`/blog/${post.postID}`}
                   className={styles.blogCard}
                 >
                   <div className={styles.blogImage}>
-                    <div className={styles.imagePlaceholder}>
+                    {post.coverImageUrl ? (
+                      <img 
+                        src={post.coverImageUrl} 
+                        alt={post.title}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block'
+                        }}
+                        onLoad={() => console.log('✅ Image loaded successfully:', post.coverImageUrl)}
+                        onError={(e) => {
+                          console.log('❌ Image failed to load:', post.coverImageUrl);
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={styles.imagePlaceholder}
+                      style={{ 
+                        display: post.coverImageUrl ? 'none' : 'flex',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%'
+                      }}
+                    >
                       📝
                     </div>
                   </div>
@@ -186,7 +207,7 @@ const BlogPage = () => {
                       </span>
                       <span className={styles.blogAuthor}>
                         <User size={14} />
-                        {post.author?.name || 'Gynexa'}
+                        {post.author?.fullName || 'Gynexa'}
                       </span>
                     </div>
                     
@@ -201,7 +222,7 @@ const BlogPage = () => {
                         {post.categories?.map((category, index) => (
                           <span key={index} className={styles.categoryTag}>
                             <Tag size={12} />
-                            {category.name}
+                            {category.categoryName}
                           </span>
                         ))}
                       </div>
@@ -209,7 +230,11 @@ const BlogPage = () => {
                       <div className={styles.blogStats}>
                         <span className={styles.views}>
                           <Eye size={14} />
-                          {post.views || Math.floor(Math.random() * 1000) + 100}
+                          {post.views || 0}
+                        </span>
+                        <span className={styles.likes}>
+                          <Heart size={14} />
+                          {post.likes || 0}
                         </span>
                       </div>
                     </div>

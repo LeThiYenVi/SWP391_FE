@@ -194,82 +194,182 @@ const ConsultationDemo = () => {
         </Typography>
       </Box>
 
-      {/* Consultants Grid */}
-      <Grid container spacing={3} className="consultants-grid">
-        {consultants.map((consultant) => (
-          <Grid item xs={12} md={4} key={consultant.id}>
-            <Card className="consultant-card">
-              <CardContent>
-                {/* Consultant Info */}
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Avatar 
-                    className="consultant-avatar"
-                    sx={{ 
-                      width: 60, 
-                      height: 60, 
-                      bgcolor: 'primary.main',
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {consultant.fullName?.charAt(0) || 'C'}
-                  </Avatar>
-                  <Box ml={2}>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      {consultant.fullName}
-                    </Typography>
-                    <Chip 
-                      label={consultant.specialization || 'Tư vấn viên'}
-                      color={getSpecializationColor(consultant.specialization)}
-                      size="small"
-                    />
-                  </Box>
-                </Box>
+      {/* Header Section */}
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+          👨‍⚕️ Chọn Tư Vấn Viên
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Chọn chuyên gia phù hợp để được tư vấn tốt nhất
+        </Typography>
+      </Box>
 
-                {/* Rating */}
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Rating 
-                    value={consultant.rating} 
-                    readOnly 
-                    size="small"
-                    sx={{ mr: 1 }}
+      {/* Consultants Grid - Enhanced Design */}
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(350px, 1fr))' },
+        gap: 3,
+        mb: 4
+      }}>
+        {consultants.map((consultant, index) => (
+          <Card 
+            key={consultant.id} 
+            sx={{ 
+              height: '100%',
+              transition: 'all 0.3s ease',
+              border: '2px solid transparent',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+                borderColor: 'primary.main'
+              }
+            }}
+          >
+            <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {/* Consultant Header */}
+              <Box display="flex" alignItems="center" mb={3}>
+                <Avatar 
+                  sx={{ 
+                    width: 70, 
+                    height: 70, 
+                    bgcolor: 'primary.main',
+                    fontSize: '1.8rem',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  {consultant.fullName?.charAt(0) || 'C'}
+                </Avatar>
+                <Box ml={3} flex={1}>
+                  <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+                    {consultant.fullName}
+                  </Typography>
+                  <Chip 
+                    label={consultant.specialization || 'Tư vấn viên'}
+                    color={getSpecializationColor(consultant.specialization)}
+                    size="medium"
+                    sx={{ fontWeight: 'bold' }}
                   />
-                  <Typography variant="body2" color="text.secondary">
-                    {consultant.rating} • {consultant.consultations} buổi tư vấn
+                </Box>
+              </Box>
+
+              {/* Stats Grid */}
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: 2, 
+                mb: 3,
+                p: 2,
+                bgcolor: 'grey.50',
+                borderRadius: 2
+              }}>
+                {/* Rating */}
+                <Box textAlign="center">
+                  <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
+                    <Rating 
+                      value={consultant.rating} 
+                      readOnly 
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Typography variant="body2" fontWeight="bold" color="primary.main">
+                      {consultant.rating}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {consultant.consultations} buổi tư vấn
                   </Typography>
                 </Box>
 
                 {/* Experience */}
-                <Box display="flex" alignItems="center" mb={2}>
-                  <WorkIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Kinh nghiệm: {consultant.experienceYears}+ năm kinh nghiệm
+                <Box textAlign="center">
+                  <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
+                    <WorkIcon sx={{ color: 'success.main', fontSize: 20, mr: 1 }} />
+                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                      {consultant.experienceYears}+ năm
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Kinh nghiệm
                   </Typography>
                 </Box>
+              </Box>
 
-                {/* Expertise */}
-                <Box display="flex" alignItems="center" mb={3}>
-                  <PersonIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Chuyên môn: {consultant.specialization || 'Tư vấn sức khỏe'}
-                  </Typography>
-                </Box>
+              {/* Expertise Details */}
+              <Box sx={{ 
+                p: 2, 
+                bgcolor: 'primary.50', 
+                borderRadius: 2, 
+                mb: 3,
+                flex: 1
+              }}>
+                <Typography variant="body2" fontWeight="bold" color="primary.main" gutterBottom>
+                  🎯 Chuyên môn
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {consultant.specialization || 'Tư vấn sức khỏe tổng quát'}
+                </Typography>
+              </Box>
 
-                {/* Book Button */}
-                <Button
-                  variant="contained"
-                  fullWidth
-                  startIcon={<ScheduleIcon />}
-                  onClick={() => handleConsultantSelect(consultant)}
-                  sx={{ mt: 'auto' }}
-                >
-                  Đặt lịch tư vấn
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
+              {/* Book Button */}
+              <Button
+                variant="contained"
+                fullWidth
+                size="large"
+                startIcon={<ScheduleIcon />}
+                onClick={() => handleConsultantSelect(consultant)}
+                sx={{ 
+                  mt: 'auto',
+                  py: 1.5,
+                  fontWeight: 'bold',
+                  fontSize: '1.1rem',
+                  borderRadius: 2,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+                  }
+                }}
+              >
+                📅 Đặt lịch tư vấn
+              </Button>
+            </CardContent>
+          </Card>
         ))}
-      </Grid>
+      </Box>
+
+      {/* Quick Stats */}
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+        gap: 2,
+        mb: 4
+      }}>
+        <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.50' }}>
+          <Typography variant="h4" fontWeight="bold" color="primary.main">
+            {consultants.length}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Tư vấn viên có sẵn
+          </Typography>
+        </Card>
+        <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'success.50' }}>
+          <Typography variant="h4" fontWeight="bold" color="success.main">
+            24/7
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Hỗ trợ trực tuyến
+          </Typography>
+        </Card>
+        <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.50' }}>
+          <Typography variant="h4" fontWeight="bold" color="warning.main">
+            100%
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Bảo mật thông tin
+          </Typography>
+        </Card>
+      </Box>
 
       {/* Booking Dialog */}
       <Dialog 

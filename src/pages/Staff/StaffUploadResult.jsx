@@ -6,8 +6,10 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import TestResultForm from '../../components/staff/TestResultForm';
 import { toast } from 'react-toastify';
+import { useWebSocket } from '../../context/WebSocketContext';
 
 const StaffUploadResult = () => {
+  const { connected, notifications } = useWebSocket();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,24 @@ const StaffUploadResult = () => {
   useEffect(() => {
     filterBookings();
   }, [searchTerm, statusFilter, dateFilter, bookings]);
+
+  // Listen for WebSocket notifications to auto-refresh
+  useEffect(() => {
+    if (connected && notifications.length > 0) {
+      const latestNotification = notifications[notifications.length - 1];
+      console.log('📨 Staff Upload Result received notification:', latestNotification);
+
+      // If it's a booking status update, refresh the list
+      if (latestNotification.type === 'booking_status_update' ||
+          latestNotification.message?.includes('booking') ||
+          latestNotification.message?.includes('lịch hẹn') ||
+          latestNotification.message?.includes('mẫu')) {
+        console.log('🔄 Auto-refreshing bookings due to notification');
+        toast.info('Danh sách đã được cập nhật tự động');
+        fetchBookings();
+      }
+    }
+  }, [notifications, connected]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -65,7 +85,7 @@ const StaffUploadResult = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (booking) =>
-          booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          booking.customerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           booking.bookingId?.toString().includes(searchTerm)
       );
     }
@@ -285,7 +305,15 @@ const StaffUploadResult = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Nhập kết quả xét nghiệm</h1>
+      <div className="mb-6">
+        <div className="flex justify-between items-start">
+          <h1 className="text-2xl font-bold text-gray-800">Nhập kết quả xét nghiệm</h1>
+          <div className="text-sm bg-gray-100 p-2 rounded">
+            <div>WebSocket: {connected ? '✅ Kết nối' : '❌ Không kết nối'}</div>
+            <div>Thông báo: {notifications.length}</div>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -375,7 +403,7 @@ const StaffUploadResult = () => {
                         #{booking.bookingId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.customerName}
+                        {booking.customerFullName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {booking.serviceName}
@@ -455,7 +483,7 @@ const StaffUploadResult = () => {
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-gray-700">
-                  <span className="font-medium">Khách hàng:</span> {selectedBooking.customerName}
+                  <span className="font-medium">Khách hàng:</span> {selectedBooking.customerFullName}
                 </p>
                 <p className="text-sm text-gray-700">
                   <span className="font-medium">Dịch vụ:</span> {selectedBooking.serviceName}

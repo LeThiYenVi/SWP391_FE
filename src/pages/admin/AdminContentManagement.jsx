@@ -19,6 +19,16 @@ import {
   Tooltip,
   Switch,
   FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
+  Autocomplete,
+  Checkbox,
+  Card,
+  CardContent,
+  CardActionArea,
+  Grid,
   // Tabs,
   // Tab
 } from '@mui/material';
@@ -50,7 +60,7 @@ const AdminContentManagement = () => {
   const [tab, setTab] = useState('blog');
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryEditMode, setCategoryEditMode] = useState(false);
-  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
+  const [categoryForm, setCategoryForm] = useState({ categoryName: '', description: '', slug: '', thumbnailUrl: '' });
   const [categoryError, setCategoryError] = useState({});
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [deleteCategoryId, setDeleteCategoryId] = useState(null);
@@ -102,12 +112,25 @@ const AdminContentManagement = () => {
   // Load categories
   const loadCategories = async () => {
     try {
+      setLoading(true);
       const response = await BlogService.getAllCategories();
+      console.log('Categories API Response:', response); // Debug log
+
       if (response && Array.isArray(response)) {
+        console.log('Categories loaded successfully:', response);
+        console.log('First category structure:', response[0]);
         setCategories(response);
+        toast.success('Đã tải danh mục thành công!');
+      } else {
+        setCategories([]);
+        toast.info('Chưa có danh mục nào trong hệ thống');
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+      toast.error('Lỗi khi tải danh mục: ' + (error.message || 'Không xác định'));
+      setCategories([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,9 +154,17 @@ const AdminContentManagement = () => {
 
   // Load data when component mounts or page changes
   useEffect(() => {
+    if (tab === 'blog') {
+      loadBlogPosts(page);
+    } else if (tab === 'category') {
+      loadCategories();
+    }
+  }, [page, refreshKey, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load categories for blog form
+  useEffect(() => {
     loadCategories();
-    loadBlogPosts(page);
-  }, [page, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle page change
   const handlePageChange = (_, newPage) => {
@@ -142,7 +173,11 @@ const AdminContentManagement = () => {
 
   // Handle refresh
   const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
+    if (tab === 'blog') {
+      loadBlogPosts(page);
+    } else if (tab === 'category') {
+      loadCategories();
+    }
     toast.success('Đã làm mới dữ liệu!');
   };
 
@@ -155,13 +190,18 @@ const AdminContentManagement = () => {
 
   const openAddCategory = () => {
     setCategoryEditMode(false);
-    setCategoryForm({ name: '', description: '' });
+    setCategoryForm({ categoryName: '', description: '', slug: '', thumbnailUrl: '' });
     setCategoryError({});
     setCategoryModalOpen(true);
   };
   const openEditCategory = (cat) => {
     setCategoryEditMode(true);
-    setCategoryForm({ name: cat.name, description: cat.description || '' });
+    setCategoryForm({
+      categoryName: cat.categoryName || '',
+      description: cat.description || '',
+      slug: cat.slug || '',
+      thumbnailUrl: cat.thumbnailUrl || ''
+    });
     setSelectedCategory(cat);
     setCategoryError({});
     setCategoryModalOpen(true);
@@ -175,13 +215,22 @@ const AdminContentManagement = () => {
   };
   const validateCategory = () => {
     const err = {};
-    if (!categoryForm.name || !categoryForm.name.trim()) err.name = 'Tên danh mục không được để trống';
-    if (categoryForm.name && categoryForm.name.length > 100) err.name = 'Tên danh mục tối đa 100 ký tự';
-    if (categoryForm.description && categoryForm.description.length > 255) err.description = 'Mô tả tối đa 255 ký tự';
+    if (!categoryForm.categoryName || !categoryForm.categoryName.trim()) err.categoryName = 'Tên danh mục không được để trống';
+    if (categoryForm.categoryName && categoryForm.categoryName.length > 100) err.categoryName = 'Tên danh mục tối đa 100 ký tự';
+    if (categoryForm.description && categoryForm.description.length > 500) err.description = 'Mô tả tối đa 500 ký tự';
+    if (categoryForm.slug && categoryForm.slug.length > 100) err.slug = 'Slug tối đa 100 ký tự';
+    if (categoryForm.thumbnailUrl && categoryForm.thumbnailUrl.length > 500) err.thumbnailUrl = 'URL thumbnail tối đa 500 ký tự';
+
     // Kiểm tra trùng tên (FE)
-    const lower = categoryForm.name.trim().toLowerCase();
-    const duplicate = categories.some(cat => cat.categoryName.trim().toLowerCase() === lower && (!categoryEditMode || cat.categoryID !== selectedCategory?.categoryID));
-    if (duplicate) err.name = 'Tên danh mục đã tồn tại';
+    if (categoryForm.categoryName && categoryForm.categoryName.trim()) {
+      const lower = categoryForm.categoryName.trim().toLowerCase();
+      const duplicate = categories.some(cat =>
+        cat.categoryName &&
+        cat.categoryName.trim().toLowerCase() === lower &&
+        (!categoryEditMode || cat.categoryID !== selectedCategory?.categoryID)
+      );
+      if (duplicate) err.categoryName = 'Tên danh mục đã tồn tại';
+    }
     setCategoryError(err);
     return Object.keys(err).length === 0;
   };
@@ -210,7 +259,16 @@ const AdminContentManagement = () => {
       loadCategories();
     } catch (err) {
       console.error('Category submit error:', err);
-      const errorMsg = err?.response?.data || 'Lỗi khi lưu danh mục!';
+      let errorMsg = 'Lỗi khi lưu danh mục!';
+
+      if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.response?.data) {
+        errorMsg = err.response.data;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+
       toast.error(errorMsg);
     }
   };
@@ -222,7 +280,16 @@ const AdminContentManagement = () => {
       setDeleteCategoryId(null);
       loadCategories();
     } catch (err) {
-      toast.error('Không thể xóa danh mục (có thể đang có bài viết liên kết)!');
+      console.error('Delete category error:', err);
+      let errorMsg = 'Không thể xóa danh mục!';
+
+      if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.response?.data) {
+        errorMsg = err.response.data;
+      }
+
+      toast.error(errorMsg);
     }
   };
   const filteredCategories = categories.filter(cat => (cat.categoryName || '').toLowerCase().includes(categorySearch.toLowerCase()));
@@ -262,9 +329,9 @@ const AdminContentManagement = () => {
 
   const openAddBlog = () => {
     setBlogEditMode(false);
-    setBlogForm({ 
-      title: '', 
-      content: '', 
+    setBlogForm({
+      title: '',
+      content: '',
       summary: '',
       tags: '',
       categoryIds: [],
@@ -273,6 +340,16 @@ const AdminContentManagement = () => {
     setBlogError({});
     setCoverImage(null);
     setBlogModalOpen(true);
+
+    // Load categories nếu chưa có
+    if (!categories || categories.length === 0) {
+      console.log('Loading categories for blog modal...');
+      loadCategories();
+    }
+
+    // Debug: Kiểm tra categories
+    console.log('Categories when opening blog modal:', categories);
+    console.log('Categories length:', categories.length);
   };
   const openEditBlog = (post) => {
     setBlogEditMode(true);
@@ -281,13 +358,19 @@ const AdminContentManagement = () => {
       content: post.content || '',
       summary: post.summary || '',
       tags: post.tags || '',
-      categoryIds: post.categories ? post.categories.map(cat => cat.categoryID || cat.id) : [],
+      categoryIds: post.categories ? post.categories.map(cat => Number(cat.categoryID || cat.id)) : [],
       isPublished: post.isPublished || false
     });
     setSelectedBlog(post);
     setBlogError({});
     setCoverImage(null);
     setBlogModalOpen(true);
+
+    // Load categories nếu chưa có
+    if (!categories || categories.length === 0) {
+      console.log('Loading categories for edit blog modal...');
+      loadCategories();
+    }
   };
   const closeBlogModal = () => {
     setBlogModalOpen(false);
@@ -298,6 +381,41 @@ const AdminContentManagement = () => {
   };
   const handleBlogCategoryChange = (e) => {
     setBlogForm({ ...blogForm, categoryIds: e.target.value });
+  };
+
+  // Handle category card selection
+  const handleCategoryCardClick = (categoryId) => {
+    console.log('=== Category Click Debug ===');
+    console.log('Clicked categoryId:', categoryId, typeof categoryId);
+    console.log('Current blogForm.categoryIds:', blogForm.categoryIds);
+
+    // Ensure categoryId is a number for consistent comparison
+    const numericCategoryId = Number(categoryId);
+    const currentIds = (blogForm.categoryIds || []).map(Number);
+
+    console.log('Numeric categoryId:', numericCategoryId);
+    console.log('Current numeric IDs:', currentIds);
+    console.log('Includes check:', currentIds.includes(numericCategoryId));
+
+    let newIds;
+
+    if (currentIds.includes(numericCategoryId)) {
+      // Unselect category
+      newIds = currentIds.filter(id => id !== numericCategoryId);
+      console.log('Unselecting, new IDs:', newIds);
+    } else {
+      // Select category
+      newIds = [...currentIds, numericCategoryId];
+      console.log('Selecting, new IDs:', newIds);
+    }
+
+    setBlogForm({ ...blogForm, categoryIds: newIds });
+    console.log('Updated blogForm will have categoryIds:', newIds);
+
+    // Clear error if at least one category is selected
+    if (newIds.length > 0 && blogError.categoryIds) {
+      setBlogError({ ...blogError, categoryIds: null });
+    }
   };
   const validateBlog = () => {
     const err = {};
@@ -663,6 +781,14 @@ const AdminContentManagement = () => {
                         onChange={e => setCategorySearch(e.target.value)}
                         sx={{ bgcolor: 'white', borderRadius: 2, px: 2, py: 1, boxShadow: '0 0 0 1px #ccc', width: 300 }}
                       />
+                      <Button
+                        variant="outlined"
+                        startIcon={<RefreshIcon />}
+                        onClick={handleRefresh}
+                        sx={{ borderRadius: 2, px: 3, py: 1, fontWeight: 600 }}
+                      >
+                        Làm mới
+                      </Button>
                       <Button variant="contained" startIcon={<AddIcon />} onClick={openAddCategory} sx={{ bgcolor: '#4CAF50', color: 'white', borderRadius: 2, px: 3, py: 1, fontWeight: 600 }}>
                         Thêm mới
                       </Button>
@@ -673,7 +799,9 @@ const AdminContentManagement = () => {
                           <TableRow>
                             <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>ID</TableCell>
                             <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Tên danh mục</TableCell>
+                            <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Slug</TableCell>
                             <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Mô tả</TableCell>
+                            <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Ngày tạo</TableCell>
                             <TableCell sx={{ color: '#f5f5f5', fontWeight: 600 }}>Thao tác</TableCell>
                           </TableRow>
                         </TableHead>
@@ -682,15 +810,41 @@ const AdminContentManagement = () => {
                             <TableRow key={cat.categoryID} hover>
                               <TableCell>{cat.categoryID}</TableCell>
                               <TableCell>{cat.categoryName}</TableCell>
-                              <TableCell>{cat.description}</TableCell>
                               <TableCell>
-                                <Button size="small" color="primary" onClick={() => openEditCategory(cat)} startIcon={<EditIcon />}>Sửa</Button>
-                                <Button size="small" color="error" onClick={() => setDeleteCategoryId(cat.categoryID)} startIcon={<DeleteIcon />}>Xóa</Button>
+                                <Chip
+                                  label={cat.slug || 'N/A'}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ fontFamily: 'monospace' }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" sx={{
+                                  maxWidth: 200,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {cat.description || 'Chưa có mô tả'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" color="text.secondary">
+                                  {cat.createdAt ? formatDate(cat.createdAt) : 'N/A'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Button size="small" color="primary" onClick={() => openEditCategory(cat)} startIcon={<EditIcon />} sx={{ mr: 1 }}>
+                                  Sửa
+                                </Button>
+                                <Button size="small" color="error" onClick={() => setDeleteCategoryId(cat.categoryID)} startIcon={<DeleteIcon />}>
+                                  Xóa
+                                </Button>
                               </TableCell>
                             </TableRow>
                           )) : (
                             <TableRow>
-                              <TableCell colSpan={4} align="center">Không có danh mục nào</TableCell>
+                              <TableCell colSpan={6} align="center">Không có danh mục nào</TableCell>
                             </TableRow>
                           )}
                         </TableBody>
@@ -702,11 +856,22 @@ const AdminContentManagement = () => {
                       <DialogContent>
                         <TextField
                           label="Tên danh mục"
-                          name="name"
-                          value={categoryForm.name}
+                          name="categoryName"
+                          value={categoryForm.categoryName}
                           onChange={handleCategoryFormChange}
-                          error={!!categoryError.name}
-                          helperText={categoryError.name}
+                          error={!!categoryError.categoryName}
+                          helperText={categoryError.categoryName}
+                          fullWidth
+                          sx={{ mb: 2 }}
+                          required
+                        />
+                        <TextField
+                          label="Slug (tùy chọn)"
+                          name="slug"
+                          value={categoryForm.slug}
+                          onChange={handleCategoryFormChange}
+                          error={!!categoryError.slug}
+                          helperText={categoryError.slug || "Để trống để tự động tạo từ tên danh mục"}
                           fullWidth
                           sx={{ mb: 2 }}
                         />
@@ -720,6 +885,16 @@ const AdminContentManagement = () => {
                           fullWidth
                           multiline
                           minRows={2}
+                          sx={{ mb: 2 }}
+                        />
+                        <TextField
+                          label="URL Thumbnail (tùy chọn)"
+                          name="thumbnailUrl"
+                          value={categoryForm.thumbnailUrl}
+                          onChange={handleCategoryFormChange}
+                          error={!!categoryError.thumbnailUrl}
+                          helperText={categoryError.thumbnailUrl}
+                          fullWidth
                         />
                       </DialogContent>
                       <DialogActions>
@@ -791,22 +966,171 @@ const AdminContentManagement = () => {
              minRows={6}
              sx={{ mb: 2 }}
            />
-           <TextField
-             select
-             label="Danh mục"
-             name="categoryIds"
-             value={blogForm.categoryIds}
-             onChange={handleBlogCategoryChange}
-             SelectProps={{ multiple: true }}
-             error={!!blogError.categoryIds}
-             helperText={blogError.categoryIds}
-             fullWidth
-             sx={{ mb: 2 }}
-           >
-             {categories.map(cat => (
-               <MenuItem key={cat.categoryID} value={cat.categoryID}>{cat.categoryName}</MenuItem>
-             ))}
-           </TextField>
+           <Box sx={{ mb: 2 }}>
+             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+               <Typography variant="subtitle2">Danh mục</Typography>
+               <Button
+                 size="small"
+                 onClick={() => {
+                   console.log('Force loading categories...');
+                   loadCategories();
+                 }}
+                 startIcon={<RefreshIcon />}
+                 sx={{ fontSize: '0.75rem' }}
+               >
+                 Tải lại
+               </Button>
+               <Typography variant="caption" color="text.secondary">
+                 ({categories.length} danh mục)
+               </Typography>
+               {categories.length === 0 && (
+                 <Button
+                   size="small"
+                   color="primary"
+                   onClick={() => {
+                     closeBlogModal();
+                     setTab('category');
+                   }}
+                   sx={{ fontSize: '0.75rem' }}
+                 >
+                   Tạo danh mục
+                 </Button>
+               )}
+             </Box>
+             {/* Category Selection Grid */}
+             <Box sx={{ mb: 2 }}>
+               <Typography variant="subtitle2" sx={{ mb: 2, color: blogError.categoryIds ? 'error.main' : 'text.primary' }}>
+                 Chọn danh mục ({(blogForm.categoryIds || []).length} đã chọn)
+                 {/* Debug info */}
+                 <span style={{ fontSize: '12px', color: 'gray', marginLeft: '10px' }}>
+                   [Debug: {JSON.stringify(blogForm.categoryIds)}]
+                 </span>
+               </Typography>
+
+               {categories && categories.length > 0 ? (
+                 <Grid container spacing={2}>
+                   {categories.map((category) => {
+                     const categoryId = Number(category.categoryID);
+                     const selectedIds = (blogForm.categoryIds || []);
+                     const isSelected = selectedIds.some(id => Number(id) === categoryId);
+
+                     console.log(`Category ${category.categoryName} (ID: ${categoryId}):`, {
+                       selectedIds,
+                       isSelected,
+                       categoryId
+                     });
+
+                     return (
+                       <Grid item xs={12} sm={6} md={4} lg={3} key={category.categoryID}>
+                         <Card
+                           sx={{
+                             cursor: 'pointer',
+                             border: isSelected ? '2px solid' : '1px solid',
+                             borderColor: isSelected ? 'primary.main' : 'grey.300',
+                             backgroundColor: isSelected ? 'primary.50' : 'background.paper',
+                             transition: 'all 0.2s ease-in-out',
+                             '&:hover': {
+                               transform: 'translateY(-2px)',
+                               boxShadow: 3,
+                               borderColor: isSelected ? 'primary.dark' : 'primary.light',
+                             },
+                             height: '100%',
+                             display: 'flex',
+                             flexDirection: 'column'
+                           }}
+                           onClick={() => handleCategoryCardClick(category.categoryID)}
+                         >
+                           <CardActionArea sx={{ flexGrow: 1, p: 0 }}>
+                             <CardContent sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                               {/* Category Name */}
+                               <Typography
+                                 variant="subtitle2"
+                                 sx={{
+                                   fontWeight: 600,
+                                   color: isSelected ? 'primary.main' : 'text.primary',
+                                   mb: 1,
+                                   lineHeight: 1.2
+                                 }}
+                               >
+                                 {category.categoryName}
+                               </Typography>
+
+                               {/* Category Description */}
+                               {category.description && (
+                                 <Typography
+                                   variant="caption"
+                                   sx={{
+                                     color: 'text.secondary',
+                                     display: '-webkit-box',
+                                     WebkitLineClamp: 2,
+                                     WebkitBoxOrient: 'vertical',
+                                     overflow: 'hidden',
+                                     flexGrow: 1
+                                   }}
+                                 >
+                                   {category.description}
+                                 </Typography>
+                               )}
+
+                               {/* Selection Indicator */}
+                               {isSelected && (
+                                 <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                                   <Chip
+                                     label="Đã chọn"
+                                     size="small"
+                                     color="primary"
+                                     variant="filled"
+                                     sx={{ fontSize: '0.7rem', height: 20 }}
+                                   />
+                                 </Box>
+                               )}
+                             </CardContent>
+                           </CardActionArea>
+                         </Card>
+                       </Grid>
+                     );
+                   })}
+                 </Grid>
+               ) : (
+                 /* Empty State */
+                 <Box
+                   sx={{
+                     textAlign: 'center',
+                     py: 4,
+                     border: '2px dashed',
+                     borderColor: 'grey.300',
+                     borderRadius: 2,
+                     backgroundColor: 'grey.50'
+                   }}
+                 >
+                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                     {loading ? 'Đang tải danh mục...' : 'Chưa có danh mục nào'}
+                   </Typography>
+                   {!loading && (
+                     <Button
+                       variant="outlined"
+                       color="primary"
+                       onClick={() => {
+                         closeBlogModal();
+                         setTab('category');
+                       }}
+                       startIcon={<AddIcon />}
+                       size="small"
+                     >
+                       Tạo danh mục mới
+                     </Button>
+                   )}
+                 </Box>
+               )}
+
+               {/* Error Message */}
+               {blogError.categoryIds && (
+                 <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                   {blogError.categoryIds}
+                 </Typography>
+               )}
+             </Box>
+           </Box>
            
            {/* Cover Image Upload */}
            <Box sx={{ mb: 2 }}>

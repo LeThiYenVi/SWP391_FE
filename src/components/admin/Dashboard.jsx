@@ -60,11 +60,15 @@ const Dashboard = () => {
   const [pendingConsultants, setPendingConsultants] = useState(0);
 
   useEffect(() => {
-    fetchDashboardStats();
+    // Chỉ gọi API khi user đã đăng nhập và có role admin
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      fetchDashboardStats();
 
-    // Fetch revenue data when month/year changes
-    if (selectedMonth && selectedYear) {
-      fetchRevenueData(selectedMonth, selectedYear);
+      // Fetch revenue data when month/year changes
+      if (selectedMonth && selectedYear) {
+        fetchRevenueData(selectedMonth, selectedYear);
+      }
     }
   }, [selectedMonth, selectedYear]);
 
@@ -195,12 +199,16 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Fetch all dashboard data on component mount
-    // fetchDashboardStats();
-    // fetchTopDesigners();
-    fetchOrderSystemData();
-    // fetchCustomerGrowth();
-    fetchData();
+    // Chỉ gọi API khi user đã đăng nhập và có role admin
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Fetch all dashboard data on component mount
+      // fetchDashboardStats();
+      // fetchTopDesigners();
+      fetchOrderSystemData();
+      // fetchCustomerGrowth();
+      fetchData();
+    }
   }, []);
 
   const fetchAccounts = async () => {

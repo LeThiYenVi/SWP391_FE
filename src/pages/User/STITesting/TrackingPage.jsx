@@ -13,6 +13,12 @@ const steps = [
     color: '#fbbf24',
   },
   {
+    key: 'CONFIRMED',
+    label: 'Đã xác nhận',
+    icon: <CheckCircle size={28} />,
+    color: '#10b981',
+  },
+  {
     key: 'SAMPLE_COLLECTED',
     label: 'Đã lấy mẫu',
     icon: <FlaskConical size={28} />,
@@ -27,13 +33,13 @@ const steps = [
   {
     key: 'COMPLETED',
     label: 'Hoàn thành',
-    icon: <CheckCircle size={28} />, 
+    icon: <CheckCircle size={28} />,
     color: '#22c55e',
   },
   {
     key: 'CANCELLED',
     label: 'Đã huỷ',
-    icon: <XCircle size={28} />, 
+    icon: <XCircle size={28} />,
     color: '#ef4444',
     isCancel: true,
   },
@@ -42,10 +48,11 @@ const steps = [
 const statusToStepIndex = status => {
   switch (status) {
     case 'PENDING': return 0;
-    case 'SAMPLE_COLLECTED': return 1;
-    case 'TESTING': return 2;
-    case 'COMPLETED': return 3;
-    case 'CANCELLED': return 4;
+    case 'CONFIRMED': return 1;
+    case 'SAMPLE_COLLECTED': return 2;
+    case 'TESTING': return 3;
+    case 'COMPLETED': return 4;
+    case 'CANCELLED': return 5;
     default: return 0;
   }
 };
@@ -68,6 +75,7 @@ const TrackingPage = () => {
     setLoading(true);
     try {
       const result = await bookingService.getBookingById(bookingId);
+
       if (result.success) {
         setBookingData(result.data);
         setStatus({
@@ -78,11 +86,11 @@ const TrackingPage = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching booking data:', error);
+      // Handle error silently or show user-friendly message
     } finally {
       setLoading(false);
     }
-  }, [bookingId, bookingService]);
+  }, [bookingId]);
 
   // Get status message
   const getStatusMessage = (status) => {
@@ -125,11 +133,11 @@ const TrackingPage = () => {
   }, [fetchBookingData]);
 
   useEffect(() => {
-    if (!bookingId || !connected) return;
+    if (!bookingId || !connected) {
+      return;
+    }
 
     const subscription = subscribeToBooking(bookingId, (update) => {
-      console.log('Received booking update:', update);
-
       // Update status
       setStatus(prevStatus => {
         // Only show notification if status actually changed
@@ -147,8 +155,32 @@ const TrackingPage = () => {
     };
   }, [bookingId, connected, subscribeToBooking, unsubscribeFromBooking]);
 
-  const currentStep = status ? statusToStepIndex(status.status) : 0;
+  // Calculate current step - when a status is achieved, that step is completed and next step becomes active
+  const getStepStatus = (status) => {
+    if (!status) return { currentStep: 0, completedSteps: [] };
+
+    const statusIndex = statusToStepIndex(status.status);
+
+    // When a status is achieved, that step and all previous steps are completed
+    // The next step becomes the current active step
+    const completedSteps = [];
+    for (let i = 0; i <= statusIndex; i++) {
+      completedSteps.push(i);
+    }
+
+    // Current active step is the next step after the completed status
+    // Unless it's the final step or cancelled
+    const currentStep = status.status === 'COMPLETED' || status.status === 'CANCELLED'
+      ? statusIndex
+      : Math.min(statusIndex + 1, steps.length - 1);
+
+    return { currentStep, completedSteps };
+  };
+
+  const { currentStep, completedSteps } = getStepStatus(status);
   const isCancelled = status && status.status === 'CANCELLED';
+
+
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center py-8 bg-gray-50">
@@ -189,12 +221,14 @@ const TrackingPage = () => {
               <span className="font-medium"> Ngày tạo:</span> {new Date(bookingData.createdAt).toLocaleString('vi-VN')}
             </div>
           )}
+
+
         </div>
         {/* Stepper */}
         <div className="flex items-center justify-between mb-8">
           {steps.slice(0, isCancelled ? 5 : 4).map((step, idx) => {
             const isActive = idx === currentStep && (!isCancelled || step.isCancel);
-            const isCompleted = idx < currentStep && !isCancelled;
+            const isCompleted = completedSteps.includes(idx) && !isCancelled && idx !== currentStep;
             const isFuture = idx > currentStep && !isCancelled;
             return (
               <div key={step.key} className="flex-1 flex flex-col items-center relative">

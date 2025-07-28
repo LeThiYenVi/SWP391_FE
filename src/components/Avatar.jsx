@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 
-const Avatar = ({ 
-  src, 
-  alt = "Avatar", 
-  size = "md", 
-  fallbackSrc = "https://res.cloudinary.com/demo/image/upload/v1/samples/people/boy-snow-hoodie.jpg",
+const Avatar = ({
+  src,
+  alt = "Avatar",
+  size = "md",
+  fallbackSrc = "https://cdn-icons-png.flaticon.com/512/149/149071.png",
   className = "",
-  ...props 
+  ...props
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const sizeClasses = {
     sm: "w-8 h-8",
-    md: "w-16 h-16", 
+    md: "w-16 h-16",
     lg: "w-24 h-24",
     xl: "w-32 h-32"
   };

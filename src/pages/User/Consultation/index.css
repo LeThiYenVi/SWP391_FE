@@ -4,7 +4,7 @@
 /* Consultation Page Styles */
 .consultation-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #ffffff;
   padding: 2rem 0;
 }
 
@@ -18,9 +18,9 @@
 .page-title {
   font-size: 2.5rem !important;
   font-weight: 700 !important;
-  color: #1a365d !important;
+  color: #134e4a !important;
   margin-bottom: 1rem !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -55,8 +55,8 @@
 
 .consultant-card:hover {
   transform: translateY(-8px) !important;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15) !important;
-  border-color: #667eea !important;
+  box-shadow: 0 20px 25px rgba(20, 184, 166, 0.15) !important;
+  border-color: #14b8a6 !important;
 }
 
 .consultant-card .MuiCardContent-root {
@@ -68,8 +68,8 @@
 
 /* Consultant Avatar */
 .consultant-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
 }
 
 /* Time Slot Grid Styles */
@@ -93,18 +93,18 @@
 }
 
 .time-slot-item:hover {
-  border-color: #667eea;
-  background: #f7fafc;
+  border-color: #14b8a6;
+  background: #f0fdfa;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
 }
 
 .time-slot-item.selected {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #14b8a6;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
 }
 
 .time-slot-item.selected .time-slot-time {
@@ -177,9 +177,9 @@
 }
 
 .date-button.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
 }
 
 /* Dialog Styles */
@@ -190,7 +190,7 @@
 }
 
 .booking-dialog .MuiDialogTitle-root {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: white !important;
   padding: 1.5rem 2rem !important;
 }
@@ -215,8 +215,8 @@
 }
 
 .consultant-summary .MuiAvatar-root {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
 }
 
 /* Section Headers */
@@ -234,7 +234,7 @@
   content: '';
   width: 4px;
   height: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   border-radius: 2px;
 }
 
@@ -284,15 +284,15 @@
 }
 
 .form-control .MuiOutlinedInput-root:hover {
-  border-color: #667eea;
+  border-color: #14b8a6;
 }
 
 .form-control .MuiOutlinedInput-root.Mui-focused {
-  border-color: #667eea;
+  border-color: #14b8a6;
 }
 
 .form-control .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #667eea;
+  border-color: #14b8a6;
   border-width: 2px;
 }
 
@@ -306,15 +306,15 @@
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3) !important;
 }
 
 .action-button.primary:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.4) !important;
 }
 
 .action-button.secondary {
@@ -324,9 +324,9 @@
 }
 
 .action-button.secondary:hover {
-  border-color: #667eea !important;
-  color: #667eea !important;
-  background: #f7fafc !important;
+  border-color: #14b8a6 !important;
+  color: #14b8a6 !important;
+  background: #f0fdfa !important;
 }
 
 /* Loading States */
@@ -338,7 +338,7 @@
 }
 
 .loading-spinner {
-  color: #667eea !important;
+  color: #14b8a6 !important;
 }
 
 /* Responsive Design */

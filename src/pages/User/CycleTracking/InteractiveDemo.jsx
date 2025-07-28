@@ -304,8 +304,6 @@ const InteractiveDemo = () => {
         message.error(response.message || 'Ghi nhận thất bại');
       }
     } catch (error) {
-      console.error('Error quick logging:', error);
-      // Add to demo logs
       setDemoLogs(prev => [...prev, {
         date: dayjs().format('YYYY-MM-DD'),
         [quickLogType.toLowerCase()]: quickLogContent

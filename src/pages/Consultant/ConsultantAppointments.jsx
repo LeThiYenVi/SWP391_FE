@@ -43,7 +43,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
-import { getConsultationBookingsAPI } from '../../services/ConsultantService';
+import { getConsultantBookingsAPI } from '../../services/ConsultationService';
 import { confirmConsultationAPI, updateConsultationStatusAPI, confirmWithMeetingLinkAPI } from '../../services/ConsultationService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -70,7 +70,7 @@ const ConsultantAppointments = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const data = await getConsultationBookingsAPI();
+      const data = await getConsultantBookingsAPI();
       setBookings(data || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -225,7 +225,7 @@ const ConsultantAppointments = () => {
                 <TableCell>Ngày giờ</TableCell>
                 <TableCell>Hình thức</TableCell>
                 <TableCell>Trạng thái</TableCell>
-                <TableCell>Ghi chú</TableCell>
+                <TableCell>Meeting Link</TableCell>
                 <TableCell>Thao tác</TableCell>
               </TableRow>
             </TableHead>
@@ -273,21 +273,22 @@ const ConsultantAppointments = () => {
                   </TableCell>
                   <TableCell>
                     <Box>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                        {booking.notes || 'Không có ghi chú'}
-                      </Typography>
-                      {booking.meetingLink && (
-                        <Typography 
-                          variant="body2" 
-                          color="primary" 
-                          sx={{ 
+                      {booking.meetingLink ? (
+                        <Typography
+                          variant="body2"
+                          color="primary"
+                          sx={{
                             cursor: 'pointer',
                             textDecoration: 'underline',
-                            fontSize: '0.75rem'
+                            fontWeight: 'medium'
                           }}
                           onClick={() => window.open(booking.meetingLink, '_blank')}
                         >
-                          📹 Link Meeting
+                          📹 {booking.meetingLink.length > 30 ? booking.meetingLink.substring(0, 30) + '...' : booking.meetingLink}
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          {booking.status === 'SCHEDULED' ? 'Chưa có link' : 'Không có link'}
                         </Typography>
                       )}
                     </Box>

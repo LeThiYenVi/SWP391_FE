@@ -22,7 +22,9 @@ import {
   Rating,
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
+  Tabs,
+  Tab
 } from '@mui/material';
 import './index.css';
 import { 
@@ -41,6 +43,7 @@ import { getPublicConsultantsAPI } from '../../../services/ConsultantService';
 import { bookConsultationAPI, getConsultantAvailabilityAPI } from '../../../services/ConsultationService';
 import { format, addDays, startOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import ConsultationHistory from '../../../components/ConsultationHistory';
 
 const ConsultationPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -57,6 +60,7 @@ const ConsultationPage = () => {
     notes: '',
     consultationType: 'ONLINE'
   });
+  const [activeTab, setActiveTab] = useState(0); // 0: Đặt lịch, 1: Lịch sử
 
   // Generate available dates (next 14 days)
   const generateAvailableDates = () => {
@@ -209,8 +213,19 @@ const ConsultationPage = () => {
         </Typography>
       </Box>
 
-      {/* Consultants Grid */}
-      <Grid container spacing={3} className="consultants-grid">
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="Đặt lịch tư vấn" />
+          <Tab label="Lịch sử tư vấn" />
+        </Tabs>
+      </Box>
+
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <>
+          {/* Consultants Grid */}
+          <Grid container spacing={3} className="consultants-grid">
         {consultants.map((consultant) => (
           <Grid item xs={12} md={4} key={consultant.id}>
             <Card className="consultant-card">
@@ -498,6 +513,13 @@ const ConsultationPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
+
+      {/* History Tab */}
+      {activeTab === 1 && (
+        <ConsultationHistory />
+      )}
     </Box>
   );
 };

@@ -7,6 +7,7 @@ export default defineConfig(() => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.0.0'),
+    global: 'globalThis',
   },
   resolve: {
     alias: {
@@ -25,6 +26,11 @@ export default defineConfig(() => ({
     port: 3000,
     host: true,
     open: true,
+    // ✅ Tắt HMR WebSocket khi BE down để tránh spam console
+    hmr: {
+      port: 3001, // Dùng port khác để tránh conflict
+      overlay: false, // Tắt error overlay
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -63,10 +69,8 @@ export default defineConfig(() => ({
     sourcemap: true,
     rollupOptions: {
       output: {
-        // Auto hash cho JS files
         entryFileNames: '[name].[hash].js',
         chunkFileNames: '[name].[hash].js',
-        // Auto hash cho CSS và assets
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
@@ -78,7 +82,6 @@ export default defineConfig(() => ({
           }
           return `assets/[name].[hash].${ext}`;
         },
-        // Chunk splitting tối ưu
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
@@ -91,8 +94,5 @@ export default defineConfig(() => ({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'buffer', 'process'],
-  },
-  define: {
-    global: 'globalThis',
   },
 }));

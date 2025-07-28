@@ -15,7 +15,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   useEffect(() => {
-    // Kiểm tra version và clear cache nếu cần
     checkVersionAndClearCache();
   }, []);
 

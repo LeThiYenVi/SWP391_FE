@@ -14,7 +14,7 @@ const createTestingServiceAPI = async (serviceData) => {
 
 const updateTestingServiceAPI = async (serviceId, serviceData) => {
   try {
-    const response = await instance.put(`/api/admin/testing-services/${serviceId}`, serviceData);
+    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, serviceData);
     console.log('Update testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -95,6 +95,24 @@ const autoCreateConsultantSlotsAPI = async (consultantId, data) => {
     const response = await instance.post(`/api/admin/consultants/${consultantId}/auto-create-slots`, data);
     return response.data;
   } catch (error) {
+    throw error;
+  }
+};
+
+const uploadConsultantAvatarAPI = async (consultantId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await instance.post(`/api/admin/consultants/${consultantId}/profile-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('Upload consultant avatar success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Upload consultant avatar error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -360,6 +378,7 @@ export {
   getAllConsultantsAPI,
   getConsultantByIdAPI,
   autoCreateConsultantSlotsAPI,
+  uploadConsultantAvatarAPI,
   
   // User Management APIs
   getAllUsersAPI,

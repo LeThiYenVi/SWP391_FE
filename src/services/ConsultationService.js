@@ -47,10 +47,8 @@ const getConsultantBookingsAPI = async (date = null, status = null) => {
     if (status) params.status = status;
     
     const response = await instance.get('/api/consultation/consultant-bookings', { params });
-    console.log('Get consultant bookings success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Get consultant bookings error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -115,28 +113,21 @@ const confirmConsultationAPI = async (consultationId, confirmationData) => {
 const confirmWithMeetingLinkAPI = async (consultationId) => {
   try {
     const response = await instance.post(`/api/consultation/consultant/${consultationId}/confirm-with-meeting`);
-    console.log('Confirm with meeting link success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Confirm with meeting link error:', error.response?.data || error.message);
     throw error;
   }
 };
 
 export {
-  // Availability APIs
   getConsultantAvailabilityAPI,
-  
-  // Booking APIs
   bookConsultationAPI,
   getUserBookingsAPI,
   getConsultantBookingsAPI,
-  
-  // Management APIs
   updateConsultationStatusAPI,
   getConsultationDetailsAPI,
   cancelConsultationAPI,
   getUpcomingConsultationsAPI,
   confirmConsultationAPI,
   confirmWithMeetingLinkAPI
-}; 
+};

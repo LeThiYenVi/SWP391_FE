@@ -26,7 +26,7 @@ import {
   getTodayAppointmentsAPI,
   getPendingAppointmentsAPI,
   getUpcomingAppointmentsAPI,
-  getUnreadMessagesCountAPI,
+  // getUnreadMessagesCountAPI, // ❌ Disable chat API
   getRevenueAPI
 } from '../../services/ConsultantService';
 
@@ -75,50 +75,74 @@ const ConsultantDashboard = () => {
         console.log('Loading dashboard data...');
         hasLoadedRef.current = true; // Đánh dấu đã load
         try {
-          await Promise.all([
-            loadDashboardStats(),
-            loadAppointments(),
-            loadConversations(),
+          // ✅ Gọi trực tiếp API thay vì qua Context để tránh re-render loop
+          setDashboardLoading(true);
+          setDashboardError(null);
+
+          // ✅ Loại bỏ chat API để tránh infinite loop
+          const [today, pending, upcoming, revToday, revMonth, revTotal] = await Promise.all([
+            getTodayAppointmentsAPI(),
+            getPendingAppointmentsAPI(),
+            getUpcomingAppointmentsAPI(),
+            // getUnreadMessagesCountAPI(), // ❌ Disable chat API
+            getRevenueAPI('today'),
+            getRevenueAPI('month'),
+            getRevenueAPI('total'),
           ]);
+
+          setTodayCount(Array.isArray(today) ? today.length : 0);
+          setPendingCount(Array.isArray(pending) ? pending.length : 0);
+          setUpcomingCount(Array.isArray(upcoming) ? upcoming.length : 0);
+          setUnreadCount(0); // ✅ Set to 0 thay vì gọi API
+          setRevenueToday(revToday?.amount || 0);
+          setRevenueMonth(revMonth?.amount || 0);
+          setRevenueTotal(revTotal?.amount || 0);
+
           console.log('Dashboard data loaded successfully');
         } catch (error) {
           console.error('Error loading dashboard data:', error);
+          setDashboardError('Không thể tải dữ liệu dashboard');
           hasLoadedRef.current = false; // Reset nếu lỗi
+        } finally {
+          setDashboardLoading(false);
         }
       };
       loadData();
     }
-  }, [user?.role]); // Chỉ phụ thuộc vào user?.role
+  }, [user?.role]); // ✅ Chỉ phụ thuộc vào user.role, không phụ thuộc vào functions
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setDashboardLoading(true);
-      setDashboardError(null);
-      try {
-        const [today, pending, upcoming, unread, revToday, revMonth, revTotal] = await Promise.all([
-          getTodayAppointmentsAPI(),
-          getPendingAppointmentsAPI(),
-          getUpcomingAppointmentsAPI(),
-          getUnreadMessagesCountAPI(),
-          getRevenueAPI('today'),
-          getRevenueAPI('month'),
-          getRevenueAPI('total'),
-        ]);
-        setTodayCount(Array.isArray(today) ? today.length : 0);
-        setPendingCount(Array.isArray(pending) ? pending.length : 0);
-        setUpcomingCount(Array.isArray(upcoming) ? upcoming.length : 0);
-        setUnreadCount(typeof unread === 'number' ? unread : 0);
-        setRevenueToday(revToday?.amount || 0);
-        setRevenueMonth(revMonth?.amount || 0);
-        setRevenueTotal(revTotal?.amount || 0);
-      } catch (err) {
-        setDashboardError('Không thể tải dữ liệu dashboard');
-      } finally {
-        setDashboardLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
+  // ✅ LOẠI BỎ useEffect thứ 2 để tránh duplicate API calls
+  // useEffect(() => {
+  //   if (user?.role === 'ROLE_CONSULTANT') {
+  //     const fetchDashboardData = async () => {
+  //       setDashboardLoading(true);
+  //       setDashboardError(null);
+  //       try {
+  //         const [today, pending, upcoming, unread, revToday, revMonth, revTotal] = await Promise.all([
+  //           getTodayAppointmentsAPI(),
+  //           getPendingAppointmentsAPI(),
+  //           getUpcomingAppointmentsAPI(),
+  //           getUnreadMessagesCountAPI(),
+  //           getRevenueAPI('today'),
+  //           getRevenueAPI('month'),
+  //           getRevenueAPI('total'),
+  //         ]);
+  //         setTodayCount(Array.isArray(today) ? today.length : 0);
+  //         setPendingCount(Array.isArray(pending) ? pending.length : 0);
+  //         setUpcomingCount(Array.isArray(upcoming) ? upcoming.length : 0);
+  //         setUnreadCount(typeof unread === 'number' ? unread : 0);
+  //         setRevenueToday(revToday?.amount || 0);
+  //         setRevenueMonth(revMonth?.amount || 0);
+  //         setRevenueTotal(revTotal?.amount || 0);
+  //       } catch (err) {
+  //         setDashboardError('Không thể tải dữ liệu dashboard');
+  //       } finally {
+  //         setDashboardLoading(false);
+  //       }
+  //     };
+  //     fetchDashboardData();
+  //   }
+  // }, [user?.role]); // ✅ Chỉ phụ thuộc vào user?.role
 
   // Helper functions để format data
   const formatTime = (timeString) => {
@@ -160,7 +184,7 @@ const ConsultantDashboard = () => {
 
   const handleChatAction = (chatId, action) => {
     if (action === 'open') {
-      navigate(`/consultant/messages/${chatId}`);
+      navigate(`/consultant/messages`);
     }
   };
 
@@ -168,14 +192,14 @@ const ConsultantDashboard = () => {
     // Lấy data thực từ context
     const todayAppointments = getTodayAppointments();
     const upcomingAppointments = getUpcomingAppointments();
-    const unreadCount = getUnreadMessagesCount();
+    // const unreadCount = getUnreadMessagesCount(); // ❌ Disable chat
     // Nếu conversations là mảng rỗng hoặc trả về lỗi thì hiển thị thông báo
-    const recentConversations = Array.isArray(conversations) && conversations.length > 0 ? conversations.slice(0, 3) : [];
+    // const recentConversations = Array.isArray(conversations) && conversations.length > 0 ? conversations.slice(0, 3) : []; // ❌ Disable chat
 
     // Stats từ dashboardStats hoặc tính toán từ data
     const stats = {
       completedToday: todayAppointments.filter(apt => apt.status === 'COMPLETED').length,
-      activeChats: unreadCount,
+      activeChats: 0, // ✅ Set to 0 thay vì unreadCount
       pendingAppointments: upcomingAppointments.length,
       rating: dashboardStats && dashboardStats.averageRating ? dashboardStats.averageRating : '--',
       monthlyRevenue: dashboardStats && dashboardStats.monthlyRevenue ? dashboardStats.monthlyRevenue : 0,
@@ -236,7 +260,7 @@ const ConsultantDashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="consultant-grid-2">
+        <div className="consultant-grid-single">
           {/* Upcoming Appointments */}
           <div className="glass-card hover-lift">
             <div className="card-header">
@@ -301,52 +325,7 @@ const ConsultantDashboard = () => {
             </div>
           </div>
 
-          {/* Recent Chats */}
-          <div className="glass-card hover-lift">
-            <div className="card-header">
-              <h3 className="text-gradient-primary">Tin nhắn gần đây</h3>
-              <Link to="/consultant/messages" className="btn-glass">
-                Xem tất cả
-              </Link>
-            </div>
-            <div className="chats-list">
-              {loading ? (
-                <div style={{display:'flex',justifyContent:'center',padding:'2rem'}}>
-                  <Loader2 size={24} className="animate-spin" />
-                </div>
-              ) : recentConversations.length > 0 ? (
-                recentConversations.map(conversation => (
-                  <div
-                    key={conversation.id}
-                    className="chat-item"
-                    onClick={() => handleChatAction(conversation.id, 'open')}
-                  >
-                    <div className="chat-avatar">
-                      <img 
-                        src={conversation.customerAvatar || 'https://i.pravatar.cc/100?u=1'} 
-                        alt={conversation.customerName} 
-                      />
-                      {conversation.customerStatus === 'online' && <div className="online-indicator"></div>}
-                    </div>
-                    <div className="chat-content">
-                      <div className="chat-header">
-                        <h4>{conversation.customerName}</h4>
-                        <span className="chat-time">{getTimeAgo(conversation.lastMessageTime)}</span>
-                      </div>
-                      <p className="chat-message">{conversation.lastMessage || 'Chưa có tin nhắn'}</p>
-                    </div>
-                    {conversation.unreadCount > 0 && (
-                      <div className="unread-badge">{conversation.unreadCount}</div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div style={{textAlign:'center',padding:'2rem',color:'#64748b'}}>
-                  Chưa có dữ liệu tin nhắn (API chưa tích hợp)
-                </div>
-              )}
-            </div>
-          </div>
+
         </div>
 
         {/* Revenue Overview */}

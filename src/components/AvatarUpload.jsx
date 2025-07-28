@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Upload, Trash2, Check, X } from 'lucide-react';
-import axios from '../services/customize-axios';
+import instance from '../services/customize-axios';
 import { toast } from 'react-toastify';
 
 const AvatarUpload = ({ onAvatarUpdate, currentAvatarUrl }) => {
@@ -17,7 +17,7 @@ const AvatarUpload = ({ onAvatarUpdate, currentAvatarUrl }) => {
 
   const checkAvatarStatus = async () => {
     try {
-      const response = await axios.get('/api/user/avatar/check');
+      const response = await instance.get('/api/user/avatar/check');
       setHasAvatar(response.data.hasAvatar);
       setCurrentUrl(response.data.avatarUrl);
     } catch (error) {
@@ -62,7 +62,7 @@ const AvatarUpload = ({ onAvatarUpdate, currentAvatarUrl }) => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await axios.post('/api/user/avatar/upload', formData, {
+      const response = await instance.post('/api/user/avatar/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -101,7 +101,7 @@ const AvatarUpload = ({ onAvatarUpdate, currentAvatarUrl }) => {
 
     setDeleting(true);
     try {
-      const response = await axios.delete('/api/user/avatar/delete');
+      const response = await instance.delete('/api/user/avatar/delete');
       
       toast.success('Xóa avatar thành công!');
       setCurrentUrl(response.data.user.avatarUrl);
@@ -135,7 +135,7 @@ const AvatarUpload = ({ onAvatarUpdate, currentAvatarUrl }) => {
       <div className="current-avatar-section">
         <div className="avatar-preview">
           <img
-            src={currentUrl || 'https://res.cloudinary.com/demo/image/upload/v1/samples/people/boy-snow-hoodie.jpg'}
+            src={currentUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
             alt="Avatar"
             className="avatar-image"
           />

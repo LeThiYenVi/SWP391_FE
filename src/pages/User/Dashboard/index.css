@@ -1,22 +1,22 @@
 /* Dashboard CSS - Đồng nhất với HomePage */
 
-/* CSS Variables - sử dụng từ HomePage */
+/* CSS Variables - Updated with light blue/teal theme */
 :root {
-  --primary-gradient: linear-gradient(135deg, #b0b9bc 0%, #568392 100%);
-  --primary-color: #568392;
-  --primary-light: #b0b9bc;
-  --primary-dark: #2d5a66;
-  --secondary-color: #1f2b6c;
-  --accent-color: #ffd700;
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a5568;
-  --text-light: #718096;
+  --primary-gradient: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #10b981 100%);
+  --primary-color: #10b981;
+  --primary-light: #a7f3d0;
+  --primary-dark: #047857;
+  --secondary-color: #0891b2;
+  --accent-color: #fbbf24;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-light: #6b7280;
   --text-white: #ffffff;
   --background: #ffffff;
-  --background-light: #f8fafc;
-  --background-gray: #f1f5f9;
-  --border-color: #e2e8f0;
-  --border-light: #f1f5f9;
+  --background-light: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  --background-gray: #f0fdfa;
+  --border-color: #d1fae5;
+  --border-light: #ecfdf5;
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
@@ -45,7 +45,7 @@
 /* ===== WELCOME SECTION ===== */
 .dashboard-welcome {
   padding: 60px 0 70px;
-  background: linear-gradient(135deg, #b0b9bc 0%, #568392 100%);
+  background: var(--primary-gradient);
   position: relative;
 }
 
@@ -56,7 +56,7 @@
   left: 0;
   width: 100%;
   height: 30px;
-  background-color: var(--background-light);
+  background: var(--background-light);
   border-radius: 30px 30px 0 0;
 }
 
@@ -117,7 +117,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(86, 131, 146, 0.02);
+  background: rgba(16, 185, 129, 0.03);
   opacity: 0;
   transition: var(--transition);
   z-index: 0;
@@ -304,7 +304,7 @@
 
 .appointment-status {
   padding: 8px 16px;
-  background: rgba(86, 131, 146, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   color: var(--primary-dark);
   border-radius: var(--border-radius-xl);
   font-size: 12px;
@@ -650,7 +650,7 @@ html {
   color: var(--text-white);
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(86, 131, 146, 0.25);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
   border: 2px solid #fff;
   overflow: hidden;
 }
@@ -891,7 +891,7 @@ html {
 }
 
 .notification-item.unread {
-  background: rgba(86, 131, 146, 0.03);
+  background: rgba(16, 185, 129, 0.03);
   border-left: 4px solid var(--primary-color);
 }
 
@@ -901,7 +901,7 @@ html {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: rgba(86, 131, 146, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   border-radius: var(--border-radius);
   flex-shrink: 0;
 }
@@ -1006,7 +1006,7 @@ html {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: rgba(86, 131, 146, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   color: var(--primary-color);
   border-radius: var(--border-radius);
   flex-shrink: 0;
@@ -1133,7 +1133,7 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(86, 131, 146, 0.02);
+  background: rgba(16, 185, 129, 0.02);
   opacity: 0;
   transition: var(--transition);
   z-index: 0;
@@ -1346,15 +1346,23 @@ html {
 }
 
 .chat-container {
-  display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
   min-height: 600px;
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-lg);
   overflow: hidden;
   background: var(--background);
   box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+/* Chat Action Button - nút bên phải */
+.chat-action-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
 }
 
 /* Chat Sidebar */
@@ -1421,7 +1429,7 @@ html {
 }
 
 .chat-item.active {
-  background: rgba(86, 131, 146, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   border-left: 4px solid var(--primary-color);
 }
 
@@ -1730,6 +1738,63 @@ html {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+/* Chat Active State */
+.chat-active {
+  background: var(--background);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.chat-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.chat-info h3 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chat-info p {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.last-message {
+  font-size: 13px;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.continue-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.continue-chat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
 /* Online Counselors */
 .online-counselors-section {
   margin-top: 32px;
@@ -1841,18 +1906,29 @@ html {
   }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Chat Responsive Design */
 @media (max-width: 1024px) {
   .chat-container {
-    grid-template-columns: 300px 1fr;
+    min-height: 550px;
   }
 }
 
 @media (max-width: 768px) {
   .chat-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
     min-height: 500px;
+  }
+
+  .chat-action-button {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-top: 16px;
+    text-align: center;
   }
 
   .chat-sidebar {

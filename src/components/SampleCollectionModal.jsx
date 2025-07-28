@@ -102,7 +102,7 @@ const SampleCollectionModal = ({
             <h3 className="font-semibold text-gray-800 mb-3">Thông tin khách hàng</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <p className="text-sm text-gray-700">
-                <span className="font-medium">Khách hàng:</span> {booking.customerName}
+                <span className="font-medium">Khách hàng:</span> {booking.customerFullName}
               </p>
               <p className="text-sm text-gray-700">
                 <span className="font-medium">Dịch vụ:</span> {booking.serviceName}
