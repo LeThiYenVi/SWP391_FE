@@ -1,8 +1,8 @@
 /**
  * ===== COMPONENT: AdminConsultants =====
- * 
+ *
  * Mô tả: Component quản lý danh sách tư vấn viên trong admin panel
- * 
+ *
  * Chức năng chính:
  * - Hiển thị danh sách tư vấn viên dưới dạng bảng với phân trang
  * - Tìm kiếm tư vấn viên theo tên, email, chuyên môn, username
@@ -12,13 +12,13 @@
  * - Xóa tư vấn viên với xác nhận
  * - Tạo lịch tự động cho tư vấn viên cụ thể hoặc tạo lịch chung
  * - Refresh dữ liệu
- * 
+ *
  * State management:
  * - Quản lý danh sách tư vấn viên và trạng thái loading/error
  * - Quản lý trạng thái các modal (view, edit, delete, add)
  * - Quản lý phân trang và tìm kiếm
  * - Quản lý form data cho chỉnh sửa
- * 
+ *
  * API calls:
  * - getAllConsultantsAPI: Lấy danh sách tất cả tư vấn viên
  * - updateConsultantAPI: Cập nhật thông tin tư vấn viên
@@ -40,18 +40,18 @@ import Sidebar from '../../components/admin/AdminSidebar';
 import Header from '../../components/admin/AdminHeader';
 
 // Import các component UI từ Material-UI
-import { 
-  Box, 
-  Typography, 
-  InputBase, 
-  Button, 
-  Table, 
-  TableHead, 
-  TableBody, 
-  TableRow, 
-  TableCell, 
-  Paper, 
-  TableContainer, 
+import {
+  Box,
+  Typography,
+  InputBase,
+  Button,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+  TableContainer,
   IconButton,
   Dialog,
   DialogTitle,
@@ -70,7 +70,7 @@ import {
   Stack,
   Divider,
   Avatar,
-  TextField
+  TextField,
 } from '@mui/material';
 
 // Import hook để xử lý navigation
@@ -87,12 +87,12 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 
 // Import các API service để gọi backend
 import {
-  getAllConsultantsAPI,        // API lấy danh sách tất cả tư vấn viên
-  createConsultantAPI,         // API tạo tư vấn viên mới
-  updateConsultantAPI,         // API cập nhật thông tin tư vấn viên
-  deleteConsultantAPI,         // API xóa tư vấn viên
+  getAllConsultantsAPI, // API lấy danh sách tất cả tư vấn viên
+  createConsultantAPI, // API tạo tư vấn viên mới
+  updateConsultantAPI, // API cập nhật thông tin tư vấn viên
+  deleteConsultantAPI, // API xóa tư vấn viên
   autoCreateConsultantSlotsAPI, // API tạo lịch tự động cho tư vấn viên
-  autoCreateCommonSlotsAPI     // API tạo lịch chung tự động
+  autoCreateCommonSlotsAPI, // API tạo lịch chung tự động
 } from '../../services/AdminService';
 
 // Import component modal để thêm tư vấn viên mới
@@ -102,24 +102,24 @@ import AddConsultantModal from '../../components/admin/AddConsultantModal';
 export default function AdminConsultants() {
   // Hook để lấy thông tin location từ router (dùng để hiển thị toast message)
   const location = useLocation();
-  
+
   // ===== STATE VARIABLES =====
   // State cho tìm kiếm
   const [searchTerm, setSearchTerm] = useState(''); // Từ khóa tìm kiếm
-  
+
   // State cho dữ liệu tư vấn viên
   const [consultants, setConsultants] = useState([]); // Tất cả tư vấn viên từ API
   const [filteredConsultants, setFilteredConsultants] = useState([]); // Danh sách sau khi lọc/tìm kiếm
-  
+
   // State cho phân trang
   const [page, setPage] = useState(1); // Trang hiện tại
   const pageSize = 10; // Số item trên mỗi trang
-  
+
   // State cho loading và error
   const [loading, setLoading] = useState(true); // Trạng thái loading khi fetch data
   const [error, setError] = useState(null); // Lưu thông báo lỗi nếu có
   const [refreshKey, setRefreshKey] = useState(0); // Key để trigger refresh data
-  
+
   // ===== MODAL STATES =====
   const [viewModalOpen, setViewModalOpen] = useState(false); // Modal xem chi tiết
   const [editModalOpen, setEditModalOpen] = useState(false); // Modal chỉnh sửa
@@ -152,9 +152,11 @@ export default function AdminConsultants() {
       setLoading(true); // Bật loading
       const response = await getAllConsultantsAPI();
       console.log('Consultants response:', response);
-      
+
       // Xử lý response data (có thể là array trực tiếp hoặc trong response.data)
-      const consultantsData = Array.isArray(response) ? response : (response.data || []);
+      const consultantsData = Array.isArray(response)
+        ? response
+        : response.data || [];
       setConsultants(consultantsData); // Set data gốc
       setFilteredConsultants(consultantsData); // Set data cho hiển thị
       setError(null); // Clear error nếu thành công
@@ -176,7 +178,9 @@ export default function AdminConsultants() {
         // Tìm kiếm theo email
         consultant.email?.toLowerCase().includes(lowerCaseSearchTerm) ||
         // Tìm kiếm theo chuyên môn
-        consultant.specialization?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        consultant.specialization
+          ?.toLowerCase()
+          .includes(lowerCaseSearchTerm) ||
         // Tìm kiếm theo username
         consultant.username?.toLowerCase().includes(lowerCaseSearchTerm)
       );
@@ -188,7 +192,7 @@ export default function AdminConsultants() {
   // Hàm xử lý refresh dữ liệu
   const handleRefresh = () => {
     setRefreshKey(prevKey => prevKey + 1); // Tăng refreshKey để trigger useEffect
-    toast.success("Đã làm mới dữ liệu!");
+    toast.success('Đã làm mới dữ liệu!');
   };
 
   // Hàm mở modal thêm tư vấn viên mới
@@ -198,15 +202,13 @@ export default function AdminConsultants() {
 
   // ===== VIEW, EDIT, DELETE HANDLERS =====
   // Hàm xử lý xem chi tiết tư vấn viên
-  const handleView = (consultant) => {
+  const handleView = consultant => {
     setSelectedConsultant(consultant); // Set tư vấn viên được chọn
     setViewModalOpen(true); // Mở modal xem chi tiết
   };
 
   // Hàm xử lý chỉnh sửa tư vấn viên
-  const handleEdit = (consultant) => {
-  // Hàm xử lý chỉnh sửa tư vấn viên
-  const handleEdit = (consultant) => {
+  const handleEdit = consultant => {
     setSelectedConsultant(consultant); // Set tư vấn viên được chọn
     // Khởi tạo form với dữ liệu hiện tại của tư vấn viên
     setEditForm({
@@ -219,13 +221,13 @@ export default function AdminConsultants() {
       biography: consultant.biography || '',
       qualifications: consultant.qualifications || '',
       experienceYears: consultant.experienceYears || 0,
-      specialization: consultant.specialization || ''
+      specialization: consultant.specialization || '',
     });
     setEditModalOpen(true); // Mở modal chỉnh sửa
   };
 
   // Hàm xử lý xóa tư vấn viên
-  const handleDelete = (consultant) => {
+  const handleDelete = consultant => {
     setSelectedConsultant(consultant); // Set tư vấn viên được chọn
     setDeleteModalOpen(true); // Mở modal xác nhận xóa
   };
@@ -235,7 +237,7 @@ export default function AdminConsultants() {
   const handleSaveEdit = async () => {
     try {
       setActionLoading(true); // Bật loading cho action
-      
+
       // Chuẩn bị dữ liệu để gửi API
       const updateData = {
         id: selectedConsultant.id,
@@ -248,19 +250,25 @@ export default function AdminConsultants() {
         biography: editForm.biography,
         qualifications: editForm.qualifications,
         experienceYears: editForm.experienceYears,
-        specialization: editForm.specialization
+        specialization: editForm.specialization,
       };
-      
+
       // Gọi API cập nhật
-      const response = await updateConsultantAPI(selectedConsultant.id, updateData);
-      
+      const response = await updateConsultantAPI(
+        selectedConsultant.id,
+        updateData
+      );
+
       setEditModalOpen(false); // Đóng modal
       toast.success('Cập nhật tư vấn viên thành công!');
-      
+
       // Reload lại dữ liệu để hiển thị thông tin mới
       fetchConsultants();
     } catch (error) {
-      toast.error('Lỗi khi cập nhật tư vấn viên: ' + (error.response?.data || error.message));
+      toast.error(
+        'Lỗi khi cập nhật tư vấn viên: ' +
+          (error.response?.data || error.message)
+      );
     } finally {
       setActionLoading(false); // Tắt loading
     }
@@ -270,17 +278,19 @@ export default function AdminConsultants() {
   const handleConfirmDelete = async () => {
     try {
       setActionLoading(true); // Bật loading
-      
+
       // Gọi API xóa tư vấn viên
       const response = await deleteConsultantAPI(selectedConsultant.id);
-      
+
       setDeleteModalOpen(false); // Đóng modal
       toast.success('Xóa tư vấn viên thành công!');
-      
+
       // Reload lại dữ liệu
       fetchConsultants();
     } catch (error) {
-      toast.error('Lỗi khi xóa tư vấn viên: ' + (error.response?.data || error.message));
+      toast.error(
+        'Lỗi khi xóa tư vấn viên: ' + (error.response?.data || error.message)
+      );
     } finally {
       setActionLoading(false); // Tắt loading
     }
@@ -297,11 +307,11 @@ export default function AdminConsultants() {
     try {
       // Gọi API tạo lịch tự động với các tham số mặc định
       await autoCreateConsultantSlotsAPI(selectedConsultantId, {
-        slotType: 'CONSULTATION',      // Loại lịch: tư vấn
-        capacity: 5,                   // Sức chứa: 5 người
+        slotType: 'CONSULTATION', // Loại lịch: tư vấn
+        capacity: 5, // Sức chứa: 5 người
         description: 'Lịch tự động 7 ngày', // Mô tả
-        duration: 120,                 // Thời lượng: 120 phút
-        days: 7                        // Tạo lịch cho 7 ngày
+        duration: 120, // Thời lượng: 120 phút
+        days: 7, // Tạo lịch cho 7 ngày
       });
       toast.success('Đã tạo lịch tự động 7 ngày cho tư vấn viên!');
     } catch (err) {
@@ -314,11 +324,11 @@ export default function AdminConsultants() {
     try {
       // Gọi API tạo lịch chung với các tham số mặc định
       await autoCreateCommonSlotsAPI({
-        slotType: 'CONSULTATION',          // Loại lịch: tư vấn
-        capacity: 5,                       // Sức chứa: 5 người
+        slotType: 'CONSULTATION', // Loại lịch: tư vấn
+        capacity: 5, // Sức chứa: 5 người
         description: 'Lịch chung tự động 7 ngày', // Mô tả
-        duration: 120,                     // Thời lượng: 120 phút
-        days: 7                            // Tạo lịch cho 7 ngày
+        duration: 120, // Thời lượng: 120 phút
+        days: 7, // Tạo lịch cho 7 ngày
       });
       toast.success('Đã tạo lịch chung tự động 7 ngày cho hệ thống!');
     } catch (err) {
@@ -328,24 +338,28 @@ export default function AdminConsultants() {
 
   // ===== UTILITY FUNCTIONS =====
   // Hàm format ngày tháng hiển thị
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'Chưa cập nhật';
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN'); // Format theo chuẩn Việt Nam
   };
 
   // Hàm chuyển đổi gender code thành text hiển thị
-  const getGenderText = (gender) => {
+  const getGenderText = gender => {
     switch (gender) {
-      case 'MALE': return 'Nam';
-      case 'FEMALE': return 'Nữ';
-      case 'OTHER': return 'Khác';
-      default: return 'Chưa cập nhật';
+      case 'MALE':
+        return 'Nam';
+      case 'FEMALE':
+        return 'Nữ';
+      case 'OTHER':
+        return 'Khác';
+      default:
+        return 'Chưa cập nhật';
     }
   };
 
   // Hàm tạo status chip dựa trên logic kinh nghiệm
-  const getStatusChip = (consultant) => {
+  const getStatusChip = consultant => {
     // Logic đơn giản: có kinh nghiệm > 0 thì hoạt động
     const isActive = consultant.experienceYears > 0;
     return (
@@ -362,8 +376,8 @@ export default function AdminConsultants() {
   // ===== PAGINATION LOGIC =====
   // Tính toán dữ liệu cho trang hiện tại
   const paginatedConsultants = filteredConsultants.slice(
-    (page - 1) * pageSize,  // Vị trí bắt đầu
-    page * pageSize         // Vị trí kết thúc
+    (page - 1) * pageSize, // Vị trí bắt đầu
+    page * pageSize // Vị trí kết thúc
   );
 
   // Tính tổng số trang
@@ -375,7 +389,7 @@ export default function AdminConsultants() {
     <Box sx={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar navigation */}
       <Sidebar />
-      
+
       {/* Main content area */}
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header cố định */}
@@ -386,27 +400,47 @@ export default function AdminConsultants() {
         {/* Content area có thể scroll */}
         <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
           {/* Title và Search/Action buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              mb: 2,
+              mt: 2,
+            }}
+          >
             {/* Page title */}
-            <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray' }}>
+            <Typography variant="h3" sx={{ fontWeight: 500, color: 'gray' }}>
               Quản lý tư vấn viên
             </Typography>
 
             {/* Search box và Action buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Search input */}
-              <Box sx={{ display: 'flex', alignItems: 'center', width: 300, bgcolor: 'white', borderRadius: '999px', px: 2, py: '6px', boxShadow: '0 0 0 1px #ccc' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: 300,
+                  bgcolor: 'white',
+                  borderRadius: '999px',
+                  px: 2,
+                  py: '6px',
+                  boxShadow: '0 0 0 1px #ccc',
+                }}
+              >
                 <SearchIcon sx={{ color: 'gray', mr: 1 }} />
                 <InputBase
                   placeholder="Tìm kiếm tư vấn viên..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   sx={{
                     flex: 1,
                     color: 'gray',
                     fontSize: 16,
                     '& .MuiInputBase-input': { p: 0 },
-                    '&:focus-within': { outline: 'none' }
+                    '&:focus-within': { outline: 'none' },
                   }}
                 />
               </Box>
@@ -423,13 +457,13 @@ export default function AdminConsultants() {
                       bgcolor: '#43a047',
                       borderRadius: '8px',
                       p: 1.2,
-                      '&:hover': { bgcolor: '#2e7031' }
+                      '&:hover': { bgcolor: '#2e7031' },
                     }}
                   >
                     <EventAvailableIcon fontSize="large" />
                   </IconButton>
                 </Tooltip>
-                
+
                 {/* Button tạo lịch cho tư vấn viên */}
                 <Tooltip title="Tạo lịch 7 ngày tự động cho tư vấn viên">
                   <IconButton
@@ -440,13 +474,13 @@ export default function AdminConsultants() {
                       bgcolor: '#1976d2',
                       borderRadius: '8px',
                       p: 1.2,
-                      '&:hover': { bgcolor: '#1565c0' }
+                      '&:hover': { bgcolor: '#1565c0' },
                     }}
                   >
                     <EventAvailableIcon fontSize="large" />
                   </IconButton>
                 </Tooltip>
-                
+
                 {/* Button thêm mới */}
                 <Button
                   variant="contained"
@@ -460,12 +494,12 @@ export default function AdminConsultants() {
                     borderRadius: '8px',
                     px: 3,
                     py: 1.2,
-                    mr: 1
+                    mr: 1,
                   }}
                 >
                   Thêm mới
                 </Button>
-                
+
                 {/* Button refresh */}
                 <Tooltip title="Làm mới dữ liệu">
                   <Button
@@ -479,7 +513,7 @@ export default function AdminConsultants() {
                       boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                       borderRadius: '8px',
                       px: 3,
-                      py: 1.2
+                      py: 1.2,
                     }}
                   >
                     Làm mới
@@ -501,7 +535,9 @@ export default function AdminConsultants() {
             >
               <MenuItem value="">-- Chọn tư vấn viên --</MenuItem>
               {consultants.map(c => (
-                <MenuItem key={c.id} value={c.id}>{c.fullName || c.email}</MenuItem>
+                <MenuItem key={c.id} value={c.id}>
+                  {c.fullName || c.email}
+                </MenuItem>
               ))}
             </TextField>
           </Box>
@@ -514,13 +550,22 @@ export default function AdminConsultants() {
                 {error}
               </Alert>
             )}
-            
+
             {/* Hiển thị loading hoặc bảng dữ liệu */}
             {loading ? (
               // Loading state
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                }}
+              >
                 <CircularProgress />
-                <Typography variant="h6" sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
+                <Typography variant="h6" sx={{ ml: 2 }}>
+                  Đang tải dữ liệu...
+                </Typography>
               </Box>
             ) : (
               // Data table
@@ -529,13 +574,33 @@ export default function AdminConsultants() {
                   {/* Table header */}
                   <TableHead sx={{ backgroundColor: '#3B6774' }}>
                     <TableRow>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>STT</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Họ tên</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Email</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Số điện thoại</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Chuyên môn</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>Kinh nghiệm</TableCell>
-                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Thao tác</TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>
+                        STT
+                      </TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>
+                        Họ tên
+                      </TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>
+                        Email
+                      </TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>
+                        Số điện thoại
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: '#f5f5f5', fontWeight: 'bold' }}
+                        align="center"
+                      >
+                        Chuyên môn
+                      </TableCell>
+                      <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>
+                        Kinh nghiệm
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: '#f5f5f5', fontWeight: 'bold' }}
+                        align="center"
+                      >
+                        Thao tác
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   {/* Table body */}
@@ -554,54 +619,92 @@ export default function AdminConsultants() {
                       paginatedConsultants.map((consultant, index) => (
                         <TableRow key={consultant.id} hover>
                           {/* Cột STT */}
-                          <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
+                          <TableCell>
+                            {(page - 1) * pageSize + index + 1}
+                          </TableCell>
                           {/* Cột Họ tên với Avatar */}
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <Avatar
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  bgcolor: '#1976d2',
+                                }}
+                              >
                                 {consultant.fullName?.charAt(0) || 'T'}
                               </Avatar>
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 500 }}
+                              >
                                 {consultant.fullName || 'Chưa cập nhật'}
                               </Typography>
                             </Box>
                           </TableCell>
                           {/* Cột Email */}
-                          <TableCell>{consultant.email || 'Chưa cập nhật'}</TableCell>
+                          <TableCell>
+                            {consultant.email || 'Chưa cập nhật'}
+                          </TableCell>
                           {/* Cột Số điện thoại */}
-                          <TableCell>{consultant.phoneNumber || 'Chưa cập nhật'}</TableCell>
+                          <TableCell>
+                            {consultant.phoneNumber || 'Chưa cập nhật'}
+                          </TableCell>
                           {/* Cột Chuyên môn với Chip */}
                           <TableCell align="center">
-                            <Chip 
-                              label={consultant.specialization || 'Chưa cập nhật'} 
+                            <Chip
+                              label={
+                                consultant.specialization || 'Chưa cập nhật'
+                              }
                               size="small"
-                              sx={{ 
+                              sx={{
                                 backgroundColor: '#E3F2FD',
                                 color: '#1976D2',
                                 fontWeight: 'bold',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
                               }}
                             />
                           </TableCell>
                           {/* Cột Kinh nghiệm */}
                           <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 'bold', color: 'primary.main' }}
+                            >
                               {consultant.experienceYears || 0} năm
                             </Typography>
                           </TableCell>
                           {/* Cột Action buttons */}
                           <TableCell align="center">
-                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                gap: 0.5,
+                                justifyContent: 'center',
+                              }}
+                            >
                               {/* Button tạo lịch tự động */}
                               <Tooltip title="Tạo lịch 7 ngày tự động">
-                                <IconButton size="small" onClick={() => handleAutoCreateSlots(consultant.id)} sx={{ color: 'success.main' }}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    handleAutoCreateSlots(consultant.id)
+                                  }
+                                  sx={{ color: 'success.main' }}
+                                >
                                   <EventAvailableIcon fontSize="medium" />
                                 </IconButton>
                               </Tooltip>
                               {/* Button xem chi tiết */}
                               <Tooltip title="Xem chi tiết">
-                                <IconButton 
-                                  size="small" 
+                                <IconButton
+                                  size="small"
                                   onClick={() => handleView(consultant)}
                                   sx={{ color: 'info.main' }}
                                 >
@@ -610,8 +713,8 @@ export default function AdminConsultants() {
                               </Tooltip>
                               {/* Button chỉnh sửa */}
                               <Tooltip title="Chỉnh sửa">
-                                <IconButton 
-                                  size="small" 
+                                <IconButton
+                                  size="small"
                                   onClick={() => handleEdit(consultant)}
                                   sx={{ color: 'warning.main' }}
                                 >
@@ -620,8 +723,8 @@ export default function AdminConsultants() {
                               </Tooltip>
                               {/* Button xóa */}
                               <Tooltip title="Xóa">
-                                <IconButton 
-                                  size="small" 
+                                <IconButton
+                                  size="small"
                                   onClick={() => handleDelete(consultant)}
                                   sx={{ color: 'error.main' }}
                                 >
@@ -640,12 +743,22 @@ export default function AdminConsultants() {
 
             {/* ===== PAGINATION ===== */}
             {filteredConsultants.length > 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, px: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mt: 2,
+                  px: 2,
+                }}
+              >
                 {/* Thông tin hiển thị số lượng record */}
                 <Typography variant="body2" color="text.secondary">
-                  Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredConsultants.length)} trong tổng số {filteredConsultants.length} tư vấn viên
+                  Hiển thị {(page - 1) * pageSize + 1} -{' '}
+                  {Math.min(page * pageSize, filteredConsultants.length)} trong
+                  tổng số {filteredConsultants.length} tư vấn viên
                 </Typography>
-                
+
                 {/* Navigation buttons */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
@@ -673,7 +786,12 @@ export default function AdminConsultants() {
 
       {/* ===== MODAL DIALOGS ===== */}
       {/* Modal xem chi tiết tư vấn viên */}
-      <Dialog open={viewModalOpen} onClose={() => setViewModalOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle sx={{ backgroundColor: '#1976d2', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
             Chi tiết tư vấn viên
@@ -682,14 +800,29 @@ export default function AdminConsultants() {
         <DialogContent dividers sx={{ p: 3 }}>
           {selectedConsultant && (
             <Box sx={{ mt: 2 }}>
-              <Card variant="outlined" sx={{ borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                }}
+              >
                 <CardContent>
-                  <Typography variant="h6" gutterBottom color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    color="primary"
+                    sx={{ fontWeight: 'bold', mb: 2 }}
+                  >
                     Thông tin tư vấn viên
                   </Typography>
                   <Stack spacing={3}>
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Họ tên
                       </Typography>
                       <Typography variant="body1" fontWeight="bold">
@@ -698,7 +831,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Email
                       </Typography>
                       <Typography variant="body1">
@@ -707,7 +844,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Số điện thoại
                       </Typography>
                       <Typography variant="body1">
@@ -716,7 +857,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Giới tính
                       </Typography>
                       <Typography variant="body1">
@@ -725,7 +870,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Ngày sinh
                       </Typography>
                       <Typography variant="body1">
@@ -734,7 +883,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Địa chỉ
                       </Typography>
                       <Typography variant="body1">
@@ -743,7 +896,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Tiểu sử
                       </Typography>
                       <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
@@ -752,7 +909,11 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Bằng cấp
                       </Typography>
                       <Typography variant="body1">
@@ -761,25 +922,39 @@ export default function AdminConsultants() {
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Kinh nghiệm
                       </Typography>
-                      <Typography variant="body1" fontWeight="bold" color="primary">
+                      <Typography
+                        variant="body1"
+                        fontWeight="bold"
+                        color="primary"
+                      >
                         {selectedConsultant.experienceYears || 0} năm
                       </Typography>
                     </Box>
                     <Divider />
                     <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
                         Chuyên môn
                       </Typography>
-                      <Chip 
-                        label={selectedConsultant.specialization || 'Chưa cập nhật'} 
+                      <Chip
+                        label={
+                          selectedConsultant.specialization || 'Chưa cập nhật'
+                        }
                         size="medium"
-                        sx={{ 
+                        sx={{
                           backgroundColor: '#E3F2FD',
                           color: '#1976D2',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
                         }}
                       />
                     </Box>
@@ -790,14 +965,23 @@ export default function AdminConsultants() {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
-          <Button onClick={() => setViewModalOpen(false)} variant="outlined" color="secondary">
+          <Button
+            onClick={() => setViewModalOpen(false)}
+            variant="outlined"
+            color="secondary"
+          >
             Đóng
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal chỉnh sửa tư vấn viên */}
-      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ backgroundColor: '#ff9800', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
             Chỉnh sửa tư vấn viên
@@ -811,7 +995,9 @@ export default function AdminConsultants() {
                   fullWidth
                   label="Họ tên"
                   value={editForm.fullName}
-                  onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, fullName: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -820,7 +1006,9 @@ export default function AdminConsultants() {
                   label="Email"
                   type="email"
                   value={editForm.email}
-                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -828,7 +1016,9 @@ export default function AdminConsultants() {
                   fullWidth
                   label="Số điện thoại"
                   value={editForm.phoneNumber}
-                  onChange={(e) => setEditForm({...editForm, phoneNumber: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, phoneNumber: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -837,7 +1027,9 @@ export default function AdminConsultants() {
                     <InputLabel>Giới tính</InputLabel>
                     <Select
                       value={editForm.gender}
-                      onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
+                      onChange={e =>
+                        setEditForm({ ...editForm, gender: e.target.value })
+                      }
                       label="Giới tính"
                     >
                       <MenuItem value="MALE">Nam</MenuItem>
@@ -850,7 +1042,12 @@ export default function AdminConsultants() {
                     label="Kinh nghiệm (năm)"
                     type="number"
                     value={editForm.experienceYears}
-                    onChange={(e) => setEditForm({...editForm, experienceYears: parseInt(e.target.value) || 0})}
+                    onChange={e =>
+                      setEditForm({
+                        ...editForm,
+                        experienceYears: parseInt(e.target.value) || 0,
+                      })
+                    }
                     variant="outlined"
                     size="medium"
                   />
@@ -859,7 +1056,9 @@ export default function AdminConsultants() {
                   fullWidth
                   label="Chuyên môn"
                   value={editForm.specialization}
-                  onChange={(e) => setEditForm({...editForm, specialization: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, specialization: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -867,7 +1066,9 @@ export default function AdminConsultants() {
                   fullWidth
                   label="Bằng cấp"
                   value={editForm.qualifications}
-                  onChange={(e) => setEditForm({...editForm, qualifications: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, qualifications: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -875,7 +1076,9 @@ export default function AdminConsultants() {
                   fullWidth
                   label="Địa chỉ"
                   value={editForm.address}
-                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, address: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                 />
@@ -885,7 +1088,9 @@ export default function AdminConsultants() {
                   multiline
                   rows={4}
                   value={editForm.biography}
-                  onChange={(e) => setEditForm({...editForm, biography: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, biography: e.target.value })
+                  }
                   variant="outlined"
                   size="medium"
                   helperText="Mô tả chi tiết về kinh nghiệm và chuyên môn."
@@ -895,17 +1100,36 @@ export default function AdminConsultants() {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
-          <Button onClick={() => setEditModalOpen(false)} variant="outlined" color="secondary" disabled={actionLoading}>
+          <Button
+            onClick={() => setEditModalOpen(false)}
+            variant="outlined"
+            color="secondary"
+            disabled={actionLoading}
+          >
             Hủy
           </Button>
-          <Button onClick={handleSaveEdit} variant="contained" color="primary" disabled={actionLoading}>
-            {actionLoading ? <CircularProgress size={24} color="inherit" /> : 'Lưu thay đổi'}
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            color="primary"
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Lưu thay đổi'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal xác nhận xóa tư vấn viên */}
-      <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle sx={{ backgroundColor: '#f44336', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
             Xác nhận xóa tư vấn viên
@@ -914,11 +1138,28 @@ export default function AdminConsultants() {
         <DialogContent dividers sx={{ p: 3 }}>
           {selectedConsultant && (
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>
+              <Typography
+                variant="body1"
+                gutterBottom
+                sx={{ fontWeight: 'bold' }}
+              >
                 Bạn có thật sự muốn xóa tư vấn viên này?
               </Typography>
-              <Card variant="outlined" sx={{ mt: 2, p: 2, backgroundColor: '#ffebee', borderColor: '#f44336', borderRadius: '8px' }}>
-                <Typography variant="h6" color="error" sx={{ fontWeight: 'bold' }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  backgroundColor: '#ffebee',
+                  borderColor: '#f44336',
+                  borderRadius: '8px',
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  color="error"
+                  sx={{ fontWeight: 'bold' }}
+                >
                   {selectedConsultant.fullName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -935,17 +1176,35 @@ export default function AdminConsultants() {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
-          <Button onClick={() => setDeleteModalOpen(false)} variant="outlined" color="secondary" disabled={actionLoading}>
+          <Button
+            onClick={() => setDeleteModalOpen(false)}
+            variant="outlined"
+            color="secondary"
+            disabled={actionLoading}
+          >
             Hủy
           </Button>
-          <Button onClick={handleConfirmDelete} variant="contained" color="error" disabled={actionLoading}>
-            {actionLoading ? <CircularProgress size={24} color="inherit" /> : 'Xóa'}
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Xóa'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Modal thêm tư vấn viên mới */}
-      <AddConsultantModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={fetchConsultants} />
+      <AddConsultantModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={fetchConsultants}
+      />
     </Box>
   );
 }
