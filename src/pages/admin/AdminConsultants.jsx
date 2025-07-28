@@ -1,9 +1,45 @@
+/**
+ * ===== COMPONENT: AdminConsultants =====
+ * 
+ * Mô tả: Component quản lý danh sách tư vấn viên trong admin panel
+ * 
+ * Chức năng chính:
+ * - Hiển thị danh sách tư vấn viên dưới dạng bảng với phân trang
+ * - Tìm kiếm tư vấn viên theo tên, email, chuyên môn, username
+ * - Thêm mới tư vấn viên thông qua modal
+ * - Xem chi tiết thông tin tư vấn viên
+ * - Chỉnh sửa thông tin tư vấn viên
+ * - Xóa tư vấn viên với xác nhận
+ * - Tạo lịch tự động cho tư vấn viên cụ thể hoặc tạo lịch chung
+ * - Refresh dữ liệu
+ * 
+ * State management:
+ * - Quản lý danh sách tư vấn viên và trạng thái loading/error
+ * - Quản lý trạng thái các modal (view, edit, delete, add)
+ * - Quản lý phân trang và tìm kiếm
+ * - Quản lý form data cho chỉnh sửa
+ * 
+ * API calls:
+ * - getAllConsultantsAPI: Lấy danh sách tất cả tư vấn viên
+ * - updateConsultantAPI: Cập nhật thông tin tư vấn viên
+ * - deleteConsultantAPI: Xóa tư vấn viên
+ * - autoCreateConsultantSlotsAPI: Tạo lịch tự động cho tư vấn viên
+ * - autoCreateCommonSlotsAPI: Tạo lịch chung tự động
+ */
+
+// Import các thư viện React cần thiết
 import React, { useEffect, useState } from 'react';
+
+// Import các icon từ Material-UI
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
+
+// Import các component layout chính
 import Sidebar from '../../components/admin/AdminSidebar';
 import Header from '../../components/admin/AdminHeader';
+
+// Import các component UI từ Material-UI
 import { 
   Box, 
   Typography, 
@@ -36,103 +72,143 @@ import {
   Avatar,
   TextField
 } from '@mui/material';
+
+// Import hook để xử lý navigation
 import { useLocation } from 'react-router-dom';
+
+// Import thư viện thông báo toast
 import { toast } from 'react-toastify';
+
+// Import các icon cho các thao tác CRUD
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+
+// Import các API service để gọi backend
 import {
-  getAllConsultantsAPI,
-  createConsultantAPI,
-  updateConsultantAPI,
-  deleteConsultantAPI,
-  autoCreateConsultantSlotsAPI,
-  autoCreateCommonSlotsAPI
+  getAllConsultantsAPI,        // API lấy danh sách tất cả tư vấn viên
+  createConsultantAPI,         // API tạo tư vấn viên mới
+  updateConsultantAPI,         // API cập nhật thông tin tư vấn viên
+  deleteConsultantAPI,         // API xóa tư vấn viên
+  autoCreateConsultantSlotsAPI, // API tạo lịch tự động cho tư vấn viên
+  autoCreateCommonSlotsAPI     // API tạo lịch chung tự động
 } from '../../services/AdminService';
+
+// Import component modal để thêm tư vấn viên mới
 import AddConsultantModal from '../../components/admin/AddConsultantModal';
 
+// Component chính quản lý tư vấn viên
 export default function AdminConsultants() {
+  // Hook để lấy thông tin location từ router (dùng để hiển thị toast message)
   const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [consultants, setConsultants] = useState([]);
-  const [filteredConsultants, setFilteredConsultants] = useState([]);
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
   
-  // Modal states
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedConsultant, setSelectedConsultant] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedConsultantId, setSelectedConsultantId] = useState(null);
+  // ===== STATE VARIABLES =====
+  // State cho tìm kiếm
+  const [searchTerm, setSearchTerm] = useState(''); // Từ khóa tìm kiếm
+  
+  // State cho dữ liệu tư vấn viên
+  const [consultants, setConsultants] = useState([]); // Tất cả tư vấn viên từ API
+  const [filteredConsultants, setFilteredConsultants] = useState([]); // Danh sách sau khi lọc/tìm kiếm
+  
+  // State cho phân trang
+  const [page, setPage] = useState(1); // Trang hiện tại
+  const pageSize = 10; // Số item trên mỗi trang
+  
+  // State cho loading và error
+  const [loading, setLoading] = useState(true); // Trạng thái loading khi fetch data
+  const [error, setError] = useState(null); // Lưu thông báo lỗi nếu có
+  const [refreshKey, setRefreshKey] = useState(0); // Key để trigger refresh data
+  
+  // ===== MODAL STATES =====
+  const [viewModalOpen, setViewModalOpen] = useState(false); // Modal xem chi tiết
+  const [editModalOpen, setEditModalOpen] = useState(false); // Modal chỉnh sửa
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false); // Modal xác nhận xóa
+  const [selectedConsultant, setSelectedConsultant] = useState(null); // Tư vấn viên được chọn
+  const [editForm, setEditForm] = useState({}); // Form data cho chỉnh sửa
+  const [actionLoading, setActionLoading] = useState(false); // Loading cho các action (edit, delete)
+  const [showAddModal, setShowAddModal] = useState(false); // Modal thêm tư vấn viên mới
+  const [selectedConsultantId, setSelectedConsultantId] = useState(null); // ID tư vấn viên cho tạo lịch tự động
 
+  // ===== USEEFFECT HOOKS =====
+  // Effect để hiển thị toast message khi navigate đến trang này
   useEffect(() => {
     if (location.state?.toastMessage) {
       toast.success(location.state.toastMessage);
+      // Xóa state để tránh hiển thị lại khi refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
+  // Effect để fetch dữ liệu tư vấn viên khi component mount hoặc khi refreshKey thay đổi
   useEffect(() => {
     fetchConsultants();
   }, [refreshKey]);
 
+  // ===== API FUNCTIONS =====
+  // Hàm fetch danh sách tư vấn viên từ API
   const fetchConsultants = async () => {
     try {
-      setLoading(true);
+      setLoading(true); // Bật loading
       const response = await getAllConsultantsAPI();
       console.log('Consultants response:', response);
       
+      // Xử lý response data (có thể là array trực tiếp hoặc trong response.data)
       const consultantsData = Array.isArray(response) ? response : (response.data || []);
-      setConsultants(consultantsData);
-      setFilteredConsultants(consultantsData);
-      setError(null);
+      setConsultants(consultantsData); // Set data gốc
+      setFilteredConsultants(consultantsData); // Set data cho hiển thị
+      setError(null); // Clear error nếu thành công
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu tư vấn viên:', err);
       setError('Không thể tải dữ liệu tư vấn viên. Vui lòng thử lại sau.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Tắt loading
     }
   };
 
+  // Effect để lọc danh sách tư vấn viên dựa trên từ khóa tìm kiếm
   useEffect(() => {
     const filtered = consultants.filter(consultant => {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       return (
+        // Tìm kiếm theo họ tên
         consultant.fullName?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        // Tìm kiếm theo email
         consultant.email?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        // Tìm kiếm theo chuyên môn
         consultant.specialization?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        // Tìm kiếm theo username
         consultant.username?.toLowerCase().includes(lowerCaseSearchTerm)
       );
     });
     setFilteredConsultants(filtered);
   }, [searchTerm, consultants]);
 
+  // ===== EVENT HANDLERS =====
+  // Hàm xử lý refresh dữ liệu
   const handleRefresh = () => {
-    setRefreshKey(prevKey => prevKey + 1);
+    setRefreshKey(prevKey => prevKey + 1); // Tăng refreshKey để trigger useEffect
     toast.success("Đã làm mới dữ liệu!");
   };
 
+  // Hàm mở modal thêm tư vấn viên mới
   const handleAddNew = () => {
     setShowAddModal(true);
   };
 
-  // Handle view
+  // ===== VIEW, EDIT, DELETE HANDLERS =====
+  // Hàm xử lý xem chi tiết tư vấn viên
   const handleView = (consultant) => {
-    setSelectedConsultant(consultant);
-    setViewModalOpen(true);
+    setSelectedConsultant(consultant); // Set tư vấn viên được chọn
+    setViewModalOpen(true); // Mở modal xem chi tiết
   };
 
-  // Handle edit
+  // Hàm xử lý chỉnh sửa tư vấn viên
   const handleEdit = (consultant) => {
-    setSelectedConsultant(consultant);
+  // Hàm xử lý chỉnh sửa tư vấn viên
+  const handleEdit = (consultant) => {
+    setSelectedConsultant(consultant); // Set tư vấn viên được chọn
+    // Khởi tạo form với dữ liệu hiện tại của tư vấn viên
     setEditForm({
       fullName: consultant.fullName || '',
       email: consultant.email || '',
@@ -145,19 +221,22 @@ export default function AdminConsultants() {
       experienceYears: consultant.experienceYears || 0,
       specialization: consultant.specialization || ''
     });
-    setEditModalOpen(true);
+    setEditModalOpen(true); // Mở modal chỉnh sửa
   };
 
-  // Handle delete
+  // Hàm xử lý xóa tư vấn viên
   const handleDelete = (consultant) => {
-    setSelectedConsultant(consultant);
-    setDeleteModalOpen(true);
+    setSelectedConsultant(consultant); // Set tư vấn viên được chọn
+    setDeleteModalOpen(true); // Mở modal xác nhận xóa
   };
 
-  // Handle save edit
+  // ===== SAVE AND DELETE HANDLERS =====
+  // Hàm lưu thay đổi sau khi chỉnh sửa
   const handleSaveEdit = async () => {
     try {
-      setActionLoading(true);
+      setActionLoading(true); // Bật loading cho action
+      
+      // Chuẩn bị dữ liệu để gửi API
       const updateData = {
         id: selectedConsultant.id,
         fullName: editForm.fullName,
@@ -171,50 +250,58 @@ export default function AdminConsultants() {
         experienceYears: editForm.experienceYears,
         specialization: editForm.specialization
       };
+      
+      // Gọi API cập nhật
       const response = await updateConsultantAPI(selectedConsultant.id, updateData);
       
-      setEditModalOpen(false);
+      setEditModalOpen(false); // Đóng modal
       toast.success('Cập nhật tư vấn viên thành công!');
       
-      // Reload data
+      // Reload lại dữ liệu để hiển thị thông tin mới
       fetchConsultants();
     } catch (error) {
       toast.error('Lỗi khi cập nhật tư vấn viên: ' + (error.response?.data || error.message));
     } finally {
-      setActionLoading(false);
+      setActionLoading(false); // Tắt loading
     }
   };
 
-  // Handle confirm delete
+  // Hàm xác nhận xóa tư vấn viên
   const handleConfirmDelete = async () => {
     try {
-      setActionLoading(true);
+      setActionLoading(true); // Bật loading
+      
+      // Gọi API xóa tư vấn viên
       const response = await deleteConsultantAPI(selectedConsultant.id);
       
-      setDeleteModalOpen(false);
+      setDeleteModalOpen(false); // Đóng modal
       toast.success('Xóa tư vấn viên thành công!');
       
-      // Reload data
+      // Reload lại dữ liệu
       fetchConsultants();
     } catch (error) {
       toast.error('Lỗi khi xóa tư vấn viên: ' + (error.response?.data || error.message));
     } finally {
-      setActionLoading(false);
+      setActionLoading(false); // Tắt loading
     }
   };
 
+  // ===== AUTO CREATE SLOTS HANDLERS =====
+  // Hàm tạo lịch tự động cho một tư vấn viên cụ thể
   const handleAutoCreateSlots = async () => {
+    // Kiểm tra xem đã chọn tư vấn viên chưa
     if (!selectedConsultantId) {
       toast.error('Vui lòng chọn tư vấn viên để tạo lịch!');
       return;
     }
     try {
+      // Gọi API tạo lịch tự động với các tham số mặc định
       await autoCreateConsultantSlotsAPI(selectedConsultantId, {
-        slotType: 'CONSULTATION',
-        capacity: 5,
-        description: 'Lịch tự động 7 ngày',
-        duration: 120,
-        days: 7
+        slotType: 'CONSULTATION',      // Loại lịch: tư vấn
+        capacity: 5,                   // Sức chứa: 5 người
+        description: 'Lịch tự động 7 ngày', // Mô tả
+        duration: 120,                 // Thời lượng: 120 phút
+        days: 7                        // Tạo lịch cho 7 ngày
       });
       toast.success('Đã tạo lịch tự động 7 ngày cho tư vấn viên!');
     } catch (err) {
@@ -222,14 +309,16 @@ export default function AdminConsultants() {
     }
   };
 
+  // Hàm tạo lịch chung tự động cho toàn hệ thống
   const handleAutoCreateCommonSlots = async () => {
     try {
+      // Gọi API tạo lịch chung với các tham số mặc định
       await autoCreateCommonSlotsAPI({
-        slotType: 'CONSULTATION',
-        capacity: 5,
-        description: 'Lịch chung tự động 7 ngày',
-        duration: 120,
-        days: 7
+        slotType: 'CONSULTATION',          // Loại lịch: tư vấn
+        capacity: 5,                       // Sức chứa: 5 người
+        description: 'Lịch chung tự động 7 ngày', // Mô tả
+        duration: 120,                     // Thời lượng: 120 phút
+        days: 7                            // Tạo lịch cho 7 ngày
       });
       toast.success('Đã tạo lịch chung tự động 7 ngày cho hệ thống!');
     } catch (err) {
@@ -237,12 +326,15 @@ export default function AdminConsultants() {
     }
   };
 
+  // ===== UTILITY FUNCTIONS =====
+  // Hàm format ngày tháng hiển thị
   const formatDate = (dateString) => {
     if (!dateString) return 'Chưa cập nhật';
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    return date.toLocaleDateString('vi-VN'); // Format theo chuẩn Việt Nam
   };
 
+  // Hàm chuyển đổi gender code thành text hiển thị
   const getGenderText = (gender) => {
     switch (gender) {
       case 'MALE': return 'Nam';
@@ -252,9 +344,10 @@ export default function AdminConsultants() {
     }
   };
 
+  // Hàm tạo status chip dựa trên logic kinh nghiệm
   const getStatusChip = (consultant) => {
-    // Giả sử status được tính dựa trên một số điều kiện
-    const isActive = consultant.experienceYears > 0; // Logic đơn giản
+    // Logic đơn giản: có kinh nghiệm > 0 thì hoạt động
+    const isActive = consultant.experienceYears > 0;
     return (
       <Chip
         label={isActive ? 'Hoạt động' : 'Tạm dừng'}
@@ -266,29 +359,42 @@ export default function AdminConsultants() {
     );
   };
 
+  // ===== PAGINATION LOGIC =====
+  // Tính toán dữ liệu cho trang hiện tại
   const paginatedConsultants = filteredConsultants.slice(
-    (page - 1) * pageSize,
-    page * pageSize
+    (page - 1) * pageSize,  // Vị trí bắt đầu
+    page * pageSize         // Vị trí kết thúc
   );
 
+  // Tính tổng số trang
   const totalPages = Math.ceil(filteredConsultants.length / pageSize);
 
+  // ===== RENDER UI =====
   return (
+    // Layout chính với Sidebar và Content
     <Box sx={{ display: 'flex', height: '100vh' }}>
+      {/* Sidebar navigation */}
       <Sidebar />
+      
+      {/* Main content area */}
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Header cố định */}
         <Box sx={{ flexShrink: 0, minHeight: 64 }}>
           <Header />
         </Box>
 
+        {/* Content area có thể scroll */}
         <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', p: 2, overflowY: 'auto' }}>
+          {/* Title và Search/Action buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, mb: 2, mt: 2 }}>
+            {/* Page title */}
             <Typography variant='h3' sx={{ fontWeight: 500, color: 'gray' }}>
               Quản lý tư vấn viên
             </Typography>
 
+            {/* Search box và Action buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* Search box */}
+              {/* Search input */}
               <Box sx={{ display: 'flex', alignItems: 'center', width: 300, bgcolor: 'white', borderRadius: '999px', px: 2, py: '6px', boxShadow: '0 0 0 1px #ccc' }}>
                 <SearchIcon sx={{ color: 'gray', mr: 1 }} />
                 <InputBase
@@ -307,6 +413,7 @@ export default function AdminConsultants() {
 
               {/* Action Buttons */}
               <Box sx={{ display: 'flex', gap: 1 }}>
+                {/* Button tạo lịch chung */}
                 <Tooltip title="Tạo lịch chung 7 ngày tự động">
                   <IconButton
                     size="large"
@@ -322,6 +429,8 @@ export default function AdminConsultants() {
                     <EventAvailableIcon fontSize="large" />
                   </IconButton>
                 </Tooltip>
+                
+                {/* Button tạo lịch cho tư vấn viên */}
                 <Tooltip title="Tạo lịch 7 ngày tự động cho tư vấn viên">
                   <IconButton
                     size="large"
@@ -337,6 +446,8 @@ export default function AdminConsultants() {
                     <EventAvailableIcon fontSize="large" />
                   </IconButton>
                 </Tooltip>
+                
+                {/* Button thêm mới */}
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
@@ -354,6 +465,8 @@ export default function AdminConsultants() {
                 >
                   Thêm mới
                 </Button>
+                
+                {/* Button refresh */}
                 <Tooltip title="Làm mới dữ liệu">
                   <Button
                     variant="contained"
@@ -376,7 +489,7 @@ export default function AdminConsultants() {
             </Box>
           </Box>
 
-          {/* Thêm dropdown chọn consultant phía trên bảng */}
+          {/* Dropdown chọn tư vấn viên để tạo lịch */}
           <Box sx={{ mb: 2, width: 260 }}>
             <TextField
               select
@@ -393,22 +506,27 @@ export default function AdminConsultants() {
             </TextField>
           </Box>
 
-          {/* TABLE AREA */}
+          {/* ===== TABLE AREA ===== */}
           <Box sx={{ bgcolor: '#f5f5f5', p: 2 }}>
+            {/* Hiển thị thông báo lỗi nếu có */}
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
             
+            {/* Hiển thị loading hoặc bảng dữ liệu */}
             {loading ? (
+              // Loading state
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
                 <CircularProgress />
                 <Typography variant="h6" sx={{ ml: 2 }}>Đang tải dữ liệu...</Typography>
               </Box>
             ) : (
+              // Data table
               <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
                 <Table>
+                  {/* Table header */}
                   <TableHead sx={{ backgroundColor: '#3B6774' }}>
                     <TableRow>
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }}>STT</TableCell>
@@ -420,7 +538,9 @@ export default function AdminConsultants() {
                       <TableCell sx={{ color: '#f5f5f5', fontWeight: 'bold' }} align="center">Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
+                  {/* Table body */}
                   <TableBody>
+                    {/* Hiển thị thông báo nếu không có dữ liệu */}
                     {paginatedConsultants.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
@@ -430,9 +550,12 @@ export default function AdminConsultants() {
                         </TableCell>
                       </TableRow>
                     ) : (
+                      // Render từng row tư vấn viên
                       paginatedConsultants.map((consultant, index) => (
                         <TableRow key={consultant.id} hover>
+                          {/* Cột STT */}
                           <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
+                          {/* Cột Họ tên với Avatar */}
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
@@ -443,8 +566,11 @@ export default function AdminConsultants() {
                               </Typography>
                             </Box>
                           </TableCell>
+                          {/* Cột Email */}
                           <TableCell>{consultant.email || 'Chưa cập nhật'}</TableCell>
+                          {/* Cột Số điện thoại */}
                           <TableCell>{consultant.phoneNumber || 'Chưa cập nhật'}</TableCell>
+                          {/* Cột Chuyên môn với Chip */}
                           <TableCell align="center">
                             <Chip 
                               label={consultant.specialization || 'Chưa cập nhật'} 
@@ -457,18 +583,22 @@ export default function AdminConsultants() {
                               }}
                             />
                           </TableCell>
+                          {/* Cột Kinh nghiệm */}
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                               {consultant.experienceYears || 0} năm
                             </Typography>
                           </TableCell>
+                          {/* Cột Action buttons */}
                           <TableCell align="center">
                             <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                              {/* Button tạo lịch tự động */}
                               <Tooltip title="Tạo lịch 7 ngày tự động">
                                 <IconButton size="small" onClick={() => handleAutoCreateSlots(consultant.id)} sx={{ color: 'success.main' }}>
                                   <EventAvailableIcon fontSize="medium" />
                                 </IconButton>
                               </Tooltip>
+                              {/* Button xem chi tiết */}
                               <Tooltip title="Xem chi tiết">
                                 <IconButton 
                                   size="small" 
@@ -478,6 +608,7 @@ export default function AdminConsultants() {
                                   <VisibilityIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
+                              {/* Button chỉnh sửa */}
                               <Tooltip title="Chỉnh sửa">
                                 <IconButton 
                                   size="small" 
@@ -487,6 +618,7 @@ export default function AdminConsultants() {
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
+                              {/* Button xóa */}
                               <Tooltip title="Xóa">
                                 <IconButton 
                                   size="small" 
@@ -506,13 +638,15 @@ export default function AdminConsultants() {
               </TableContainer>
             )}
 
-            {/* Pagination */}
+            {/* ===== PAGINATION ===== */}
             {filteredConsultants.length > 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, px: 2 }}>
+                {/* Thông tin hiển thị số lượng record */}
                 <Typography variant="body2" color="text.secondary">
                   Hiển thị {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredConsultants.length)} trong tổng số {filteredConsultants.length} tư vấn viên
                 </Typography>
                 
+                {/* Navigation buttons */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     variant="outlined"
@@ -537,7 +671,8 @@ export default function AdminConsultants() {
         </Box>
       </Box>
 
-      {/* View Detail Modal */}
+      {/* ===== MODAL DIALOGS ===== */}
+      {/* Modal xem chi tiết tư vấn viên */}
       <Dialog open={viewModalOpen} onClose={() => setViewModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ backgroundColor: '#1976d2', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
@@ -661,7 +796,7 @@ export default function AdminConsultants() {
         </DialogActions>
       </Dialog>
 
-      {/* Edit Modal */}
+      {/* Modal chỉnh sửa tư vấn viên */}
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ backgroundColor: '#ff9800', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
@@ -769,7 +904,7 @@ export default function AdminConsultants() {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* Modal xác nhận xóa tư vấn viên */}
       <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ backgroundColor: '#f44336', color: '#fff', pb: 2 }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
@@ -809,7 +944,7 @@ export default function AdminConsultants() {
         </DialogActions>
       </Dialog>
 
-      {/* Add Consultant Modal */}
+      {/* Modal thêm tư vấn viên mới */}
       <AddConsultantModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={fetchConsultants} />
     </Box>
   );
