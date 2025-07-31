@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useCycle } from '../../../context/CycleContext';
 import { useAppointment } from '../../../context/AppointmentContext';
+import { useChat } from '../../../context/ChatContext';
+import BookingService from '../../../services/BookingService';
+import DashboardService from '../../../services/DashboardService';
+import ChatService from '../../../services/ChatService';
+import ChatInitializer from '../../../components/Chat/ChatInitializer';
 import {
   Search,
   Menu,
@@ -55,22 +60,87 @@ import './index.css';
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showChatWindow, setShowChatWindow] = useState(false);
-  const [activeChatId, setActiveChatId] = useState(null);
-  const [newMessage, setNewMessage] = useState('');
+
+  const [showRealtimeChat, setShowRealtimeChat] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [overviewStats, setOverviewStats] = useState({
     totalConsultations: 0,
     totalSTITests: 0,
     totalQuestions: 0,
     newNotifications: 0,
   });
-  const { user, logout, isAuthenticated } = useAuth();
+  const [onlineCounselors, setOnlineCounselors] = useState([]);
+  const [loadingConsultants, setLoadingConsultants] = useState(false);
+  
+  // ✅ Sử dụng ChatContext thay vì state riêng
+  
+  const { user, logout, isAuthenticated, updateUserProfile } = useAuth();
   const { getDaysUntilNextPeriod, getDaysUntilOvulation, isInFertilityWindow } =
     useCycle();
   const { getUpcomingAppointments } = useAppointment();
+
+  // Load dashboard data
+  const loadDashboardData = async () => {
+    try {
+      const [stats, appointments, notifications] = await Promise.all([
+        DashboardService.getDashboardStats(),
+        DashboardService.getUpcomingAppointments(),
+        DashboardService.getNotifications()
+      ]);
+      
+      setOverviewStats({
+        totalConsultations: stats.totalConsultations,
+        totalSTITests: stats.totalSTITests,
+        totalQuestions: stats.totalQuestions,
+        newNotifications: stats.newNotifications,
+      });
+      
+      setPendingBookingsCount(appointments.length);
+      setUpcomingAppointments(appointments);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+  };
+
+  // ✅ Đã loại bỏ loadConversations riêng, sử dụng ChatContext thay thế
+
+  // Load consultants - Removed per user request
+  // const loadConsultants = async () => {
+  //   try {
+  //     setLoadingConsultants(true);
+  //     const response = await DashboardService.getOnlineConsultants();
+  //     if (response && Array.isArray(response)) {
+  //       setOnlineCounselors(response);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading consultants:', error);
+  //   } finally {
+  //     setLoadingConsultants(false);
+  //   }
+  // };
+
+  // Load tất cả data khi component mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadDashboardData();
+      // ✅ Loại bỏ loadConversations() - sử dụng ChatContext thay thế
+      // loadConsultants(); // Removed per user request
+    }
+  }, [isAuthenticated, user]);
+
+  const {
+    conversations, // ✅ Sử dụng trực tiếp conversations từ ChatContext
+    loading: loadingConversations, // ✅ Sử dụng loading từ ChatContext
+    currentConversation,
+    messages,
+    selectConversation,
+    createConversation
+  } = useChat();
   const navigate = useNavigate();
 
-  const upcomingAppointments = getUpcomingAppointments();
+  // const upcomingAppointments = getUpcomingAppointments(); // Commented out to use API data
   const daysUntilPeriod = getDaysUntilNextPeriod();
   const daysUntilOvulation = getDaysUntilOvulation();
   const inFertilityWindow = isInFertilityWindow();
@@ -225,134 +295,11 @@ const Dashboard = () => {
     },
   ];
 
-  // Chat realtime data
-  const [activeChats, setActiveChats] = useState([
-    {
-      id: 1,
-      counselorId: 1,
-      counselorName: 'Dr. Nguyễn Thị Hoa',
-      counselorAvatar:
-        'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
-      isOnline: true,
-      lastMessage:
-        'Tôi sẽ gửi cho bạn một số lời khuyên về chu kỳ kinh nguyệt.',
-      lastMessageTime: '2 phút trước',
-      unreadCount: 2,
-      status: 'active',
-      sessionType: 'consultation',
-    },
-    {
-      id: 2,
-      counselorId: 2,
-      counselorName: 'Dr. Lê Văn Minh',
-      counselorAvatar:
-        'https://hoanghamobile.com/tin-tuc/wp-content/webp-express/webp-images/uploads/2024/06/anh-bac-si-27.jpg.webp',
-      isOnline: false,
-      lastMessage: 'Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.',
-      lastMessageTime: '1 giờ trước',
-      unreadCount: 0,
-      status: 'completed',
-      sessionType: 'qa',
-    },
-  ]);
+  // Chat realtime data - will be loaded from API
+  const [activeChats, setActiveChats] = useState([]);
+  const [chatMessages, setChatMessages] = useState({});
 
-  const [chatMessages, setChatMessages] = useState({
-    1: [
-      {
-        id: 1,
-        sender: 'counselor',
-        senderName: 'Dr. Nguyễn Thị Hoa',
-        message:
-          'Chào bạn! Tôi là Dr. Hoa. Hôm nay bạn cần tư vấn về vấn đề gì?',
-        timestamp: '14:30',
-        type: 'text',
-      },
-      {
-        id: 2,
-        sender: 'user',
-        senderName: user?.name || 'Bạn',
-        message: 'Chào bác sĩ! Tôi muốn hỏi về chu kỳ kinh nguyệt không đều.',
-        timestamp: '14:32',
-        type: 'text',
-      },
-      {
-        id: 3,
-        sender: 'counselor',
-        senderName: 'Dr. Nguyễn Thị Hoa',
-        message:
-          'Chu kỳ không đều có thể do nhiều nguyên nhân. Bạn có thể mô tả chi tiết hơn về tình trạng của mình không?',
-        timestamp: '14:33',
-        type: 'text',
-      },
-      {
-        id: 4,
-        sender: 'user',
-        senderName: user?.name || 'Bạn',
-        message:
-          'Chu kỳ của tôi thường 35-40 ngày, có khi lên đến 45 ngày. Điều này có bình thường không ạ?',
-        timestamp: '14:35',
-        type: 'text',
-      },
-      {
-        id: 5,
-        sender: 'counselor',
-        senderName: 'Dr. Nguyễn Thị Hoa',
-        message: 'Tôi sẽ gửi cho bạn một số lời khuyên về chu kỳ kinh nguyệt.',
-        timestamp: '14:36',
-        type: 'text',
-      },
-    ],
-    2: [
-      {
-        id: 1,
-        sender: 'user',
-        senderName: user?.name || 'Bạn',
-        message: 'Thuốc tránh thai có ảnh hưởng đến chu kỳ không?',
-        timestamp: '13:15',
-        type: 'text',
-      },
-      {
-        id: 2,
-        sender: 'counselor',
-        senderName: 'Dr. Lê Văn Minh',
-        message:
-          'Thuốc tránh thai có thể ảnh hưởng đến chu kỳ kinh nguyệt. Tùy thuộc vào loại thuốc và cơ địa của từng người.',
-        timestamp: '13:20',
-        type: 'text',
-      },
-      {
-        id: 3,
-        sender: 'counselor',
-        senderName: 'Dr. Lê Văn Minh',
-        message: 'Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.',
-        timestamp: '13:25',
-        type: 'text',
-      },
-    ],
-  });
 
-  const onlineCounselors = [
-    {
-      id: 1,
-      name: 'Dr. Nguyễn Thị Hoa',
-      specialty: 'Sản phụ khoa',
-      avatar:
-        'https://www.hoilhpn.org.vn/documents/20182/3458479/28_Feb_2022_115842_GMTbsi_thuhien.jpg/c04e15ea-fbe4-415f-bacc-4e5d4cc0204d',
-      isOnline: true,
-      status: 'Có thể tư vấn',
-      responseTime: '~ 2 phút',
-    },
-    {
-      id: 3,
-      name: 'Dr. Đỗ Phạm Nguyệt Thanh',
-      specialty: 'Nội tiết',
-      avatar:
-        'https://www.hoilhpn.org.vn/documents/20182/3653964/5_May_2022_100351_GMTbs_dophamnguyetthanh.jpg/a744c0f6-07dd-457c-9075-3ec3ff26b384',
-      isOnline: true,
-      status: 'Có thể tư vấn',
-      responseTime: '~ 5 phút',
-    },
-  ];
 
   const handleLogout = () => {
     logout();
@@ -373,91 +320,43 @@ const Dashboard = () => {
     setIsMenuOpen(false);
   };
 
-  // Chat handlers
-  const handleOpenChat = chatId => {
-    setActiveChatId(chatId);
-    setShowChatWindow(true);
+
+
+  const handleStartNewChat = async (counselorId) => {
+    try {
+      // Forward đến trang chat để bắt đầu cuộc trò chuyện mới
+      navigate('/chat');
+    } catch (error) {
+      console.error('Error starting new chat:', error);
+    }
   };
 
-  const handleCloseChat = () => {
-    setShowChatWindow(false);
-    setActiveChatId(null);
+  const handleContinueChat = () => {
+    // Forward đến trang chat để tiếp tục cuộc trò chuyện
+    navigate('/chat');
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !activeChatId) return;
-
-    const currentTime = new Date().toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    const newMsg = {
-      id: chatMessages[activeChatId].length + 1,
-      sender: 'user',
-      senderName: user?.name || 'Bạn',
-      message: newMessage.trim(),
-      timestamp: currentTime,
-      type: 'text',
-    };
-
-    setChatMessages(prev => ({
-      ...prev,
-      [activeChatId]: [...prev[activeChatId], newMsg],
-    }));
-
-    // Update active chat last message
-    setActiveChats(prev =>
-      prev.map(chat =>
-        chat.id === activeChatId
-          ? {
-              ...chat,
-              lastMessage: newMessage.trim(),
-              lastMessageTime: 'Vừa xong',
-            }
-          : chat
-      )
-    );
-
-    setNewMessage('');
+  const handleSelectConversation = async (conversation) => {
+    await selectConversation(conversation);
+    setSelectedConversation(conversation);
+    setShowRealtimeChat(true);
   };
 
-  const handleStartNewChat = counselorId => {
-    const counselor = onlineCounselors.find(c => c.id === counselorId);
-    if (!counselor) return;
+  const handleBackToChatList = () => {
+    setSelectedConversation(null);
+    setShowRealtimeChat(false);
+  };
 
-    const newChat = {
-      id: Date.now(), // Simple ID generation
-      counselorId: counselor.id,
-      counselorName: counselor.name,
-      counselorAvatar: counselor.avatar,
-      isOnline: true,
-      lastMessage: 'Cuộc trò chuyện mới bắt đầu',
-      lastMessageTime: 'Vừa xong',
-      unreadCount: 0,
-      status: 'active',
-      sessionType: 'consultation',
-    };
-
-    setActiveChats(prev => [newChat, ...prev]);
-    setChatMessages(prev => ({
-      ...prev,
-      [newChat.id]: [
-        {
-          id: 1,
-          sender: 'counselor',
-          senderName: counselor.name,
-          message: `Chào bạn! Tôi là ${counselor.name}. Tôi có thể giúp gì cho bạn hôm nay?`,
-          timestamp: new Date().toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-          type: 'text',
-        },
-      ],
-    }));
-
-    handleOpenChat(newChat.id);
+  const handleMarkAllNotificationsAsRead = async () => {
+    try {
+      await DashboardService.markAllNotificationsAsRead();
+      // Reload notifications
+      const updatedNotifications = await DashboardService.getNotifications();
+      // Update notifications state
+      // Note: You might want to add a notifications state to store API data
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
   const quickActions = [
@@ -541,7 +440,6 @@ const Dashboard = () => {
       icon: MessageCircle,
       color: '#568392',
       bgColor: 'rgba(86, 131, 146, 0.1)',
-      trend: '+2 từ tháng trước',
     },
     {
       title: 'Xét nghiệm STIs',
@@ -550,7 +448,6 @@ const Dashboard = () => {
       icon: TestTube,
       color: '#22c55e',
       bgColor: 'rgba(34, 197, 94, 0.1)',
-      trend: '+1 từ tháng trước',
     },
     {
       title: 'Câu hỏi đã hỏi',
@@ -559,7 +456,6 @@ const Dashboard = () => {
       icon: HelpCircle,
       color: '#a855f7',
       bgColor: 'rgba(168, 85, 247, 0.1)',
-      trend: '+3 từ tuần trước',
     },
     {
       title: 'Thông báo mới',
@@ -568,7 +464,6 @@ const Dashboard = () => {
       icon: Bell,
       color: '#f59e0b',
       bgColor: 'rgba(245, 158, 11, 0.1)',
-      trend: 'Hôm nay',
     },
   ];
 
@@ -594,6 +489,14 @@ const Dashboard = () => {
       description: 'Đặt lịch và xem kết quả xét nghiệm an toàn, bảo mật',
       link: '/xet-nghiem-sti',
       requireAuth: true,
+    },
+    {
+      icon: CheckCircle,
+      title: 'Xác nhận lịch hẹn',
+      description: 'Xem và xác nhận các lịch hẹn được tạo bởi tư vấn viên',
+      link: '/booking-confirmation',
+      requireAuth: true,
+      badge: pendingBookingsCount > 0 ? pendingBookingsCount.toString() : null,
     },
     {
       icon: HelpCircle,
@@ -711,17 +614,6 @@ const Dashboard = () => {
                 }}
               >
                 Chat
-              </button>
-              <button
-                onClick={() => handleSmoothScroll('dashboard-history')}
-                className={styles.navLink}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                Lịch sử
               </button>
               <button
                 onClick={() => handleSmoothScroll('dashboard-contact')}
@@ -881,7 +773,25 @@ const Dashboard = () => {
             <div className="profile-summary-card">
               <div className="profile-info">
                 <div className="profile-avatar">
-                  <User size={32} />
+                  {user?.avatarUrl ? (
+                    <>
+                      <img
+                        src={user.avatarUrl}
+                        alt="Avatar"
+                        className="profile-avatar-img"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <User
+                        size={32}
+                        style={{ display: 'none' }}
+                      />
+                    </>
+                  ) : (
+                    <User size={32} />
+                  )}
                 </div>
                 <div className="profile-details">
                   <h3>{user?.name || 'Người dùng'}</h3>
@@ -928,7 +838,6 @@ const Dashboard = () => {
                         {stat.value}
                       </p>
                       <p className="health-stat-label">{stat.label}</p>
-                      <span className="health-stat-trend">{stat.trend}</span>
                     </div>
                     <div
                       className="health-stat-icon"
@@ -1020,10 +929,13 @@ const Dashboard = () => {
                       <div key={appointment.id} className="appointment-item">
                         <div className="appointment-info">
                           <p className="appointment-doctor">
-                            Dr. {appointment.counselorName}
+                            {appointment.type === 'CONSULTATION' ? `Dr. ${appointment.consultantName}` : appointment.serviceName}
                           </p>
                           <p className="appointment-time">
-                            {appointment.date} lúc {appointment.time}
+                            {new Date(appointment.appointmentDate).toLocaleDateString('vi-VN')} lúc {new Date(appointment.appointmentDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="appointment-description">
+                            {appointment.description}
                           </p>
                         </div>
                         <span className="appointment-status">
@@ -1082,11 +994,11 @@ const Dashboard = () => {
                     Tất cả ({notifications.length})
                   </button>
                   <button className="filter-btn">
-                    Chưa đọc ({notifications.filter(n => !n.read).length})
+                    Chưa đọc ({notifications.filter(n => !n.isRead).length})
                   </button>
                   <button className="filter-btn">Quan trọng</button>
                 </div>
-                <button className="mark-all-read-btn">
+                <button className="mark-all-read-btn" onClick={handleMarkAllNotificationsAsRead}>
                   <CheckCircle size={16} />
                   Đánh dấu đã đọc tất cả
                 </button>
@@ -1097,7 +1009,7 @@ const Dashboard = () => {
                   <div
                     key={notification.id}
                     className={`notification-item ${
-                      !notification.read ? 'unread' : ''
+                      !notification.isRead ? 'unread' : ''
                     }`}
                   >
                     <div
@@ -1126,7 +1038,8 @@ const Dashboard = () => {
             </div>
           </section>
 
-          {/* History & Activities */}
+          {/* History & Activities - Hidden per user request */}
+          {/*
           <section id="dashboard-history" className="history-section">
             <div className="dashboard-section-header">
               <h2>Lịch sử hoạt động</h2>
@@ -1200,6 +1113,7 @@ const Dashboard = () => {
               </div>
             </div>
           </section>
+          */}
 
           {/* Chat Realtime Section */}
           <section id="dashboard-chat" className="chat-realtime-section">
@@ -1209,194 +1123,70 @@ const Dashboard = () => {
             </div>
 
             <div className="chat-container">
-              {/* Active Chats List */}
-              <div className="chat-sidebar">
-                <div className="chat-sidebar-header">
-                  <h3>Cuộc trò chuyện</h3>
-                  <button
-                    className="new-chat-btn"
-                    onClick={() => handleSmoothScroll('online-counselors')}
-                  >
-                    <Plus size={16} />
-                    Chat mới
-                  </button>
+              {loadingConversations ? (
+                <div className="chat-placeholder">
+                  <MessageSquare size={64} />
+                  <h3>Đang tải...</h3>
+                  <p>Đang tải thông tin chat</p>
+                  <div style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    border: '2px solid #f3f3f3', 
+                    borderTop: '2px solid #568392', 
+                    borderRadius: '50%', 
+                    animation: 'spin 1s linear infinite',
+                    margin: '10px auto'
+                  }}></div>
                 </div>
-
-                <div className="active-chats-list">
-                  {activeChats.map(chat => (
-                    <div
-                      key={chat.id}
-                      className={`chat-item ${
-                        activeChatId === chat.id ? 'active' : ''
-                      }`}
-                      onClick={() => handleOpenChat(chat.id)}
-                    >
-                      <div className="chat-avatar">
-                        <img
-                          src={chat.counselorAvatar}
-                          alt={chat.counselorName}
-                        />
-                        {chat.isOnline && (
-                          <div className="online-indicator"></div>
-                        )}
-                      </div>
-                      <div className="chat-info">
-                        <h4 className="chat-name">{chat.counselorName}</h4>
-                        <p className="chat-last-message">{chat.lastMessage}</p>
-                        <span className="chat-time">
-                          {chat.lastMessageTime}
-                        </span>
-                      </div>
-                      {chat.unreadCount > 0 && (
-                        <div className="chat-unread-badge">
-                          {chat.unreadCount}
+              ) : conversations.length > 0 ? (
+                // Có conversation - hiển thị khung chat và nút tiếp tục
+                <div className="chat-active">
+                  <div className="chat-preview">
+                    <MessageSquare size={48} />
+                    <div className="chat-info">
+                      <h3>Cuộc trò chuyện hiện tại</h3>
+                      <p>Bạn có {conversations.length} cuộc trò chuyện đang hoạt động</p>
+                      {conversations[0] && (
+                        <div className="last-message">
+                          <span>Tin nhắn cuối: {conversations[0].lastMessage || 'Chưa có tin nhắn'}</span>
                         </div>
                       )}
-                      <div className={`chat-status ${chat.status}`}>
-                        {chat.status === 'active' && (
-                          <Circle size={8} className="status-dot" />
-                        )}
-                      </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-
-              {/* Chat Window */}
-              <div className="chat-main">
-                {activeChatId ? (
-                  <div className="chat-window">
-                    <div className="chat-header">
-                      <div className="chat-header-info">
-                        <img
-                          src={
-                            activeChats.find(c => c.id === activeChatId)
-                              ?.counselorAvatar
-                          }
-                          alt="Avatar"
-                          className="chat-header-avatar"
-                        />
-                        <div>
-                          <h4>
-                            {
-                              activeChats.find(c => c.id === activeChatId)
-                                ?.counselorName
-                            }
-                          </h4>
-                          <span className="chat-header-status">
-                            {activeChats.find(c => c.id === activeChatId)
-                              ?.isOnline
-                              ? 'Đang trực tuyến'
-                              : 'Ngoại tuyến'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="chat-header-actions">
-                        <button className="chat-action-btn">
-                          <Video size={18} />
-                        </button>
-                        <button className="chat-action-btn">
-                          <Phone size={18} />
-                        </button>
-                        <button
-                          className="chat-action-btn"
-                          onClick={handleCloseChat}
-                        >
-                          <Minimize2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="chat-messages">
-                      {chatMessages[activeChatId]?.map(message => (
-                        <div
-                          key={message.id}
-                          className={`message ${
-                            message.sender === 'user'
-                              ? 'user-message'
-                              : 'counselor-message'
-                          }`}
-                        >
-                          <div className="message-content">
-                            <p>{message.message}</p>
-                            <span className="message-time">
-                              {message.timestamp}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="chat-input">
-                      <div className="chat-input-actions">
-                        <button className="input-action-btn">
-                          <Paperclip size={18} />
-                        </button>
-                        <button className="input-action-btn">
-                          <Smile size={18} />
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Nhập tin nhắn..."
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        onKeyPress={e =>
-                          e.key === 'Enter' && handleSendMessage()
-                        }
-                        className="message-input"
-                      />
-                      <button
-                        className="send-message-btn"
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim()}
-                      >
-                        <Send size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="chat-placeholder">
-                    <MessageSquare size={64} />
-                    <h3>Chọn cuộc trò chuyện để bắt đầu</h3>
-                    <p>
-                      Chọn một tư vấn viên từ danh sách bên trái để bắt đầu chat
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Online Counselors */}
-            <div id="online-counselors" className="online-counselors-section">
-              <h3>Tư vấn viên đang trực tuyến</h3>
-              <div className="online-counselors-grid">
-                {onlineCounselors.map(counselor => (
-                  <div key={counselor.id} className="counselor-card">
-                    <div className="counselor-avatar">
-                      <img src={counselor.avatar} alt={counselor.name} />
-                      <div className="online-indicator"></div>
-                    </div>
-                    <div className="counselor-info">
-                      <h4>{counselor.name}</h4>
-                      <p>{counselor.specialty}</p>
-                      <span className="counselor-status">
-                        {counselor.status}
-                      </span>
-                      <span className="response-time">
-                        {counselor.responseTime}
-                      </span>
-                    </div>
-                    <button
-                      className="start-chat-btn"
-                      onClick={() => handleStartNewChat(counselor.id)}
+              ) : (
+                // Không có conversation - hiển thị nút bắt đầu mới
+                <div className="chat-placeholder">
+                  <MessageSquare size={64} />
+                  <h3>Bắt đầu cuộc trò chuyện</h3>
+                  <p>
+                    Bạn chưa có cuộc trò chuyện nào. Hãy bắt đầu chat với tư vấn viên ngay!
+                  </p>
+                </div>
+              )}
+              
+              {/* Nút chat bên phải */}
+              {!loadingConversations && (
+                <div className="chat-action-button">
+                  {conversations.length > 0 ? (
+                    <button 
+                      className="continue-chat-btn"
+                      onClick={handleContinueChat}
                     >
                       <MessageCircle size={16} />
-                      Bắt đầu chat
+                      Tiếp tục trò chuyện
                     </button>
-                  </div>
-                ))}
-              </div>
+                  ) : (
+                    <button 
+                      className="start-new-chat-btn"
+                      onClick={() => navigate('/chat')}
+                    >
+                      <Plus size={16} />
+                      Bắt đầu cuộc trò chuyện
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
@@ -1466,6 +1256,11 @@ const Dashboard = () => {
                 >
                   <div className={styles.serviceIcon}>
                     <service.icon size={32} />
+                    {service.badge && (
+                      <span className={styles.serviceBadge}>
+                        {service.badge}
+                      </span>
+                    )}
                   </div>
                   <h3>{service.title}</h3>
                   <p>{service.description}</p>

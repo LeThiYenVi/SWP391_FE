@@ -25,6 +25,13 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // ✅ Chỉ cache GET requests và tránh API calls khi BE tắt
+  if (event.request.method !== 'GET' ||
+      event.request.url.includes('/api/') ||
+      event.request.url.includes('/ws/')) {
+    return; // Không cache API calls hoặc WebSocket
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -32,7 +39,7 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
-        
+
         return fetch(event.request).then((response) => {
           // Check if we received a valid response
           if (!response || response.status !== 200 || response.type !== 'basic') {
@@ -45,16 +52,25 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
+            })
+            .catch((error) => {
+              console.error('Failed to cache response:', error);
             });
 
           return response;
         });
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Fetch failed:', error);
         // Return offline page for HTML requests
         if (event.request.destination === 'document') {
           return caches.match('/offline.html');
         }
+        // ✅ Return a proper Response object for failed requests
+        return new Response('Network error', {
+          status: 408,
+          statusText: 'Request Timeout'
+        });
       })
   );
 });

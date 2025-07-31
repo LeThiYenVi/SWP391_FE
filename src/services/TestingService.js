@@ -1,47 +1,28 @@
-import instance from "./customize-axios";
+﻿import instance from "./customize-axios";
 
-// =============Testing Services APIs============
 const getTestingServicesAPI = async () => {
   try {
     const response = await instance.get('/api/services/testing-services');
-    console.log('Get testing services success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Get testing services error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getTestingServiceByIdAPI = async (serviceId) => {
+const getTestingServiceByIdAPI = async (id) => {
   try {
-    const response = await instance.get(`/api/services/testing-services/${serviceId}`);
-    console.log('Get testing service by ID success:', response.data);
+    const response = await instance.get(`/api/services/testing-services/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Get testing service by ID error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getTestingServiceBookingResultsAPI = async (bookingId) => {
-  try {
-    const response = await instance.get(`/api/services/testing-services/bookings/${bookingId}/results`);
-    console.log('Get testing service booking results success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get testing service booking results error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// =============Booking APIs============
 const createBookingAPI = async (bookingData) => {
   try {
     const response = await instance.post('/api/bookings', bookingData);
-    console.log('Create booking success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Create booking error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -49,150 +30,180 @@ const createBookingAPI = async (bookingData) => {
 const getMyBookingsAPI = async () => {
   try {
     const response = await instance.get('/api/bookings/my-bookings');
-    console.log('Get my bookings success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Get my bookings error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getBookingByIdAPI = async (bookingId) => {
+const getBookingByIdAPI = async (id) => {
   try {
-    const response = await instance.get(`/api/bookings/${bookingId}/my-booking`);
-    console.log('Get booking by ID success:', response.data);
+    const response = await instance.get(`/api/bookings/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Get booking by ID error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const cancelBookingAPI = async (bookingId) => {
+const cancelBookingAPI = async (id) => {
   try {
-    const response = await instance.patch(`/api/bookings/${bookingId}/cancel`);
-    console.log('Cancel booking success:', response.data);
+    const response = await instance.put(`/api/bookings/${id}/cancel`);
     return response.data;
   } catch (error) {
-    console.error('Cancel booking error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-// =============Admin Booking APIs (for admin/staff)============
 const getAllBookingsForStaffAPI = async () => {
   try {
-    const response = await instance.get('/api/bookings/all');
-    console.log('Get all bookings for staff success:', response.data);
+    const response = await instance.get('/api/admin/bookings');
     return response.data;
   } catch (error) {
-    console.error('Get all bookings for staff error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getBookingByIdForAdminAPI = async (bookingId) => {
+const updateBookingStatusAPI = async (id, status) => {
   try {
-    const response = await instance.get(`/api/bookings/${bookingId}/admin`);
-    console.log('Get booking by ID for admin success:', response.data);
+    const response = await instance.put(`/api/admin/bookings/${id}/status`, { status });
     return response.data;
   } catch (error) {
-    console.error('Get booking by ID for admin error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const updateBookingStatusAPI = async (bookingId, statusData) => {
-  try {
-    const response = await instance.patch(`/api/bookings/${bookingId}/status`, statusData);
-    console.log('Update booking status success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Update booking status error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// =============Booking Tracking APIs============
 const markSampleCollectedAPI = async (bookingId, trackingData) => {
   try {
     const response = await instance.post(`/api/booking/${bookingId}/sample-collected`, trackingData);
-    console.log('Mark sample collected success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Mark sample collected error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const markResultsReadyAPI = async (bookingId, trackingData) => {
+const uploadTestResultAPI = async (bookingId, resultData) => {
   try {
-    const response = await instance.post(`/api/booking/${bookingId}/results-ready`, trackingData);
-    console.log('Mark results ready success:', response.data);
+    const response = await instance.post(`/api/services/testing-services/bookings/${bookingId}/results`, resultData);
     return response.data;
   } catch (error) {
-    console.error('Mark results ready error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const markBookingCompletedAPI = async (bookingId, trackingData) => {
+const getTestResultAPI = async (bookingId) => {
   try {
-    const response = await instance.post(`/api/booking/${bookingId}/completed`, trackingData);
-    console.log('Mark booking completed success:', response.data);
+    const response = await instance.get(`/api/services/testing-services/bookings/${bookingId}/results`);
     return response.data;
   } catch (error) {
-    console.error('Mark booking completed error:', error.response?.data || error.message);
     throw error;
   }
 };
 
-const getBookingTrackingStatusAPI = async (bookingId) => {
-  try {
-    const response = await instance.get('/api/booking-tracking/status', {
-      params: { bookingId }
-    });
-    console.log('Get booking tracking status success:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('Get booking tracking status error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// =============Admin Testing Service APIs============
 const createTestingServiceAPI = async (serviceData) => {
   try {
     const response = await instance.post('/api/admin/testing-services', serviceData);
-    console.log('Create testing service success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Create testing service error:', error.response?.data || error.message);
     throw error;
   }
 };
 
+const updateTestingServiceAPI = async (id, serviceData) => {
+  try {
+    const response = await instance.put(`/api/admin/testing-services/${id}`, serviceData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const deleteTestingServiceAPI = async (id) => {
+  try {
+    const response = await instance.delete(`/api/admin/testing-services/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getStaffDashboardStatsAPI = async () => {
+  try {
+    const response = await instance.get('/api/staff/dashboard/stats');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getBookingsByDateRangeAPI = async (startDate, endDate) => {
+  try {
+    const response = await instance.get('/api/staff/bookings/date-range', {
+      params: { startDate, endDate }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const updateTestResultAPI = async (bookingId, resultData) => {
+  try {
+    const response = await instance.put(`/api/staff/bookings/${bookingId}/result`, resultData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+class TestingService {
+  async getTestingServices() {
+    try {
+      const data = await getTestingServicesAPI();
+      return { success: true, data: data };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async createBooking(bookingData) {
+    try {
+      const data = await createBookingAPI(bookingData);
+      return { success: true, data: data };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async getMyBookings() {
+    try {
+      const data = await getMyBookingsAPI();
+      return { success: true, data: data };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+}
+
+const testingService = new TestingService();
+
+export default testingService;
+
 export {
-  // Testing Services APIs
   getTestingServicesAPI,
   getTestingServiceByIdAPI,
-  getTestingServiceBookingResultsAPI,
-  
-  // Booking APIs
   createBookingAPI,
   getMyBookingsAPI,
   getBookingByIdAPI,
   cancelBookingAPI,
-  
-  // Admin Booking APIs
   getAllBookingsForStaffAPI,
-  getBookingByIdForAdminAPI,
   updateBookingStatusAPI,
-  
-  // Booking Tracking APIs
   markSampleCollectedAPI,
-  markResultsReadyAPI,
-  markBookingCompletedAPI,
-  getBookingTrackingStatusAPI,
-  createTestingServiceAPI // Thêm export hàm mới
-}; 
+  uploadTestResultAPI,
+  getTestResultAPI,
+  createTestingServiceAPI,
+  updateTestingServiceAPI,
+  deleteTestingServiceAPI,
+  getStaffDashboardStatsAPI,
+  getBookingsByDateRangeAPI,
+  updateTestResultAPI
+};

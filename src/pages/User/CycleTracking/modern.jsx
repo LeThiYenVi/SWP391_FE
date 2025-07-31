@@ -1,183 +1,274 @@
 import React, { useState, useEffect } from 'react';
-import { message } from 'antd';
+import { message, Modal, Select, Input, Button } from 'antd';
 import {
   Calendar,
-  Plus,
-  Smile,
-  Frown,
-  Meh,
   Heart,
   Droplets,
+  Info,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  User,
+  AlertCircle
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { cycleService } from '../../../services/MenstrualCycleService';
+import { useNavigate } from 'react-router-dom';
+import MenstrualCycleService from '../../../services/MenstrualCycleService';
 import './modern.css';
 
-// Extend dayjs with plugins
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isSameOrAfter);
+const { TextArea } = Input;
+const { Option } = Select;
+
+// Predefined options for symptoms and moods
+const SYMPTOM_OPTIONS = [
+  { value: 'CRAMPS', label: 'Đau bụng kinh' },
+  { value: 'HEADACHE', label: 'Đau đầu' },
+  { value: 'BACK_PAIN', label: 'Đau lưng' },
+  { value: 'BREAST_TENDERNESS', label: 'Đau ngực' },
+  { value: 'BLOATING', label: 'Đầy hơi' },
+  { value: 'FATIGUE', label: 'Mệt mỏi' },
+  { value: 'MOOD_SWINGS', label: 'Thay đổi tâm trạng' },
+  { value: 'FOOD_CRAVINGS', label: 'Thèm ăn' },
+  { value: 'ACNE', label: 'Mụn' },
+  { value: 'OTHER', label: 'Khác' }
+];
+
+const MOOD_OPTIONS = [
+  { value: 'HAPPY', label: 'Vui vẻ' },
+  { value: 'SAD', label: 'Buồn' },
+  { value: 'IRRITABLE', label: 'Cáu gắt' },
+  { value: 'ANXIOUS', label: 'Lo lắng' },
+  { value: 'CALM', label: 'Bình tĩnh' },
+  { value: 'ENERGETIC', label: 'Năng lượng' },
+  { value: 'TIRED', label: 'Mệt mỏi' },
+  { value: 'STRESSED', label: 'Căng thẳng' },
+  { value: 'EMOTIONAL', label: 'Xúc động' },
+  { value: 'NORMAL', label: 'Bình thường' },
+  { value: 'OTHER', label: 'Khác' }
+];
+
+const INTENSITY_OPTIONS = [
+  { value: 'SPOTTING', label: 'Rất nhẹ' },
+  { value: 'LIGHT', label: 'Nhẹ' },
+  { value: 'MEDIUM', label: 'Trung bình' },
+  { value: 'HEAVY', label: 'Nặng' },
+  { value: 'VERY_HEAVY', label: 'Rất nặng' }
+];
 
 const ModernCycleTracking = () => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(dayjs());
-  const [selectedDate, setSelectedDate] = useState(dayjs());
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('period');
+  const [cycleData, setCycleData] = useState(null);
+  const [phases, setPhases] = useState({
+    period: [],
+    ovulation: '',
+    fertile: [],
+    predictedPeriod: []
+  });
   const [loading, setLoading] = useState(true);
-  const [calendarData, setCalendarData] = useState(null);
-  const [currentCycle, setCurrentCycle] = useState(null);
+  const [genderError, setGenderError] = useState(false);
+  
+  // Modal states
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [dayLog, setDayLog] = useState({
+    isPeriodDay: false,
+    intensity: '',
+    symptoms: '',
+    mood: '',
+    notes: ''
+  });
+  const [modalLoading, setModalLoading] = useState(false);
 
-  // Load data when component mounts or date changes
+  // Quick log states
+  const [quickLogModal, setQuickLogModal] = useState(false);
+  const [quickLogType, setQuickLogType] = useState('');
+  const [quickLogContent, setQuickLogContent] = useState('');
+  const [cycleSettings, setCycleSettings] = useState({
+    cycleLength: 28,
+    periodDuration: 7
+  });
+  const [updatingSettings, setUpdatingSettings] = useState(false);
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
+    console.log('useEffect 1: Initial fetch');
+    fetchCycleData();
+  }, []);
 
-        // Check if user is authenticated
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          console.warn('No authentication token found');
-          message.warning('Vui lòng đăng nhập để xem dữ liệu chu kỳ');
-          setLoading(false);
-          return;
-        }
-
-        console.log('Loading cycle data with token:', token ? 'Present' : 'Missing');
-
-        // 1. Load calendar data for current month
-        const year = currentDate.year();
-        const month = currentDate.month() + 1;
-
-        try {
-          const calendarResponse = await cycleService.getCalendarData(year, month);
-          console.log('Calendar data:', calendarResponse.data);
-          setCalendarData(calendarResponse.data || { logs: [], fertilityWindow: null, periodPrediction: null });
-        } catch (calendarError) {
-          console.error('Error loading calendar:', calendarError);
-          setCalendarData({ logs: [], fertilityWindow: null, periodPrediction: null });
-          if (calendarError.response?.status === 401) {
-            message.error('Phiên đăng nhập đã hết hạn');
-          }
-        }
-
-        // 2. Load dashboard data
-        try {
-          const dashboardResponse = await cycleService.getDashboard();
-          console.log('Dashboard data:', dashboardResponse.data);
-          setCurrentCycle(dashboardResponse.data || {
-            cycleAnalytics: { averageCycleLength: 28, averagePeriodDuration: 5, regularityStatus: 'REGULAR' },
-            recentLogs: []
-          });
-        } catch (dashboardError) {
-          console.error('Error loading dashboard:', dashboardError);
-          setCurrentCycle({
-            cycleAnalytics: { averageCycleLength: 28, averagePeriodDuration: 5, regularityStatus: 'REGULAR' },
-            recentLogs: []
-          });
-          if (dashboardError.response?.status === 401) {
-            message.error('Phiên đăng nhập đã hết hạn');
-          }
-        }
-
-      } catch (error) {
-        console.error('Error loading data:', error);
-        message.error('Không thể tải dữ liệu chu kỳ');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [currentDate]);
-
-
-
-  // Mock data for cycle tracking (fallback)
-  const cycleData = {
-    nextPeriod: calendarData?.periodPrediction?.nextPeriodDate ?
-      dayjs(calendarData.periodPrediction.nextPeriodDate).diff(dayjs(), 'day') : 27,
-    ovulation: calendarData?.fertilityWindow?.ovulationDate ?
-      dayjs(calendarData.fertilityWindow.ovulationDate).diff(dayjs(), 'day') : 13,
-    cycleLength: currentCycle?.cycleAnalytics?.averageCycleLength || 28,
-    periodLength: currentCycle?.cycleAnalytics?.averagePeriodDuration || 5
-  };
-
-  // Calculate cycle phases for calendar
-  const calculateCyclePhases = () => {
-    const phases = {
-      period: [],
-      fertile: [],
-      ovulation: null,
-      predictedPeriod: []
-    };
-
-    if (!calendarData) {
-      // Fallback mock data
-      const periodStart = dayjs().subtract(15, 'day');
-      for (let i = 0; i < 5; i++) {
-        phases.period.push(periodStart.add(i, 'day').format('YYYY-MM-DD'));
-      }
-      const ovulationDay = dayjs().add(13, 'day');
-      phases.ovulation = ovulationDay.format('YYYY-MM-DD');
-      for (let i = -5; i <= 0; i++) {
-        phases.fertile.push(ovulationDay.add(i, 'day').format('YYYY-MM-DD'));
-      }
-      const nextPeriodStart = dayjs().add(27, 'day');
-      for (let i = 0; i < 5; i++) {
-        phases.predictedPeriod.push(nextPeriodStart.add(i, 'day').format('YYYY-MM-DD'));
-      }
-      return phases;
-    }
-
-    // Get actual period days from logs
-    if (calendarData.logs) {
-      calendarData.logs.forEach(log => {
-        if (log.isActualPeriod) {
-          phases.period.push(dayjs(log.logDate).format('YYYY-MM-DD'));
-        }
+  useEffect(() => {
+    if (cycleData) {
+      setCycleSettings({
+        cycleLength: cycleData.cycleLength || 28,
+        periodDuration: cycleData.periodDuration || 7
       });
     }
+  }, [cycleData]);
 
-    // Get fertility window from API
-    if (calendarData.fertilityWindow) {
-      const { fertileWindowStart, fertileWindowEnd, ovulationDate } = calendarData.fertilityWindow;
+  useEffect(() => {
+    if (cycleData) {
+      fetchPhasesForCurrentMonth();
+    }
+  }, [currentDate, cycleData]);
 
-      if (ovulationDate) {
-        phases.ovulation = dayjs(ovulationDate).format('YYYY-MM-DD');
+  const fetchPhasesForCurrentMonth = async () => {
+    try {
+      const year = currentDate.year();
+      const month = currentDate.month() + 1;
+      const response = await MenstrualCycleService.getDetailedPhasesForMonth(year, month);
+      if (response && typeof response === 'object') {
+        const phasesData = response;
+        const periodDays = [];
+        const ovulationDays = [];
+        const fertileDays = [];
+        const predictedDays = [];
+        const phaseInfo = {};
+
+        Object.entries(phasesData).forEach(([dateStr, phaseDetail]) => {
+          const phase = phaseDetail.phase;
+          switch (phase) {
+            case 'PERIOD':
+              periodDays.push(dateStr);
+              break;
+            case 'OVULATION':
+              ovulationDays.push(dateStr);
+              break;
+            case 'FERTILE':
+              fertileDays.push(dateStr);
+              break;
+            case 'PREDICTED':
+              predictedDays.push(dateStr);
+              break;
+            case 'NORMAL':
+              break;
+            default:
+              break;
+          }
+          phaseInfo[dateStr] = phaseDetail;
+        });
+
+        const newPhases = {
+          period: periodDays,
+          ovulation: ovulationDays.length > 0 ? ovulationDays[0] : '',
+          fertile: fertileDays,
+          predictedPeriod: predictedDays,
+          phaseInfo: phaseInfo
+        };
+        setPhases(newPhases);
       }
+    } catch (error) {
+      try {
+        const year = currentDate.year();
+        const month = currentDate.month() + 1;
+        const response = await MenstrualCycleService.getPhasesForMonth(year, month);
+        if (response && typeof response === 'object') {
+          const phasesData = response;
+          const periodDays = [];
+          const ovulationDays = [];
+          const fertileDays = [];
+          const predictedDays = [];
 
-      if (fertileWindowStart && fertileWindowEnd) {
-        let current = dayjs(fertileWindowStart);
-        const end = dayjs(fertileWindowEnd);
+          Object.entries(phasesData).forEach(([dateStr, phase]) => {
+            switch (phase) {
+              case 'PERIOD':
+                periodDays.push(dateStr);
+                break;
+              case 'OVULATION':
+                ovulationDays.push(dateStr);
+                break;
+              case 'FERTILE':
+                fertileDays.push(dateStr);
+                break;
+              case 'PREDICTED':
+                predictedDays.push(dateStr);
+                break;
+              case 'NORMAL':
+                break;
+              default:
+                break;
+            }
+          });
 
-        while (current.isSameOrBefore(end)) {
-          phases.fertile.push(current.format('YYYY-MM-DD'));
-          current = current.add(1, 'day');
+          const newPhases = {
+            period: periodDays,
+            ovulation: ovulationDays.length > 0 ? ovulationDays[0] : '',
+            fertile: fertileDays,
+            predictedPeriod: predictedDays
+          };
+          setPhases(newPhases);
+        }
+      } catch (fallbackError) {
+        if (cycleData) {
+          calculatePhases(cycleData);
         }
       }
     }
+  };
 
-    // Get predicted period from API
-    if (calendarData.periodPrediction) {
-      const { nextPeriodDate, predictedPeriodDuration } = calendarData.periodPrediction;
+  const fetchCycleData = async () => {
+    try {
+      setLoading(true);
+      setGenderError(false);
+      const response = await MenstrualCycleService.getCurrentMenstrualCycle();
 
-      if (nextPeriodDate) {
-        const duration = predictedPeriodDuration || 5;
-        for (let i = 0; i < duration; i++) {
-          phases.predictedPeriod.push(dayjs(nextPeriodDate).add(i, 'day').format('YYYY-MM-DD'));
-        }
+      if (response && response.startDate) {
+        setCycleData(response);
+        await fetchPhasesForCurrentMonth();
+      } else {
+        message.warning('Chưa có dữ liệu chu kỳ');
       }
+    } catch (error) {
+      // Check if the error response contains the gender validation message
+      if (error.response?.data?.message &&
+          error.response.data.message.includes('chưa chọn giới tính')) {
+        setGenderError(true);
+      } else {
+        message.error('Lỗi khi tải dữ liệu chu kỳ');
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return phases;
+  const handleGoToProfile = () => {
+    navigate('/profile');
   };
 
 
 
-  // Generate calendar days
+  const calculatePhases = (data) => {
+    if (!data) return;
+
+    const startDate = dayjs(data.startDate);
+    const periodDuration = data.periodDuration || 5;
+    const cycleLength = data.cycleLength || 28;
+
+    const periodDays = [];
+    for (let i = 0; i < periodDuration; i++) {
+      periodDays.push(startDate.add(i, 'day').format('YYYY-MM-DD'));
+    }
+
+    const ovulationDate = startDate.add(cycleLength - 14, 'day').format('YYYY-MM-DD');
+
+    const fertileDays = [];
+    const ovulation = dayjs(ovulationDate);
+    for (let i = -5; i <= 1; i++) {
+      fertileDays.push(ovulation.add(i, 'day').format('YYYY-MM-DD'));
+    }
+
+    const predictedPeriodDays = [];
+    const nextPeriodStart = startDate.add(cycleLength, 'day');
+    for (let i = 0; i < periodDuration; i++) {
+      predictedPeriodDays.push(nextPeriodStart.add(i, 'day').format('YYYY-MM-DD'));
+    }
+
+    setPhases({
+      period: periodDays,
+      ovulation: ovulationDate,
+      fertile: fertileDays,
+      predictedPeriod: predictedPeriodDays
+    });
+  };
+
   const generateCalendarDays = () => {
     const startOfMonth = currentDate.startOf('month');
     const endOfMonth = currentDate.endOf('month');
@@ -195,16 +286,6 @@ const ModernCycleTracking = () => {
     return days;
   };
 
-  const handleModalOk = () => {
-    console.log('Saving data...');
-    message.success('Đã lưu thông tin thành công!');
-    setShowModal(false);
-  };
-
-  // Calculate phases and calendar data
-  const phases = calculateCyclePhases();
-  const calendarDays = generateCalendarDays();
-
   const getDayClass = (day) => {
     const dayStr = day.format('YYYY-MM-DD');
     const today = dayjs().format('YYYY-MM-DD');
@@ -217,74 +298,217 @@ const ModernCycleTracking = () => {
     if (phases.fertile.includes(dayStr)) classes.push('fertile');
     if (phases.predictedPeriod.includes(dayStr)) classes.push('predicted-period');
 
+    // Debug log for specific dates
+    if (dayStr === '2025-01-15' || dayStr === '2025-01-16' || dayStr === '2025-01-17') {
+      console.log('Day class for', dayStr, ':', classes.join(' '), 'phases:', phases);
+    }
+
     return classes.join(' ');
   };
 
-  const handleStartPeriod = async () => {
+  const getDayStyle = (day) => {
+    const dayStr = day.format('YYYY-MM-DD');
+    
+    // If we have detailed phase info, use it for styling
+    if (phases.phaseInfo && phases.phaseInfo[dayStr]) {
+      const phaseDetail = phases.phaseInfo[dayStr];
+      return {
+        background: phaseDetail.color,
+        color: phaseDetail.color === '#ffffff' ? '#333' : 'white',
+        fontWeight: '600'
+      };
+    }
+    
+    return {};
+  };
+
+  const getDayTooltip = (day) => {
+    const dayStr = day.format('YYYY-MM-DD');
+    const today = dayjs().format('YYYY-MM-DD');
+
+    if (dayStr === today) {
+      return 'Hôm nay';
+    }
+
+    if (phases.period.includes(dayStr)) {
+      return '🩸 Kỳ kinh - Giai đoạn kinh nguyệt';
+    }
+
+    if (phases.ovulation === dayStr) {
+      return '⭐ Rụng trứng - Ngày có khả năng thụ thai cao nhất';
+    }
+
+    if (phases.fertile.includes(dayStr)) {
+      return '🌸 Thời kỳ màu mỡ - Có khả năng thụ thai';
+    }
+
+    if (phases.predictedPeriod.includes(dayStr)) {
+      return '📅 Kỳ kinh dự đoán - Dựa trên chu kỳ trước';
+    }
+
+    return `Ngày ${day.format('DD/MM/YYYY')}`;
+  };
+
+  const handleDayClick = async (day) => {
+    const dayStr = day.format('YYYY-MM-DD');
+    const today = dayjs().format('YYYY-MM-DD');
+    
+    // Validation: Không cho phép chọn ngày trong tương lai
+    if (dayStr > today) {
+      message.warning('Không thể ghi nhận thông tin cho ngày trong tương lai');
+      return;
+    }
+    
+    setSelectedDate(day);
+    
     try {
-      const today = dayjs().format('YYYY-MM-DD');
-
-      // Log menstrual period
-      await cycleService.logMenstrualPeriod({
-        logDate: today,
-        isActualPeriod: true,
-        flowIntensity: 'MEDIUM'
-      });
-
-      message.success('Đã bắt đầu ghi nhận kỳ kinh!');
-
-      // Reload data
-      const year = currentDate.year();
-      const month = currentDate.month() + 1;
-      const calendarResponse = await cycleService.getCalendarData(year, month);
-      if (calendarResponse.data) {
-        setCalendarData(calendarResponse.data);
+      setModalLoading(true);
+      const response = await MenstrualCycleService.getDayLog(dayStr);
+      if (response.success) {
+        setDayLog({
+          isPeriodDay: response.data.isPeriodDay || false,
+          intensity: response.data.intensity || '',
+          symptoms: response.data.symptoms || '',
+          mood: response.data.mood || '',
+          notes: response.data.notes || ''
+        });
       }
-
     } catch (error) {
-      console.error('Error starting period:', error);
-      message.error('Không thể ghi nhận kỳ kinh');
+      console.error('Error fetching day log:', error);
+      setDayLog({
+        isPeriodDay: false,
+        intensity: '',
+        symptoms: '',
+        mood: '',
+        notes: ''
+      });
+    } finally {
+      setModalLoading(false);
+      setIsModalVisible(true);
     }
   };
 
-  const handleAddSymptom = (symptom) => {
-    console.log('Adding symptom:', symptom);
-    message.success(`Đã thêm triệu chứng: ${symptom}`);
+  const handleUpdateDayLog = async () => {
+    if (!selectedDate) return;
+
+    try {
+      setModalLoading(true);
+      const logData = {
+        date: selectedDate.format('YYYY-MM-DD'),
+        ...dayLog
+      };
+
+      const response = await MenstrualCycleService.updateDayLog(logData);
+      if (response.success) {
+        message.success('Cập nhật thành công');
+        setIsModalVisible(false);
+        // Refresh cycle data if needed
+        await fetchCycleData();
+      } else {
+        message.error(response.message || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('Error updating day log:', error);
+      message.error('Lỗi khi cập nhật');
+    } finally {
+      setModalLoading(false);
+    }
   };
 
-  const handleAddMood = (mood) => {
-    console.log('Adding mood:', mood);
-    message.success(`Đã ghi nhận tâm trạng: ${mood}`);
+  const handleQuickLog = (type) => {
+    setQuickLogType(type);
+    setQuickLogContent('');
+    setQuickLogModal(true);
   };
 
-  const handleAddNote = (note) => {
-    console.log('Adding note:', note);
-    message.success('Đã thêm ghi chú!');
+  const handleSubmitQuickLog = async () => {
+    if (!quickLogContent.trim()) {
+      message.warning('Vui lòng nhập nội dung');
+      return;
+    }
+
+    try {
+      setModalLoading(true);
+      const logData = {
+        date: dayjs().format('YYYY-MM-DD'),
+        type: quickLogType,
+        content: quickLogContent
+      };
+
+      const response = await MenstrualCycleService.quickLog(logData);
+      if (response.success) {
+        message.success('Ghi nhận thành công');
+        setQuickLogModal(false);
+        setQuickLogContent('');
+        await fetchCycleData();
+      } else {
+        message.error(response.message || 'Ghi nhận thất bại');
+      }
+    } catch (error) {
+      message.error('Lỗi khi ghi nhận');
+    } finally {
+      setModalLoading(false);
+    }
   };
 
-  const symptomList = [
-    'Đau bụng', 'Đau đầu', 'Buồn nôn', 'Mệt mỏi', 'Căng thẳng',
-    'Thay đổi tâm trạng', 'Đau lưng', 'Chóng mặt', 'Khó ngủ'
-  ];
+  const handleUpdateCycleSettings = async (field, value) => {
+    const newSettings = { ...cycleSettings, [field]: parseInt(value) };
+    setCycleSettings(newSettings);
 
-  const moodList = [
-    { icon: Smile, label: 'Vui vẻ', value: 'happy' },
-    { icon: Meh, label: 'Bình thường', value: 'neutral' },
-    { icon: Frown, label: 'Buồn', value: 'sad' }
-  ];
+    try {
+      setUpdatingSettings(true);
+      const response = await MenstrualCycleService.updateCycleSettings(newSettings);
+      if (response.success) {
+        message.success('Cập nhật thiết lập thành công');
+        // Refresh cycle data to get updated calculations
+        await fetchCycleData();
+      } else {
+        message.error(response.message || 'Cập nhật thất bại');
+        // Revert to original values
+        setCycleSettings({
+          cycleLength: cycleData?.cycleLength || 28,
+          periodDuration: cycleData?.periodDuration || 7
+        });
+      }
+    } catch (error) {
+      console.error('Error updating cycle settings:', error);
+      message.error('Lỗi khi cập nhật thiết lập');
+      // Revert to original values
+      setCycleSettings({
+        cycleLength: cycleData?.cycleLength || 28,
+        periodDuration: cycleData?.periodDuration || 7
+      });
+    } finally {
+      setUpdatingSettings(false);
+    }
+  };
+
+  const calendarDays = generateCalendarDays();
 
   if (loading) {
     return (
       <div className="cycle-tracking-container">
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div>Đang tải dữ liệu chu kỳ...</div>
+        <div className="cycle-main">
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (genderError) {
+    return (
+      <div className="cycle-tracking-container">
+        <div className="gender-error-container">
+          <div>
+            <AlertCircle className="alert-icon" size={50} />
+            <h2>Bạn chưa chọn giới tính</h2>
+            <p>Vui lòng điền giới tính trong trang cá nhân để theo dõi chu kỳ sinh sản.</p>
+            <Button type="primary" onClick={handleGoToProfile}>
+              Đi đến trang cá nhân
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -299,7 +523,7 @@ const ModernCycleTracking = () => {
             <h1>Theo dõi chu kỳ</h1>
             <p>Ghi nhận và theo dõi chu kỳ sinh sản của bạn</p>
           </div>
-          <button onClick={handleStartPeriod} className="start-period-btn">
+          <button className="start-period-btn">
             Bắt đầu kỳ kinh
           </button>
         </div>
@@ -313,8 +537,14 @@ const ModernCycleTracking = () => {
             <div className="cycle-card-info">
               <p>Kỳ kinh tiếp theo</p>
               <p className="cycle-card-value">
-                {cycleData.nextPeriod} ngày
+                {cycleData ? (() => {
+                  console.log('Calculating days diff for:', cycleData.nextPredictedPeriod);
+                  const diff = dayjs(cycleData.nextPredictedPeriod).diff(dayjs(), 'day');
+                  console.log('Days diff result:', diff);
+                  return diff;
+                })() : '--'} ngày
               </p>
+              {console.log('Current cycleData in render:', cycleData)}
             </div>
           </div>
 
@@ -323,7 +553,16 @@ const ModernCycleTracking = () => {
             <div className="cycle-card-info">
               <p>Rụng trứng</p>
               <p className="cycle-card-value">
-                {cycleData.ovulation} ngày
+                {cycleData ? (() => {
+                  const daysDiff = dayjs(cycleData.ovulationDate).diff(dayjs(), 'day');
+                  if (daysDiff > 0) {
+                    return `${daysDiff} ngày nữa`;
+                  } else if (daysDiff < 0) {
+                    return `${Math.abs(daysDiff)} ngày trước`;
+                  } else {
+                    return 'Hôm nay';
+                  }
+                })() : '--'}
               </p>
             </div>
           </div>
@@ -332,24 +571,15 @@ const ModernCycleTracking = () => {
             <Droplets className="cycle-icon blue" />
             <div className="cycle-card-info">
               <p>Độ dài chu kỳ</p>
-              <p className="cycle-card-value">{cycleData.cycleLength} ngày</p>
+              <p className="cycle-card-value">{cycleData?.cycleLength || '--'} ngày</p>
             </div>
           </div>
 
           <div className="cycle-card">
-            <div className="cycle-icon pink">
-              <div
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  backgroundColor: 'currentColor',
-                }}
-              ></div>
-            </div>
+            <Info className="cycle-icon pink" />
             <div className="cycle-card-info">
               <p>Thời kỳ màu mỡ</p>
-              <p className="cycle-card-value">Không</p>
+              <p className="cycle-card-value">Có</p>
             </div>
           </div>
         </div>
@@ -359,7 +589,7 @@ const ModernCycleTracking = () => {
           <div className="calendar-section">
             <div className="calendar-header">
               <h2 className="calendar-title">
-                {currentDate.format('MMMM YYYY')}
+                Tháng {currentDate.format('M')} năm {currentDate.format('YYYY')}
               </h2>
               <div className="calendar-nav">
                 <button
@@ -391,10 +621,9 @@ const ModernCycleTracking = () => {
                 <div
                   key={day.format('YYYY-MM-DD')}
                   className={getDayClass(day)}
-                  onClick={() => {
-                    setSelectedDate(day);
-                    setShowModal(true);
-                  }}
+                  style={getDayStyle(day)}
+                  data-tooltip={getDayTooltip(day)}
+                  onClick={() => handleDayClick(day)}
                 >
                   {day.date()}
                 </div>
@@ -406,14 +635,22 @@ const ModernCycleTracking = () => {
               <div className="legend-item">
                 <div className="legend-dot period"></div>
                 <span>Kỳ kinh</span>
+                <div className="help-tooltip" data-help="Giai đoạn kinh nguyệt thực tế"></div>
+              </div>
+              <div className="legend-item">
+                <div className="legend-dot ovulation"></div>
+                <span>Rụng trứng</span>
+                <div className="help-tooltip" data-help="Ngày có khả năng thụ thai cao nhất"></div>
               </div>
               <div className="legend-item">
                 <div className="legend-dot fertile"></div>
-                <span>Rụng trứng</span>
+                <span>Thời kỳ màu mỡ</span>
+                <div className="help-tooltip" data-help="Khoảng thời gian có khả năng thụ thai"></div>
               </div>
               <div className="legend-item">
                 <div className="legend-dot predicted"></div>
-                <span>Thời kỳ màu mỡ</span>
+                <span>Kỳ kinh dự đoán</span>
+                <div className="help-tooltip" data-help="Dự đoán dựa trên chu kỳ trước"></div>
               </div>
             </div>
           </div>
@@ -422,34 +659,28 @@ const ModernCycleTracking = () => {
           <div className="sidebar-section">
             {/* Quick Actions */}
             <div className="quick-actions-card">
-              <h3 className="actions-title">Ghi nhận nhanh</h3>
+              <h3 className="actions-title">
+                Ghi nhận nhanh
+                <div className="help-tooltip" data-help="Ghi nhận nhanh các thông tin quan trọng"></div>
+              </h3>
               <div className="action-buttons">
                 <button
-                  onClick={() => {
-                    setModalType('symptom');
-                    setShowModal(true);
-                  }}
                   className="action-btn symptoms"
+                  onClick={() => handleQuickLog('SYMPTOMS')}
                 >
                   <Plus size={16} />
                   Thêm triệu chứng
                 </button>
                 <button
-                  onClick={() => {
-                    setModalType('mood');
-                    setShowModal(true);
-                  }}
                   className="action-btn mood"
+                  onClick={() => handleQuickLog('MOOD')}
                 >
                   <Plus size={16} />
                   Ghi nhận tâm trạng
                 </button>
                 <button
-                  onClick={() => {
-                    setModalType('note');
-                    setShowModal(true);
-                  }}
                   className="action-btn notes"
+                  onClick={() => handleQuickLog('NOTES')}
                 >
                   <Plus size={16} />
                   Thêm ghi chú
@@ -459,15 +690,58 @@ const ModernCycleTracking = () => {
 
             {/* Cycle Settings */}
             <div className="cycle-settings-card">
-              <h3 className="settings-title">Thiết lập chu kỳ</h3>
+              <h3 className="settings-title">
+                Thiết lập chu kỳ
+                <div className="help-tooltip" data-help="Cài đặt thông số chu kỳ"></div>
+              </h3>
               <div className="settings-row">
                 <div className="setting-item">
                   <label>Độ dài chu kỳ (ngày)</label>
-                  <input type="number" value={cycleData.cycleLength} readOnly />
+                  <input
+                    type="number"
+                    value={cycleSettings.cycleLength}
+                    onChange={(e) => handleUpdateCycleSettings('cycleLength', e.target.value)}
+                    min="20"
+                    max="40"
+                    disabled={updatingSettings}
+                  />
                 </div>
                 <div className="setting-item">
                   <label>Số ngày kinh (ngày)</label>
-                  <input type="number" value={cycleData.periodLength} readOnly />
+                  <input
+                    type="number"
+                    value={cycleSettings.periodDuration}
+                    onChange={(e) => handleUpdateCycleSettings('periodDuration', e.target.value)}
+                    min="3"
+                    max="10"
+                    disabled={updatingSettings}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cycle Information */}
+            <div className="cycle-settings-card">
+              <h3 className="settings-title">
+                Thông tin chu kỳ
+                <div className="help-tooltip" data-help="Giải thích về các giai đoạn trong chu kỳ kinh nguyệt"></div>
+              </h3>
+              <div className="cycle-info">
+                <div className="info-item">
+                  <h4>🩸 Kỳ kinh (1-7 ngày)</h4>
+                  <p>Giai đoạn kinh nguyệt thực tế, cơ thể loại bỏ lớp niêm mạc tử cung.</p>
+                </div>
+                <div className="info-item">
+                  <h4>🌸 Thời kỳ màu mỡ (5-7 ngày)</h4>
+                  <p>Khoảng thời gian có khả năng thụ thai cao, bao gồm ngày rụng trứng.</p>
+                </div>
+                <div className="info-item">
+                  <h4>⭐ Rụng trứng (1 ngày)</h4>
+                  <p>Ngày trứng được giải phóng từ buồng trứng, khả năng thụ thai cao nhất.</p>
+                </div>
+                <div className="info-item">
+                  <h4>📅 Kỳ kinh dự đoán</h4>
+                  <p>Dự đoán kỳ kinh tiếp theo dựa trên chu kỳ trước đó.</p>
                 </div>
               </div>
             </div>
@@ -475,125 +749,206 @@ const ModernCycleTracking = () => {
         </div>
       </div>
 
-      {/* Add Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">
-              {modalType === 'symptom' && 'Thêm triệu chứng'}
-              {modalType === 'mood' && 'Ghi nhận tâm trạng'}
-              {modalType === 'note' && 'Thêm ghi chú'}
-              {modalType === 'period' && `Chi tiết ngày ${selectedDate?.format('DD/MM/YYYY')}`}
-            </h3>
-
-            {modalType === 'symptom' && (
-              <div className="option-list">
-                {symptomList.map(symptom => (
-                  <button
-                    key={symptom}
-                    onClick={() => {
-                      handleAddSymptom(symptom);
-                      setShowModal(false);
-                    }}
-                    className="option-item"
-                  >
-                    {symptom}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {modalType === 'mood' && (
-              <div className="option-list">
-                {moodList.map(({ icon: Icon, label, value }) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      handleAddMood(label);
-                      setShowModal(false);
-                    }}
-                    className="option-item mood-item"
-                  >
-                    <Icon size={20} />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {modalType === 'note' && (
-              <div className="note-form">
-                <textarea
-                  placeholder="Nhập ghi chú của bạn..."
-                  rows={4}
-                  className="note-textarea"
-                />
-                <div className="modal-buttons">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="modal-btn cancel"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleAddNote('Ghi chú mới');
-                      setShowModal(false);
-                    }}
-                    className="modal-btn confirm"
-                  >
-                    Lưu
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {modalType === 'period' && (
-              <div className="period-form">
-                <div className="form-group">
-                  <label>Có phải ngày kinh?</label>
-                  <input type="checkbox" />
-                </div>
-                <div className="form-group">
-                  <label>Cường độ</label>
-                  <select>
-                    <option value="">Chọn cường độ</option>
-                    <option value="light">Nhẹ</option>
-                    <option value="medium">Vừa</option>
-                    <option value="heavy">Nặng</option>
-                  </select>
-                </div>
-                <div className="modal-buttons">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="modal-btn cancel"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleModalOk();
-                      setShowModal(false);
-                    }}
-                    className="modal-btn confirm"
-                  >
-                    Lưu
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {modalType !== 'note' && modalType !== 'period' && (
-              <button
-                onClick={() => setShowModal(false)}
-                className="modal-close"
-              >
-                ×
-              </button>
-            )}
-          </div>
+      {/* Day Log Modal */}
+      <Modal
+        title={`Chi tiết ngày ${selectedDate?.format('DD/MM/YYYY')}`}
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsModalVisible(false)}>
+            Hủy
+          </Button>,
+          <Button key="save" type="primary" onClick={handleUpdateDayLog} loading={modalLoading}>
+            Lưu
+          </Button>
+        ]}
+        width={500}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 8 }}>
+            <input
+              type="checkbox"
+              checked={dayLog.isPeriodDay}
+              onChange={(e) => setDayLog({ ...dayLog, isPeriodDay: e.target.checked })}
+              style={{ marginRight: 8 }}
+            />
+            Có phải ngày kinh?
+          </label>
         </div>
-      )}
+
+        {dayLog.isPeriodDay && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8 }}>Cường độ</label>
+            <Select
+              value={dayLog.intensity}
+              onChange={(value) => setDayLog({ ...dayLog, intensity: value })}
+              placeholder="Chọn cường độ"
+              style={{ width: '100%' }}
+            >
+              {INTENSITY_OPTIONS.map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+              </div>
+            )}
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 8 }}>Triệu chứng</label>
+          <Select
+            value={dayLog.symptoms}
+            onChange={(value) => setDayLog({ ...dayLog, symptoms: value })}
+            placeholder="Chọn triệu chứng"
+            style={{ width: '100%' }}
+            optionFilterProp="label"
+          >
+            {SYMPTOM_OPTIONS.map(option => (
+              <Option key={option.value} value={option.value} label={option.label}>
+                {option.label}
+              </Option>
+            ))}
+            <Option value="OTHER" label="Khác">
+              Khác
+            </Option>
+          </Select>
+          
+          {dayLog.symptoms === 'OTHER' && (
+            <Input
+              placeholder="Nhập triệu chứng khác..."
+              style={{ marginTop: 8 }}
+              onChange={(e) => setDayLog({ ...dayLog, symptoms: e.target.value })}
+            />
+          )}
+              </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 8 }}>Tâm trạng</label>
+          <Select
+            value={dayLog.mood}
+            onChange={(value) => setDayLog({ ...dayLog, mood: value })}
+            placeholder="Chọn tâm trạng"
+            style={{ width: '100%' }}
+            optionFilterProp="label"
+          >
+            {MOOD_OPTIONS.map(option => (
+              <Option key={option.value} value={option.value} label={option.label}>
+                {option.label}
+              </Option>
+            ))}
+            <Option value="OTHER" label="Khác">
+              Khác
+            </Option>
+          </Select>
+          
+          {dayLog.mood === 'OTHER' && (
+            <Input
+              placeholder="Nhập tâm trạng khác..."
+              style={{ marginTop: 8 }}
+              onChange={(e) => setDayLog({ ...dayLog, mood: e.target.value })}
+            />
+          )}
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 8 }}>Ghi chú</label>
+          <TextArea
+            value={dayLog.notes}
+            onChange={(e) => setDayLog({ ...dayLog, notes: e.target.value })}
+            placeholder="Nhập ghi chú..."
+            rows={3}
+          />
+        </div>
+      </Modal>
+
+      {/* Quick Log Modal */}
+      <Modal
+        title={`Ghi nhận nhanh - ${
+          quickLogType === 'SYMPTOMS' ? 'Triệu chứng' :
+          quickLogType === 'MOOD' ? 'Tâm trạng' : 'Ghi chú'
+        }`}
+        open={quickLogModal}
+        onCancel={() => setQuickLogModal(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setQuickLogModal(false)}>
+            Hủy
+          </Button>,
+          <Button key="save" type="primary" onClick={handleSubmitQuickLog} loading={modalLoading}>
+            Lưu
+          </Button>
+        ]}
+        width={500}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 8 }}>
+            {quickLogType === 'SYMPTOMS' ? 'Triệu chứng' :
+             quickLogType === 'MOOD' ? 'Tâm trạng' : 'Ghi chú'}
+          </label>
+          
+          {quickLogType === 'SYMPTOMS' && (
+            <Select
+              value={quickLogContent}
+              onChange={(value) => setQuickLogContent(value)}
+              placeholder="Chọn triệu chứng"
+              style={{ width: '100%' }}
+              optionFilterProp="label"
+            >
+              {SYMPTOM_OPTIONS.map(option => (
+                <Option key={option.value} value={option.value} label={option.label}>
+                  {option.label}
+                </Option>
+              ))}
+              <Option value="OTHER" label="Khác">
+                Khác
+              </Option>
+            </Select>
+          )}
+          
+          {quickLogType === 'SYMPTOMS' && quickLogContent === 'OTHER' && (
+            <Input
+              placeholder="Nhập triệu chứng khác..."
+              style={{ marginTop: 8 }}
+              onChange={(e) => setQuickLogContent(e.target.value)}
+            />
+          )}
+          
+          {quickLogType === 'MOOD' && (
+            <Select
+              value={quickLogContent}
+              onChange={(value) => setQuickLogContent(value)}
+              placeholder="Chọn tâm trạng"
+              style={{ width: '100%' }}
+              optionFilterProp="label"
+            >
+              {MOOD_OPTIONS.map(option => (
+                <Option key={option.value} value={option.value} label={option.label}>
+                  {option.label}
+                </Option>
+              ))}
+              <Option value="OTHER" label="Khác">
+                Khác
+              </Option>
+            </Select>
+          )}
+          
+          {quickLogType === 'MOOD' && quickLogContent === 'OTHER' && (
+            <Input
+              placeholder="Nhập tâm trạng khác..."
+              style={{ marginTop: 8 }}
+              onChange={(e) => setQuickLogContent(e.target.value)}
+            />
+          )}
+          
+          {quickLogType === 'NOTES' && (
+            <TextArea
+              value={quickLogContent}
+              onChange={(e) => setQuickLogContent(e.target.value)}
+              placeholder="Nhập ghi chú..."
+              rows={4}
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

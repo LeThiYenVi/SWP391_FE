@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Calendar, FileText, Save } from 'lucide-react';
 import BookingService from '../../services/BookingService';
+import { toast } from 'react-toastify';
 
 const TestResultForm = ({ booking, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -67,14 +68,28 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
       const response = await BookingService.updateTestResult(booking.bookingId, resultData);
 
       if (response.success) {
-        alert('✅ Đã cập nhật kết quả xét nghiệm thành công!');
+        toast.success('✅ Đã cập nhật kết quả xét nghiệm thành công!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         onSuccess?.(response.data);
       } else {
         throw new Error(response.message || 'Có lỗi xảy ra');
       }
     } catch (error) {
       console.error('Error updating test result:', error);
-      alert(`❌ Lỗi khi cập nhật kết quả: ${error.message}`);
+      toast.error(`❌ Lỗi khi cập nhật kết quả: ${error.message}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -99,7 +114,7 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-blue-900">
-                Booking #{booking.bookingId} - {booking.customerName}
+                Booking #{booking.bookingId} - {booking.customerFullName}
               </p>
               <p className="text-sm text-blue-700">
                 Dịch vụ: {booking.serviceName}

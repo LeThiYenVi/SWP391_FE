@@ -115,7 +115,7 @@ const createTestingServiceAPI = async (serviceData) => {
 
 const updateTestingServiceAPI = async (serviceId, serviceData) => {
   try {
-    const response = await instance.put(`/api/admin/testing-services/${serviceId}`, serviceData);
+    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, serviceData);
     console.log('Update testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -177,165 +177,222 @@ class StaffService {
   // Booking Management
   async getAllBookings(status, date) {
     try {
-      const response = await getAllBookingsAPI(status, date);
-      return { success: true, data: response.data };
+      const data = await getAllBookingsAPI(status, date);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async getBookingsByStatus(status, pageNumber = 1, pageSize = 100) {
     try {
-      const response = await getBookingsByStatusAPI(status, pageNumber, pageSize);
-      return { success: true, data: response };
+      const data = await getBookingsByStatusAPI(status, pageNumber, pageSize);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async getBookingById(bookingId) {
     try {
-      const response = await getBookingByIdAPI(bookingId);
-      return { success: true, data: response.data };
+      const data = await getBookingByIdAPI(bookingId);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async updateBookingStatus(bookingId, status) {
     try {
-      const response = await updateBookingStatusAPI(bookingId, status);
-      return { success: true, data: response.data };
+      const data = await updateBookingStatusAPI(bookingId, status);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   // Sample Collection
   async markSampleCollected(bookingId, sampleData) {
     try {
-      const response = await markSampleCollectedAPI(bookingId, sampleData);
-      return { success: true, data: response.data };
+      const data = await markSampleCollectedAPI(bookingId, sampleData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   // Results Management
   async uploadTestResult(bookingId, resultData) {
     try {
-      const response = await uploadTestResultAPI(bookingId, resultData);
-      return { success: true, data: response.data };
+      const data = await uploadTestResultAPI(bookingId, resultData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async getTestResult(bookingId) {
     try {
-      const response = await getTestResultAPI(bookingId);
-      return { success: true, data: response.data };
+      const data = await getTestResultAPI(bookingId);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   // Service Management
   async getAllTestingServices() {
     try {
-      const response = await getAllTestingServicesAPI();
-      return { success: true, data: response.data };
+      const data = await getAllTestingServicesAPI();
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async createTestingService(serviceData) {
     try {
-      const response = await createTestingServiceAPI(serviceData);
-      return { success: true, data: response.data };
+      const data = await createTestingServiceAPI(serviceData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async updateTestingService(serviceId, serviceData) {
     try {
-      const response = await updateTestingServiceAPI(serviceId, serviceData);
-      return { success: true, data: response.data };
+      const data = await updateTestingServiceAPI(serviceId, serviceData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async deleteTestingService(serviceId) {
     try {
-      const response = await deleteTestingServiceAPI(serviceId);
-      return { success: true, data: response.data };
+      const data = await deleteTestingServiceAPI(serviceId);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   // Dashboard
   async getStaffDashboardStats() {
     try {
-      const response = await getStaffDashboardStatsAPI();
-      return { success: true, data: response.data };
+      const data = await getStaffDashboardStatsAPI();
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   async getBookingsByDateRange(startDate, endDate) {
     try {
-      const response = await getBookingsByDateRangeAPI(startDate, endDate);
-      return { success: true, data: response.data };
+      const data = await getBookingsByDateRangeAPI(startDate, endDate);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 
   // Update Test Result
   async updateTestResult(bookingId, resultData) {
     try {
-      const response = await updateTestResultAPI(bookingId, resultData);
-      return { success: true, data: response };
+      const data = await updateTestResultAPI(bookingId, resultData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
     } catch (error) {
-      return { success: false, error: error.message };
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
     }
   }
 }
 
-// Export singleton instance
 const staffService = new StaffService();
 export default staffService;
 
-// Export individual API functions
 export {
-  // Booking Management
   getAllBookingsAPI,
   getBookingsByStatusAPI,
   getBookingByIdAPI,
   updateBookingStatusAPI,
-
-  // Sample Collection
   markSampleCollectedAPI,
-  
-  // Results Management
   uploadTestResultAPI,
   getTestResultAPI,
-  
-  // Service Management
   getAllTestingServicesAPI,
   createTestingServiceAPI,
   updateTestingServiceAPI,
   deleteTestingServiceAPI,
-  
-  // Dashboard
   getStaffDashboardStatsAPI,
   getBookingsByDateRangeAPI,
-
-  // Test Result
   updateTestResultAPI
 };

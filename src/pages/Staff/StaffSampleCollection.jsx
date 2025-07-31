@@ -4,8 +4,11 @@ import { getAllBookingsAPI, getBookingsByStatusAPI, markSampleCollectedAPI } fro
 import SampleCollectionModal from '../../components/SampleCollectionModal';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useWebSocket } from '../../context/WebSocketContext';
+import { toast } from 'react-toastify';
 
 const StaffSampleCollection = () => {
+  const { connected, notifications } = useWebSocket();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +28,23 @@ const StaffSampleCollection = () => {
   useEffect(() => {
     filterBookings();
   }, [searchTerm, dateFilter, bookings]);
+
+  // Listen for WebSocket notifications to auto-refresh
+  useEffect(() => {
+    if (connected && notifications.length > 0) {
+      const latestNotification = notifications[notifications.length - 1];
+      console.log('📨 Staff received notification:', latestNotification);
+
+      // If it's a booking status update, refresh the list
+      if (latestNotification.type === 'booking_status_update' ||
+          latestNotification.message?.includes('booking') ||
+          latestNotification.message?.includes('lịch hẹn')) {
+        console.log('🔄 Auto-refreshing bookings due to notification');
+        toast.info('Danh sách đã được cập nhật tự động');
+        fetchBookings();
+      }
+    }
+  }, [notifications, connected]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -59,7 +79,7 @@ const StaffSampleCollection = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (booking) =>
-          booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          booking.customerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           booking.bookingId?.toString().includes(searchTerm)
       );
     }
@@ -114,6 +134,7 @@ const StaffSampleCollection = () => {
         sampleNotes: data.sampleNotes // Thêm sampleNotes cho API
       };
 
+      console.log('🧪 Updating sample collection for booking:', data.bookingId);
       await markSampleCollectedAPI(data.bookingId, trackingData);
 
       // Update local state instead of refetching
@@ -129,10 +150,18 @@ const StaffSampleCollection = () => {
       setSelectedBooking(null);
       setIsUpdating(false);
 
-      alert('✅ Đã cập nhật thông tin lấy mẫu thành công!');
+      console.log('✅ Sample collection updated successfully');
+      toast.success('✅ Đã cập nhật thông tin lấy mẫu thành công!');
+
+      // Force refresh after a short delay to ensure WebSocket has time to propagate
+      setTimeout(() => {
+        console.log('🔄 Force refreshing bookings after sample collection');
+        fetchBookings();
+      }, 1000);
+
     } catch (error) {
-      console.error('Error updating sample collection:', error);
-      alert('❌ Có lỗi xảy ra khi cập nhật thông tin lấy mẫu');
+      console.error('❌ Error updating sample collection:', error);
+      toast.error('❌ Có lỗi xảy ra khi cập nhật thông tin lấy mẫu');
     }
   };
 
@@ -224,8 +253,16 @@ const StaffSampleCollection = () => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Lấy mẫu xét nghiệm</h1>
-        <p className="text-gray-600">Danh sách các lịch hẹn đã xác nhận cần lấy mẫu xét nghiệm</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Lấy mẫu xét nghiệm</h1>
+            <p className="text-gray-600">Danh sách các lịch hẹn đã xác nhận cần lấy mẫu xét nghiệm</p>
+          </div>
+          <div className="text-sm bg-gray-100 p-2 rounded">
+            <div>WebSocket: {connected ? '✅ Kết nối' : '❌ Không kết nối'}</div>
+            <div>Thông báo: {notifications.length}</div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -303,8 +340,8 @@ const StaffSampleCollection = () => {
                         #{booking.bookingId}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-500">
-                        <div className="max-w-40 truncate" title={booking.customerName}>
-                          {booking.customerName}
+                        <div className="max-w-40 truncate" title={booking.customerFullName}>
+                          {booking.customerFullName}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-500">

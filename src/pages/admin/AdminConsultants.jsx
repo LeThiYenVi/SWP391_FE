@@ -51,6 +51,7 @@ import {
   autoCreateCommonSlotsAPI
 } from '../../services/AdminService';
 import AddConsultantModal from '../../components/admin/AddConsultantModal';
+import ConsultantAvatarUpload from '../../components/ConsultantAvatarUpload';
 
 export default function AdminConsultants() {
   const location = useLocation();
@@ -72,6 +73,7 @@ export default function AdminConsultants() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedConsultantId, setSelectedConsultantId] = useState(null);
+  const [consultantAvatarUrl, setConsultantAvatarUrl] = useState(null);
 
   useEffect(() => {
     if (location.state?.toastMessage) {
@@ -145,6 +147,7 @@ export default function AdminConsultants() {
       experienceYears: consultant.experienceYears || 0,
       specialization: consultant.specialization || ''
     });
+    setConsultantAvatarUrl(consultant.avatarUrl || consultant.user?.avatarUrl);
     setEditModalOpen(true);
   };
 
@@ -201,6 +204,12 @@ export default function AdminConsultants() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Handle avatar update for consultant
+  const handleAvatarUpdate = (userData) => {
+    setConsultantAvatarUrl(userData.avatarUrl);
+    toast.success('Cập nhật ảnh đại diện thành công!');
   };
 
   const handleAutoCreateSlots = async () => {
@@ -671,6 +680,18 @@ export default function AdminConsultants() {
         <DialogContent dividers sx={{ p: 3 }}>
           {selectedConsultant && (
             <Box sx={{ mt: 2 }}>
+              {/* Avatar Upload Section */}
+              <Box sx={{ mb: 3, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                  Ảnh đại diện
+                </Typography>
+                <ConsultantAvatarUpload 
+                  onAvatarUpdate={handleAvatarUpdate}
+                  currentAvatarUrl={consultantAvatarUrl}
+                  consultantId={selectedConsultant?.id}
+                />
+              </Box>
+              <Divider sx={{ mb: 3 }} />
               <Stack spacing={3}>
                 <TextField
                   fullWidth

@@ -12,9 +12,9 @@ const submitQuestionAPI = async (questionData) => {
   }
 };
 
-const getUserQuestionsAPI = async (userId = null, status = null, page = 0, size = 10) => {
+const getUserQuestionsAPI = async (userId = null, status = null, pageNumber = 1, pageSize = 10) => {
   try {
-    const params = { page, size };
+    const params = { pageNumber, pageSize };
     if (userId) params.userId = userId;
     if (status) params.status = status;
     
@@ -27,13 +27,28 @@ const getUserQuestionsAPI = async (userId = null, status = null, page = 0, size 
   }
 };
 
-const getConsultantQuestionsAPI = async (category = null, page = 0, size = 10) => {
+const getConsultantQuestionsAPI = async (category = null, pageNumber = 1, pageSize = 10) => {
   try {
-    const params = { page, size };
+    const params = { pageNumber, pageSize };
     if (category) params.category = category;
     
     const response = await instance.get('/api/qa/consultant/questions', { params });
     console.log('Get consultant questions success:', response.data);
+    console.log('Response structure:', response);
+    console.log('Response.data type:', typeof response.data);
+    console.log('Response.data keys:', Object.keys(response.data || {}));
+    
+    // Check if response.data has the expected structure
+    if (response.data && response.data.success !== undefined) {
+      // If it's wrapped in ApiResponse format, extract the data
+      const extractedData = response.data.data || response.data;
+      console.log('Extracted data:', extractedData);
+      console.log('Extracted data content:', extractedData?.content);
+      console.log('First question in content:', extractedData?.content?.[0]);
+      return extractedData;
+    }
+    
+    console.log('Returning raw response.data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Get consultant questions error:', error.response?.data || error.message);
@@ -115,9 +130,11 @@ const markQuestionAsPublicAPI = async (questionId, isPublic) => {
 };
 
 // =============Search and Categories APIs============
-const getPopularCategoriesAPI = async () => {
+const getPopularCategoriesAPI = async (limit = 5) => {
   try {
-    const response = await instance.get('/api/qa/categories/popular');
+    const response = await instance.get('/api/qa/categories/popular', {
+      params: { limit }
+    });
     console.log('Get popular categories success:', response.data);
     return response.data;
   } catch (error) {
@@ -126,15 +143,29 @@ const getPopularCategoriesAPI = async () => {
   }
 };
 
-const searchQuestionsAPI = async (keyword, page = 0, size = 10) => {
+const searchQuestionsAPI = async (query, pageNumber = 1, pageSize = 10) => {
   try {
     const response = await instance.get('/api/qa/search', {
-      params: { keyword, page, size }
+      params: { query, pageNumber, pageSize }
     });
     console.log('Search questions success:', response.data);
     return response.data;
   } catch (error) {
     console.error('Search questions error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const getPublicQuestionsAPI = async (category = null, pageNumber = 1, pageSize = 10) => {
+  try {
+    const params = { pageNumber, pageSize };
+    if (category) params.category = category;
+    
+    const response = await instance.get('/api/qa/public/questions', { params });
+    console.log('Get public questions success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Get public questions error:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -157,5 +188,6 @@ export {
   
   // Search and Categories APIs
   getPopularCategoriesAPI,
-  searchQuestionsAPI
+  searchQuestionsAPI,
+  getPublicQuestionsAPI
 }; 

@@ -11,11 +11,11 @@ import { createBrowserRouter } from 'react-router-dom';
 const AppRoutes=[
     ...LoginRouters,
     ...RegisterRouters,
-    ...DashboardRoutes,
+    ...DashboardRoutes,  // Dashboard routes trước HomePageRoutes
     ...AdminRoutes,
     ...StaffRoutes,
     ...ConsultantRoutes,
-    ...HomePageRoutes,
+    ...HomePageRoutes,   // HomePageRoutes cuối cùng
 ]
 
 // Debug: In ra tất cả routes
