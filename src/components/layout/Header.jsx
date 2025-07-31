@@ -78,6 +78,11 @@ const authenticatedNavigationItems = [
     icon: <User className="w-5 h-5" />,
   },
   {
+    label: 'Consultant',
+    href: '/consultant',
+    icon: <User className="w-5 h-5" />,
+  },
+  {
     label: 'Dịch vụ',
     href: '/services',
     icon: <Heart className="w-5 h-5" />,
@@ -196,7 +201,23 @@ export const Header = () => {
 
                      {/* Desktop Navigation */}
            <nav className="hidden md:flex items-center space-x-1">
-             {(isAuthenticated ? authenticatedNavigationItems : navigationItems).map(item => (
+             {(isAuthenticated ? authenticatedNavigationItems : navigationItems)
+              .filter(item => {
+                // Chỉ hiển thị link Consultant khi user có role consultant
+                if (item.href === '/consultant') {
+                  const userRole = user?.role;
+                  return userRole && (
+                    userRole === 'ROLE_CONSULTANT' || 
+                    userRole === 'CONSULTANT' || 
+                    userRole === 'consultant' ||
+                    userRole === 'ROLE_COUNSELOR' || 
+                    userRole === 'COUNSELOR' || 
+                    userRole === 'counselor'
+                  );
+                }
+                return true;
+              })
+              .map(item => (
                              <div
                  key={item.href}
                  className="relative dropdown-container"
@@ -399,6 +420,26 @@ export const Header = () => {
                              Dashboard
                            </span>
                          </Link>
+                         {/* Chỉ hiển thị link Consultant khi user có role consultant */}
+                         {(user?.role === 'ROLE_CONSULTANT' || 
+                           user?.role === 'CONSULTANT' || 
+                           user?.role === 'consultant' ||
+                           user?.role === 'ROLE_COUNSELOR' || 
+                           user?.role === 'COUNSELOR' || 
+                           user?.role === 'counselor') && (
+                           <Link
+                             to="/consultant"
+                             className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                             onClick={() => setIsUserMenuOpen(false)}
+                           >
+                             <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                               <User className="w-4 h-4 text-purple-600" />
+                             </div>
+                             <span className="text-sm font-medium text-gray-700">
+                               Consultant Dashboard
+                             </span>
+                           </Link>
+                         )}
                          <Link
                            to="/"
                            className="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"

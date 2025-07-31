@@ -38,8 +38,14 @@ const FeedbackStatus = ({ consultationId, bookingId, onFeedbackSubmitted, onFeed
         throw new Error('Không có consultationId hoặc bookingId');
       }
       
-      if (response.success && response.data) {
-        setFeedback(response.data);
+      // Response đã được xử lý bởi customize-axios interceptor
+      // Kiểm tra xem response có phải là object gốc không (có field success)
+      if (response && typeof response === 'object' && response.success !== undefined) {
+        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
+        setFeedback(null);
+      } else if (response && response !== null) {
+        // Đây là data thực tế (đã có feedback)
+        setFeedback(response);
       } else {
         setFeedback(null); // Không có feedback
       }

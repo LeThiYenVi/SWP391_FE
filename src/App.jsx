@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { ToastContainer } from 'react-toastify';
+// import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { ChatProvider } from './context/ChatContext';
@@ -11,7 +11,7 @@ import { ConsultantProvider } from './context/ConsultantContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { checkVersionAndClearCache } from './utils/cacheUtils';
 import router from './router';
-import 'react-toastify/dist/ReactToastify.css';
+// import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   useEffect(() => {
@@ -28,7 +28,8 @@ function App() {
                 <AppointmentProvider>
                   <ConsultantProvider>
                     <RouterProvider router={router} />
-                    <ToastContainer
+                    {/* Tắt ToastContainer để loại bỏ tất cả thông báo */}
+                    {/* <ToastContainer
                       position="top-right"
                       autoClose={3000}
                       hideProgressBar={false}
@@ -39,7 +40,7 @@ function App() {
                       draggable
                       pauseOnHover
                       theme="light"
-                    />
+                    /> */}
                   </ConsultantProvider>
                 </AppointmentProvider>
               </CycleProvider>

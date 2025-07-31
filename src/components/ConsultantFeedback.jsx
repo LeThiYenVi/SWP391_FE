@@ -39,8 +39,14 @@ const ConsultantFeedback = ({ consultantId, consultantName, maxDisplay = 3 }) =>
       setLoading(true);
       const response = await getConsultantFeedbackAPI(consultantId);
       
-      if (response.success && response.data) {
-        setFeedbacks(response.data);
+      // Response đã được xử lý bởi customize-axios interceptor
+      // Kiểm tra xem response có phải là object gốc không (có field success)
+      if (response && typeof response === 'object' && response.success !== undefined) {
+        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
+        setFeedbacks([]);
+      } else if (response && response !== null) {
+        // Đây là data thực tế (đã có feedback)
+        setFeedbacks(response);
       } else {
         setError('Không thể tải đánh giá');
       }

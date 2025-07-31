@@ -33,8 +33,26 @@ const Login = () => {
   // Redirect user đã đăng nhập - chỉ forward về trang chủ
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Chỉ forward về trang chủ, không tự động vào dashboard
-      navigate('/', { replace: true });
+      // Redirect user đã đăng nhập dựa trên role
+      const userRole = user.role;
+      console.log('User already authenticated, role:', userRole);
+      
+      if (userRole) {
+        if (userRole === 'ROLE_CONSULTANT' || userRole === 'CONSULTANT' || userRole === 'consultant' ||
+            userRole === 'ROLE_COUNSELOR' || userRole === 'COUNSELOR' || userRole === 'counselor') {
+          navigate('/consultant', { replace: true });
+        } else if (userRole === 'ROLE_ADMIN' || userRole === 'ADMIN' || userRole === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else if (userRole === 'ROLE_STAFF' || userRole === 'STAFF' || userRole === 'staff') {
+          navigate('/staff', { replace: true });
+        } else {
+          // Các role khác (CUSTOMER, etc.) thì về trang chủ
+          navigate('/', { replace: true });
+        }
+      } else {
+        // Nếu không có role thì về trang chủ
+        navigate('/', { replace: true });
+      }
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -61,8 +79,29 @@ const Login = () => {
 
       if (result.success) {
         toast.success('Đăng nhập thành công!');
-        // Chỉ forward về trang chủ, không tự động vào dashboard
-        navigate('/', { replace: true });
+        
+        // Sử dụng user data từ AuthContext sau khi login thành công
+        setTimeout(() => {
+          const userRole = user?.role;
+          console.log('User role after login:', userRole);
+          
+          if (userRole) {
+            if (userRole === 'ROLE_CONSULTANT' || userRole === 'CONSULTANT' || userRole === 'consultant' ||
+                userRole === 'ROLE_COUNSELOR' || userRole === 'COUNSELOR' || userRole === 'counselor') {
+              navigate('/consultant', { replace: true });
+            } else if (userRole === 'ROLE_ADMIN' || userRole === 'ADMIN' || userRole === 'admin') {
+              navigate('/admin/dashboard', { replace: true });
+            } else if (userRole === 'ROLE_STAFF' || userRole === 'STAFF' || userRole === 'staff') {
+              navigate('/staff', { replace: true });
+            } else {
+              // Các role khác (CUSTOMER, etc.) thì về trang chủ
+              navigate('/', { replace: true });
+            }
+          } else {
+            // Nếu không có role thì về trang chủ
+            navigate('/', { replace: true });
+          }
+        }, 100); // Delay nhỏ để đảm bảo user state đã được update
       } else {
         // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập thất bại');
@@ -85,8 +124,29 @@ const Login = () => {
 
       if (result.success) {
         toast.success('Đăng nhập bằng Google thành công!');
-        // Chỉ forward về trang chủ, không tự động vào dashboard
-        navigate('/', { replace: true });
+        
+        // Sử dụng user data từ AuthContext sau khi login thành công
+        setTimeout(() => {
+          const userRole = user?.role;
+          console.log('User role after Google login:', userRole);
+          
+          if (userRole) {
+            if (userRole === 'ROLE_CONSULTANT' || userRole === 'CONSULTANT' || userRole === 'consultant' ||
+                userRole === 'ROLE_COUNSELOR' || userRole === 'COUNSELOR' || userRole === 'counselor') {
+              navigate('/consultant', { replace: true });
+            } else if (userRole === 'ROLE_ADMIN' || userRole === 'ADMIN' || userRole === 'admin') {
+              navigate('/admin/dashboard', { replace: true });
+            } else if (userRole === 'ROLE_STAFF' || userRole === 'STAFF' || userRole === 'staff') {
+              navigate('/staff', { replace: true });
+            } else {
+              // Các role khác (CUSTOMER, etc.) thì về trang chủ
+              navigate('/', { replace: true });
+            }
+          } else {
+            // Nếu không có role thì về trang chủ
+            navigate('/', { replace: true });
+          }
+        }, 100); // Delay nhỏ để đảm bảo user state đã được update
       } else {
         // Hiển thị lỗi từ AuthContext (đã được xử lý ApiResponse format)
         toast.error(result.error || 'Đăng nhập bằng Google thất bại.');

@@ -50,16 +50,49 @@ const ConsultantProfile = () => {
     fetchProfile();
   }, []);
 
-  const [editedProfile, setEditedProfile] = useState({ ...profile });
+  const [editedProfile, setEditedProfile] = useState({ 
+    workingHours: { start: '09:00', end: '17:00' },
+    consultationFee: { video: 500000, phone: 300000, chat: 200000 },
+    languages: ['Tiếng Việt', 'Tiếng Anh'],
+    certifications: ['Bác sĩ chuyên khoa', 'Chứng chỉ hành nghề']
+  });
   const [passwords, setPasswords] = useState({
     current: '',
     new: '',
     confirm: '',
   });
 
+  // Mapping lại dữ liệu từ API - di chuyển lên trước
+  const mappedProfile = profile && {
+    name: profile.fullName,
+    email: profile.email,
+    phone: profile.phoneNumber,
+    specialty: profile.specialization,
+    experience: profile.experienceYears,
+    bio: profile.biography,
+    avatar: profile.profileImageUrl || 'https://i.pravatar.cc/100?u=' + profile.id,
+    address: profile.address,
+    gender: profile.gender,
+    // Thêm default values cho workingHours và consultationFee
+    workingHours: profile.workingHours || { start: '09:00', end: '17:00' },
+    consultationFee: profile.consultationFee || { video: 500000, phone: 300000, chat: 200000 },
+    languages: profile.languages || ['Tiếng Việt', 'Tiếng Anh'],
+    certifications: profile.certifications || ['Bác sĩ chuyên khoa', 'Chứng chỉ hành nghề'],
+    // Có thể bổ sung các trường khác nếu backend trả về
+  };
+
+  // Update editedProfile when mappedProfile changes
+  useEffect(() => {
+    if (mappedProfile) {
+      setEditedProfile({ ...mappedProfile });
+    }
+  }, [mappedProfile]);
+
   const handleEdit = () => {
     setIsEditing(true);
-    setEditedProfile({ ...profile });
+    if (mappedProfile) {
+      setEditedProfile({ ...mappedProfile });
+    }
   };
 
   const handleSave = () => {
@@ -68,7 +101,9 @@ const ConsultantProfile = () => {
   };
 
   const handleCancel = () => {
-    setEditedProfile({ ...profile });
+    if (mappedProfile) {
+      setEditedProfile({ ...mappedProfile });
+    }
     setIsEditing(false);
   };
 
@@ -92,21 +127,21 @@ const ConsultantProfile = () => {
   const handleArrayInputChange = (field, index, value) => {
     setEditedProfile(prev => ({
       ...prev,
-      [field]: prev[field].map((item, i) => (i === index ? value : item)),
+      [field]: (prev[field] || []).map((item, i) => (i === index ? value : item)),
     }));
   };
 
   const addArrayItem = (field, defaultValue = '') => {
     setEditedProfile(prev => ({
       ...prev,
-      [field]: [...prev[field], defaultValue],
+      [field]: [...(prev[field] || []), defaultValue],
     }));
   };
 
   const removeArrayItem = (field, index) => {
     setEditedProfile(prev => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
+      [field]: (prev[field] || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -155,20 +190,6 @@ const ConsultantProfile = () => {
       color: 'green',
     },
   ];
-
-  // Mapping lại dữ liệu từ API
-  const mappedProfile = profile && {
-    name: profile.fullName,
-    email: profile.email,
-    phone: profile.phoneNumber,
-    specialty: profile.specialization,
-    experience: profile.experienceYears,
-    bio: profile.biography,
-    avatar: profile.profileImageUrl || 'https://i.pravatar.cc/100?u=' + profile.id,
-    address: profile.address,
-    gender: profile.gender,
-    // Có thể bổ sung các trường khác nếu backend trả về
-  };
 
   if (loading) {
     return <div style={{textAlign:'center',padding:'2rem'}}>Đang tải dữ liệu...</div>;
@@ -324,7 +345,7 @@ const ConsultantProfile = () => {
                   <div className="time-range">
                     <input
                       type="time"
-                      value={editedProfile.workingHours.start}
+                      value={editedProfile?.workingHours?.start || '09:00'}
                       onChange={e =>
                         handleNestedInputChange(
                           'workingHours',
@@ -337,7 +358,7 @@ const ConsultantProfile = () => {
                     <span>đến</span>
                     <input
                       type="time"
-                      value={editedProfile.workingHours.end}
+                      value={editedProfile?.workingHours?.end || '17:00'}
                       onChange={e =>
                         handleNestedInputChange(
                           'workingHours',
@@ -352,7 +373,7 @@ const ConsultantProfile = () => {
                   <div className="form-display">
                     <Clock size={16} />
                     <span>
-                      {profile.workingHours.start} - {profile.workingHours.end}
+                      {mappedProfile.workingHours.start} - {mappedProfile.workingHours.end}
                     </span>
                   </div>
                 )}
@@ -361,7 +382,7 @@ const ConsultantProfile = () => {
               <div className="fees-section">
                 <h4>Phí tư vấn</h4>
                 <div className="fees-grid">
-                  {Object.entries(profile.consultationFee).map(
+                  {Object.entries(mappedProfile.consultationFee).map(
                     ([type, fee]) => (
                       <div key={type} className="fee-item">
                         <label>
@@ -372,7 +393,7 @@ const ConsultantProfile = () => {
                         {isEditing ? (
                           <input
                             type="number"
-                            value={editedProfile.consultationFee[type]}
+                            value={editedProfile?.consultationFee?.[type] || 0}
                             onChange={e =>
                               handleNestedInputChange(
                                 'consultationFee',
@@ -403,7 +424,7 @@ const ConsultantProfile = () => {
             <div className="card-content">
               {isEditing ? (
                 <div className="languages-edit">
-                  {editedProfile.languages.map((lang, index) => (
+                  {(editedProfile?.languages || []).map((lang, index) => (
                     <div key={index} className="language-item">
                       <input
                         type="text"
@@ -434,7 +455,7 @@ const ConsultantProfile = () => {
                 </div>
               ) : (
                 <div className="languages-display">
-                  {profile.languages.map((lang, index) => (
+                  {mappedProfile.languages.map((lang, index) => (
                     <div key={index} className="language-tag">
                       <Languages size={14} />
                       <span>{lang}</span>
@@ -453,7 +474,7 @@ const ConsultantProfile = () => {
             <div className="card-content">
               {isEditing ? (
                 <div className="certifications-edit">
-                  {editedProfile.certifications.map((cert, index) => (
+                  {(editedProfile?.certifications || []).map((cert, index) => (
                     <div key={index} className="certification-item">
                       <input
                         type="text"
@@ -484,7 +505,7 @@ const ConsultantProfile = () => {
                 </div>
               ) : (
                 <div className="certifications-display">
-                  {profile.certifications.map((cert, index) => (
+                  {mappedProfile.certifications.map((cert, index) => (
                     <div key={index} className="certification-item-display">
                       <Award size={16} />
                       <span>{cert}</span>

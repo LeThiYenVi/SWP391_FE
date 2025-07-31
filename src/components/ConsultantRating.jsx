@@ -29,9 +29,15 @@ const ConsultantRating = ({ consultantId, consultantName, onRatingChange }) => {
   const loadExistingFeedback = async () => {
     try {
       const response = await getConsultantFeedbackAPI(consultantId);
-      if (response.success && response.data) {
+      // Response đã được xử lý bởi customize-axios interceptor
+      // Kiểm tra xem response có phải là object gốc không (có field success)
+      if (response && typeof response === 'object' && response.success !== undefined) {
+        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
+        setExistingFeedback(null);
+      } else if (response && response !== null) {
+        // Đây là data thực tế (đã có feedback)
         // Tìm feedback của user hiện tại
-        const userFeedback = response.data.find(feedback => feedback.userId === user.id);
+        const userFeedback = response.find(feedback => feedback.userId === user.id);
         if (userFeedback) {
           setExistingFeedback(userFeedback);
           setRating(userFeedback.rating || 0);
@@ -57,7 +63,6 @@ const ConsultantRating = ({ consultantId, consultantName, onRatingChange }) => {
     setLoading(true);
     try {
       const feedbackData = {
-        customerId: user.id,
         consultantId: consultantId,
         rating: rating,
         comment: comment.trim()

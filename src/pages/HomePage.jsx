@@ -65,9 +65,41 @@ const HomePage = () => {
     }
   }, []);
 
+  // Tự động redirect user dựa trên role khi truy cập trang chủ
   useEffect(() => {
-    loadBlogPosts();
-    loadConsultants();
+    if (isAuthenticated && user) {
+      const userRole = user.role;
+      console.log('User authenticated on homepage, role:', userRole);
+      
+      if (userRole) {
+        if (userRole === 'ROLE_CONSULTANT' || userRole === 'CONSULTANT' || userRole === 'consultant' ||
+            userRole === 'ROLE_COUNSELOR' || userRole === 'COUNSELOR' || userRole === 'counselor') {
+          console.log('Redirecting consultant to /consultant');
+          navigate('/consultant', { replace: true });
+        } else if (userRole === 'ROLE_ADMIN' || userRole === 'ADMIN' || userRole === 'admin') {
+          console.log('Redirecting admin to /admin/dashboard');
+          navigate('/admin/dashboard', { replace: true });
+        } else if (userRole === 'ROLE_STAFF' || userRole === 'STAFF' || userRole === 'staff') {
+          console.log('Redirecting staff to /staff');
+          navigate('/staff', { replace: true });
+        }
+        // Các role khác (CUSTOMER, etc.) thì ở lại trang chủ
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        loadBlogPosts(); // Bật lại blog loading
+        loadConsultants();
+      } catch (error) {
+        console.error('Error initializing HomePage data:', error);
+        // Không làm crash ứng dụng, chỉ log lỗi
+      }
+    };
+    
+    initializeData();
   }, []);
 
   const loadBlogPosts = async () => {
@@ -85,8 +117,10 @@ const HomePage = () => {
         setBlogApiMessage(response.data?.message || 'Chưa có bài viết nào.');
       }
     } catch (error) {
+      console.error('Error loading blog posts:', error);
+      console.error('Error response:', error.response?.data);
       setBlogPosts([]);
-      setBlogApiMessage('Lỗi khi tải bài viết.');
+      setBlogApiMessage('Tạm thời không thể tải bài viết. Vui lòng thử lại sau.');
     } finally {
       setBlogLoading(false);
     }

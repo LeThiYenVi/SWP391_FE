@@ -94,12 +94,168 @@ const ConsultantLayout = () => {
             </span>
             <span style={{fontWeight:700,fontSize:'1.2rem',background:'linear-gradient(to right,#3a99b7,#2d7a91)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Gynexa</span>
           </Link>
-          <Link to="/consultant/dashboard" style={{marginLeft:24,color:'#334155',fontWeight:600,textDecoration:'none'}}>Dashboard</Link>
-          <Link to="/consultant/appointments" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Lịch hẹn</Link>
-          <Link to="/consultant/create-appointment" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Tạo lịch hẹn</Link>
-          <Link to="/consultant/messages" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Tin nhắn</Link>
-          <Link to="/consultant/qa" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Hỏi đáp</Link>
-          <Link to="/consultant/profile" style={{marginLeft:16,color:'#334155',fontWeight:600,textDecoration:'none'}}>Hồ sơ</Link>
+          <Link 
+            to="/consultant/dashboard" 
+            style={{
+              marginLeft:24,
+              color: location.pathname === '/consultant/dashboard' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/dashboard' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/dashboard') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/dashboard') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Dashboard
+          </Link>
+          <Link 
+            to="/consultant/appointments" 
+            style={{
+              marginLeft:16,
+              color: location.pathname === '/consultant/appointments' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/appointments' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/appointments') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/appointments') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Lịch hẹn
+          </Link>
+          <Link 
+            to="/consultant/create-appointment" 
+            style={{
+              marginLeft:16,
+              color: location.pathname === '/consultant/create-appointment' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/create-appointment' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/create-appointment') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/create-appointment') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Tạo lịch hẹn
+          </Link>
+          <Link 
+            to="/consultant/messages" 
+            style={{
+              marginLeft:16,
+              color: location.pathname === '/consultant/messages' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/messages' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/messages') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/messages') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Tin nhắn
+          </Link>
+          <Link 
+            to="/consultant/qa" 
+            style={{
+              marginLeft:16,
+              color: location.pathname === '/consultant/qa' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/qa' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/qa') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/qa') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Hỏi đáp
+          </Link>
+          <Link 
+            to="/consultant/profile" 
+            style={{
+              marginLeft:16,
+              color: location.pathname === '/consultant/profile' ? '#3a99b7' : '#334155',
+              fontWeight:600,
+              textDecoration:'none',
+              borderBottom: location.pathname === '/consultant/profile' ? '2px solid #3a99b7' : 'none',
+              paddingBottom: '4px',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              if (location.pathname !== '/consultant/profile') {
+                e.target.style.color = '#3a99b7';
+                e.target.style.borderBottom = '2px solid #3a99b7';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== '/consultant/profile') {
+                e.target.style.color = '#334155';
+                e.target.style.borderBottom = 'none';
+              }
+            }}
+          >
+            Hồ sơ
+          </Link>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <img 

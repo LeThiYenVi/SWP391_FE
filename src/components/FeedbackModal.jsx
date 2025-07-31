@@ -46,7 +46,6 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
       if (consultation) {
         // Feedback for consultation
         feedbackData = {
-          customerId: user.id,
           consultantId: consultation.consultantId,
           consultationId: consultation.id,
           rating: rating,
@@ -55,7 +54,6 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
       } else if (booking) {
         // Feedback for booking/testing service
         feedbackData = {
-          customerId: user.id,
           consultantId: null, // No consultant for testing services
           bookingId: booking.bookingId,
           rating: rating,
@@ -67,16 +65,15 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
 
       const response = await submitConsultationFeedbackAPI(feedbackData);
       
-      if (response.success) {
-        toast.success('Gửi phản hồi thành công!');
-        onFeedbackSubmitted && onFeedbackSubmitted();
-        handleClose();
-      } else {
-        setError(response.message || 'Có lỗi xảy ra khi gửi phản hồi');
-      }
+      // Response đã được xử lý bởi customize-axios interceptor
+      // Nếu thành công, response.data sẽ chứa data thực tế
+      // Nếu lỗi, sẽ throw error
+      toast.success('Gửi phản hồi thành công!');
+      onFeedbackSubmitted && onFeedbackSubmitted();
+      handleClose();
     } catch (error) {
       console.error('Feedback submission error:', error);
-      setError(error.response?.data?.message || 'Có lỗi xảy ra khi gửi phản hồi');
+      setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi gửi phản hồi');
     } finally {
       setLoading(false);
     }
@@ -110,8 +107,14 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
       
       // Nếu không có trong data, kiểm tra API
       const response = await getConsultationFeedbackAPI(consultation.id);
-      if (response.success && response.data) {
-        setExistingFeedback(response.data);
+      // Response đã được xử lý bởi customize-axios interceptor
+      // Kiểm tra xem response có phải là object gốc không (có field success)
+      if (response && typeof response === 'object' && response.success !== undefined) {
+        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
+        setExistingFeedback(null);
+      } else if (response && response !== null) {
+        // Đây là data thực tế (đã có feedback)
+        setExistingFeedback(response);
         setError('Bạn đã đánh giá consultation này rồi');
         setTimeout(() => {
           handleClose();

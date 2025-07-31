@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from './AuthContext';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import GlobalNotificationToast from '../components/GlobalNotificationToast';
 
 const WebSocketContext = createContext();
@@ -81,13 +81,14 @@ export const WebSocketProvider = ({ children }) => {
         console.log('✅ WebSocket connected:', frame);
         setConnected(true);
         subscribeToTopics();
-        toast.success('Đã kết nối thông báo real-time!');
+        // Tắt toast notification để tránh spam
+        // toast.success('Đã kết nối thông báo real-time!');
       },
       onStompError: (frame) => {
         console.error('❌ STOMP error:', frame.headers['message']);
         console.error('❌ Full error frame:', frame);
         setConnected(false);
-        toast.error('Lỗi kết nối WebSocket: ' + (frame.headers['message'] || 'Unknown error'));
+        // toast.error('Lỗi kết nối WebSocket: ' + (frame.headers['message'] || 'Unknown error'));
       },
       onWebSocketError: (event) => {
         console.error('❌ WebSocket error:', event);
@@ -207,26 +208,28 @@ export const WebSocketProvider = ({ children }) => {
 
       setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Giữ tối đa 50 notifications
 
+      // Tắt tất cả toast notifications để tránh spam
       // Chỉ hiển thị simple toast, không dùng GlobalNotificationToast để tránh lỗi
-      if (update.status && update.message && update.bookingId) {
-        const toastMessage = `Booking #${update.bookingId}: ${update.message}`;
-        switch (update.status) {
-          case 'CONFIRMED':
-          case 'SAMPLE_COLLECTED':
-          case 'COMPLETED':
-          case 'Results Ready':
-            toast.success(toastMessage);
-            break;
-          case 'CANCELLED':
-            toast.error(toastMessage);
-            break;
-          default:
-            toast.info(toastMessage);
-        }
-      }
+      // if (update.status && update.message && update.bookingId) {
+      //   const toastMessage = `Booking #${update.bookingId}: ${update.message}`;
+      //   switch (update.status) {
+      //     case 'CONFIRMED':
+      //     case 'SAMPLE_COLLECTED':
+      //     case 'COMPLETED':
+      //     case 'Results Ready':
+      //       toast.success(toastMessage);
+      //       break;
+      //     case 'CANCELLED':
+      //       toast.error(toastMessage);
+      //       break;
+      //     default:
+      //       toast.info(toastMessage);
+      //   }
+      // }
     } catch (error) {
       console.error('Error handling booking update:', error);
-      toast.error('Có lỗi khi xử lý thông báo cập nhật');
+      // Tắt toast error
+      // toast.error('Có lỗi khi xử lý thông báo cập nhật');
     }
   };
 
