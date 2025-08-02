@@ -41,7 +41,7 @@ export const MainLayout = ({
         <Header />
 
         {/* Main Content */}
-        <main className="container flex-1">{children || <Outlet />}</main>
+        <main className="container flex-1 overflow-y-auto">{children || <Outlet />}</main>
 
         {/* Footer */}
         <Footer />

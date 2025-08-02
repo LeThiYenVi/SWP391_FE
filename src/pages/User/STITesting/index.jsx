@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { TestTube, MapPin, Clock, FileText, Download, Eye, Calendar, Star } from 'lucide-react';
+import { TestTube, MapPin, Clock, FileText, Download, Eye, Calendar, Star, X, XCircle } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -8,11 +8,12 @@ import { getTestingServicesAPI } from '../../../services/TestingService';
 import { getLocationsAPI } from '../../../services/LocationService';
 import TimeSlotService from '../../../services/TimeSlotService';
 import instance from '../../../services/customize-axios';
-import BookingService from '../../../services/BookingService';
-import { useWebSocket } from '../../../context/WebSocketContext';
+import BookingService, { createBookingAPI } from '../../../services/BookingService';
+import { useWebSocket } from '../../../hooks/useWebSocketCompat';
 import { useAuth } from '../../../context/AuthContext';
 import FeedbackModal from '../../../components/FeedbackModal';
 import FeedbackStatus from '../../../components/FeedbackStatus';
+import TestResultModal from '../../../components/TestResultModal';
 
 const STITesting = () => {
   const navigate = useNavigate();
@@ -36,11 +37,21 @@ const STITesting = () => {
   const [trackingOpen, setTrackingOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
-  
+
+  // Booking confirmation modal states
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+
   // Feedback states
   const { user } = useAuth();
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+
+  // Cancel booking states
+  const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
 
 
   useEffect(() => {
@@ -176,26 +187,7 @@ const STITesting = () => {
     },
   ];
 
-  const testHistory = [
-    {
-      id: 1,
-      date: '2024-01-15',
-      tests: ['HIV', 'Giang mai'],
-      status: 'completed',
-      location: 'Trung tâm Y tế Gynexa - Quận 1',
-      resultDate: '2024-01-17',
-      totalCost: 350000,
-    },
-    {
-      id: 2,
-      date: '2024-01-20',
-      tests: ['Chlamydia', 'Lậu'],
-      status: 'pending',
-      location: 'Trung tâm Y tế Gynexa - Quận 3',
-      resultDate: '2024-01-22',
-      totalCost: 350000,
-    },
-  ];
+  // Removed mock data - using real API data from bookingHistory state
 
   const handleTestSelection = (serviceId) => {
     setSelectedTest(Number(serviceId));
@@ -221,6 +213,39 @@ const STITesting = () => {
     if (activeTab === 'history') {
       fetchBookingHistory();
     }
+  };
+
+  // Cancel booking handlers
+  const handleCancelClick = (booking) => {
+    setBookingToCancel(booking);
+    setShowCancelConfirm(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!bookingToCancel) return;
+
+    setCancellingBookingId(bookingToCancel.bookingId);
+    try {
+      const result = await BookingService.cancelBooking(bookingToCancel.bookingId);
+      if (result.success) {
+        toast.success('Hủy lịch hẹn thành công!');
+        fetchBookingHistory(); // Refresh list
+      } else {
+        toast.error(result.message || 'Không thể hủy lịch hẹn');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast.error('Có lỗi xảy ra khi hủy lịch hẹn');
+    } finally {
+      setCancellingBookingId(null);
+      setShowCancelConfirm(false);
+      setBookingToCancel(null);
+    }
+  };
+
+  const handleCancelCancel = () => {
+    setShowCancelConfirm(false);
+    setBookingToCancel(null);
   };
 
   const fetchBookingHistory = async () => {
@@ -253,7 +278,7 @@ const STITesting = () => {
     const selectedLocationData = locations.find(l => l.id === selectedLocation);
 
     // Tạo booking data
-    const bookingData = {
+    const newBookingData = {
       serviceId: selectedTest,
       serviceName: selectedService?.serviceName,
       serviceDescription: selectedService?.description,
@@ -266,10 +291,46 @@ const STITesting = () => {
       selectedTimeSlot: selectedTimeSlot,
     };
 
-    // Chuyển sang trang booking confirmation
-    navigate('/sti-testing/booking-confirmation', { 
-      state: { bookingData } 
-    });
+    // Hiển thị modal xác nhận thay vì chuyển hướng
+    setBookingData(newBookingData);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!bookingData) return;
+
+    setIsSubmittingBooking(true);
+    try {
+      const bookingRequest = {
+        serviceId: bookingData.serviceId,
+        timeSlotId: bookingData.selectedTimeSlot.timeSlotId,
+        locationId: bookingData.locationId,
+        bookingDate: bookingData.selectedDate,
+        notes: ''
+      };
+
+      const response = await createBookingAPI(bookingRequest);
+
+      if (response) {
+        toast.success('Đặt lịch xét nghiệm thành công!');
+
+        // Reset form
+        setSelectedTest(null);
+        setSelectedLocation(null);
+        setSelectedDate('');
+        setSelectedTimeSlot(null);
+        setIsBookingModalOpen(false);
+        setBookingData(null);
+
+        // Reload trang để cập nhật dữ liệu
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Lỗi khi đặt lịch:', error);
+      toast.error(error.message || 'Có lỗi xảy ra khi đặt lịch xét nghiệm');
+    } finally {
+      setIsSubmittingBooking(false);
+    }
   };
 
   const generateAvailableDates = () => {
@@ -284,16 +345,29 @@ const STITesting = () => {
   const selectedServiceName = selectedService ? selectedService.serviceName : '';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-white shadow-lg border-b-4" style={{ borderBottomColor: '#3a99b7' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Xét nghiệm STIs
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Tầm soát và theo dõi sức khỏe sinh sản an toàn, bảo mật
+            <div className="flex items-center justify-center mb-4">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center mr-4"
+                style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+              >
+                <TestTube className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold" style={{
+                background: 'linear-gradient(135deg, #3a99b7, #2d7a91)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Xét nghiệm STIs
+              </h1>
+            </div>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Dịch vụ xét nghiệm chuyên nghiệp, an toàn và bảo mật cho sức khỏe sinh sản của bạn
             </p>
           </div>
         </div>
@@ -301,22 +375,28 @@ const STITesting = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-8">
+        <div className="flex space-x-1 bg-white rounded-xl p-1 mb-8 shadow-lg border" style={{ borderColor: '#3a99b7' }}>
           {[
-            { id: 'booking', label: 'Đặt lịch xét nghiệm' },
-            { id: 'history', label: 'Lịch sử xét nghiệm' },
-            { id: 'results', label: 'Kết quả xét nghiệm' },
+            { id: 'booking', label: 'Đặt lịch xét nghiệm', icon: <Calendar className="w-4 h-4" /> },
+            { id: 'history', label: 'Theo dõi xét nghiệm', icon: <Clock className="w-4 h-4" /> },
+            { id: 'results', label: 'Kết quả xét nghiệm', icon: <FileText className="w-4 h-4" /> },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
+              className={`flex-1 py-3 px-6 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                 activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
+              style={{
+                background: activeTab === tab.id
+                  ? 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                  : 'transparent'
+              }}
             >
-              {tab.label}
+              {tab.icon}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -325,40 +405,68 @@ const STITesting = () => {
         {activeTab === 'booking' && (
           <div className="space-y-8">
             {/* Available Tests */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Chọn xét nghiệm
-              </h2>
+            <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+              <div className="flex items-center mb-6">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                  style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                >
+                  <TestTube className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                  Chọn gói xét nghiệm
+                </h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {availableTests.map(test => (
                   <div
                     key={test.serviceId}
                     onClick={() => handleTestSelection(test.serviceId)}
-                    className={`bg-white rounded-lg p-6 shadow-sm cursor-pointer transition-all ${
+                    className={`bg-white rounded-xl p-6 cursor-pointer transition-all duration-300 border-2 hover:shadow-xl transform hover:-translate-y-1 ${
                       selectedTest === test.serviceId
-                        ? 'ring-2 ring-blue-500 bg-blue-50'
-                        : 'hover:shadow-md'
+                        ? 'shadow-xl scale-105'
+                        : 'shadow-md hover:shadow-lg'
                     }`}
+                    style={{
+                      borderColor: selectedTest === test.serviceId ? '#3a99b7' : '#e5e7eb',
+                      background: selectedTest === test.serviceId
+                        ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.05), rgba(45, 122, 145, 0.05))'
+                        : 'white'
+                    }}
                   >
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center">
-                        <TestTube
-                          className={`h-6 w-6 mr-3 ${
-                            selectedTest === test.serviceId
-                              ? 'text-blue-600'
-                              : 'text-gray-600'
-                          }`}
-                        />
-                        <h3 className="font-semibold text-gray-900">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+                          style={{
+                            background: selectedTest === test.serviceId
+                              ? 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                              : '#f3f4f6'
+                          }}
+                        >
+                          <TestTube
+                            className={`h-5 w-5 ${
+                              selectedTest === test.serviceId
+                                ? 'text-white'
+                                : 'text-gray-600'
+                            }`}
+                          />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
                           {test.serviceName}
                         </h3>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           selectedTest === test.serviceId
-                            ? 'bg-blue-600 border-blue-600'
+                            ? 'border-transparent'
                             : 'border-gray-300'
                         }`}
+                        style={{
+                          background: selectedTest === test.serviceId
+                            ? 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                            : 'transparent'
+                        }}
                       >
                         {selectedTest === test.serviceId && (
                           <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -366,24 +474,29 @@ const STITesting = () => {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
                       {test.description}
                     </p>
 
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Giá:</span>
-                        <span className="font-semibold text-blue-600">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <span className="text-gray-600 font-medium">Giá:</span>
+                        <span
+                          className="text-xl font-bold"
+                          style={{ color: '#3a99b7' }}
+                        >
                           {test.price?.toLocaleString('vi-VN')}đ
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Thời gian:</span>
-                        <span className="text-gray-900">{test.durationMinutes ? `${test.durationMinutes} phút` : ''}</span>
+                        <span className="text-gray-900 bg-gray-100 px-2 py-1 rounded-full text-xs">
+                          {test.durationMinutes ? `${test.durationMinutes} phút` : '30 phút'}
+                        </span>
                       </div>
                       {test.preparation && (
-                        <div className="text-xs text-gray-500 mt-2">
-                          <strong>Chuẩn bị:</strong> {test.preparation}
+                        <div className="text-xs text-gray-500 mt-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <strong className="text-yellow-700">Chuẩn bị:</strong> {test.preparation}
                         </div>
                       )}
                     </div>
@@ -392,20 +505,35 @@ const STITesting = () => {
               </div>
 
               {selectedTest && (
-                <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                <div
+                  className="mt-6 rounded-xl p-6 border-2"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))',
+                    borderColor: '#3a99b7'
+                  }}
+                >
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-blue-900">
-                        Đã chọn xét nghiệm: {selectedServiceName}
-                      </h3>
-                      <p className="text-sm text-blue-700">
-                        {selectedServiceName}
-                      </p>
+                    <div className="flex items-center">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center mr-4"
+                        style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                      >
+                        <TestTube className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg" style={{ color: '#2d7a91' }}>
+                          Đã chọn: {selectedServiceName}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Gói xét nghiệm đã được chọn
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-blue-900">
-                        Tổng: {calculateTotal().toLocaleString('vi-VN')}đ
+                      <p className="text-2xl font-bold" style={{ color: '#3a99b7' }}>
+                        {calculateTotal().toLocaleString('vi-VN')}đ
                       </p>
+                      <p className="text-sm text-gray-600">Tổng chi phí</p>
                     </div>
                   </div>
                 </div>
@@ -414,8 +542,18 @@ const STITesting = () => {
 
             {/* Location Selection */}
             {selectedTest && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn địa điểm</h2>
+              <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+                <div className="flex items-center mb-6">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                  >
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                    Chọn địa điểm xét nghiệm
+                  </h2>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {locations.map(loc => (
                     <div
@@ -424,16 +562,67 @@ const STITesting = () => {
                         setSelectedLocation(loc.id);
                         console.log('Chọn địa điểm:', loc.id);
                       }}
-                      className={`bg-white rounded-lg p-6 shadow-sm cursor-pointer transition-all ${
+                      className={`bg-white rounded-xl p-6 cursor-pointer transition-all duration-300 border-2 hover:shadow-xl transform hover:-translate-y-1 ${
                         selectedLocation === loc.id
-                          ? 'ring-2 ring-blue-500 bg-blue-50'
-                          : 'hover:shadow-md'
+                          ? 'shadow-xl scale-105'
+                          : 'shadow-md hover:shadow-lg'
                       }`}
+                      style={{
+                        borderColor: selectedLocation === loc.id ? '#3a99b7' : '#e5e7eb',
+                        background: selectedLocation === loc.id
+                          ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.05), rgba(45, 122, 145, 0.05))'
+                          : 'white'
+                      }}
                     >
-                      <div className="font-bold text-lg mb-2">{loc.name}</div>
-                      <div className="mb-1">{loc.address}</div>
-                      <div className="mb-1">📞 {loc.phone}</div>
-                      <div className="mb-1">🕒 {loc.hours}</div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center"
+                          style={{
+                            background: selectedLocation === loc.id
+                              ? 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                              : '#f3f4f6'
+                          }}
+                        >
+                          <MapPin
+                            className={`h-5 w-5 ${
+                              selectedLocation === loc.id
+                                ? 'text-white'
+                                : 'text-gray-600'
+                            }`}
+                          />
+                        </div>
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            selectedLocation === loc.id
+                              ? 'border-transparent'
+                              : 'border-gray-300'
+                          }`}
+                          style={{
+                            background: selectedLocation === loc.id
+                              ? 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                              : 'transparent'
+                          }}
+                        >
+                          {selectedLocation === loc.id && (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="font-bold text-lg mb-3 text-gray-900">{loc.name}</div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex items-start">
+                          <span className="mr-2">📍</span>
+                          <span>{loc.address}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="mr-2">📞</span>
+                          <span>{loc.phone}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="mr-2">🕒</span>
+                          <span>{loc.hours}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -442,8 +631,18 @@ const STITesting = () => {
 
             {/* Date Selection */}
             {selectedTest && selectedLocation && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn ngày</h2>
+              <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+                <div className="flex items-center mb-6">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                  >
+                    <Calendar className="w-4 h-4 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                    Chọn ngày xét nghiệm
+                  </h2>
+                </div>
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
                   {Array.from(new Set(timeSlots.map(ts => ts.slotDate))).map(date => {
                     const d = new Date(date);
@@ -451,19 +650,30 @@ const STITesting = () => {
                     const dayNum = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
                     const isSelected = selectedDate === date;
                     return (
-                      <div 
-                        key={date} 
+                      <div
+                        key={date}
                         onClick={() => setSelectedDate(date)}
-                        className={`bg-white rounded-lg p-4 shadow-sm text-center cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'ring-2 ring-blue-500 bg-blue-50' 
-                            : 'hover:shadow-md'
+                        className={`bg-white rounded-xl p-4 text-center cursor-pointer transition-all duration-300 border-2 hover:shadow-lg transform hover:-translate-y-1 ${
+                          isSelected
+                            ? 'shadow-lg scale-105'
+                            : 'shadow-md hover:shadow-lg'
                         }`}
+                        style={{
+                          borderColor: isSelected ? '#3a99b7' : '#e5e7eb',
+                          background: isSelected
+                            ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))'
+                            : 'white'
+                        }}
                       >
-                        <div className="font-semibold">{day}</div>
-                        <div className="text-lg font-bold">{dayNum}</div>
+                        <div className="font-semibold text-gray-600 text-sm">{day}</div>
+                        <div
+                          className="text-lg font-bold mt-1"
+                          style={{ color: isSelected ? '#3a99b7' : '#374151' }}
+                        >
+                          {dayNum}
+                        </div>
                         {isSelected && (
-                          <div className="mt-2 text-xs text-blue-600 font-medium">
+                          <div className="mt-2 text-xs font-medium" style={{ color: '#3a99b7' }}>
                             Đã chọn
                           </div>
                         )}
@@ -476,26 +686,39 @@ const STITesting = () => {
 
             {/* Time Slots for Selected Date */}
             {selectedTest && selectedLocation && selectedDate && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Chọn giờ</h2>
-                <div className="mb-4 text-sm text-gray-600">
-                  Debug: {timeSlots.length} time slots, selectedDate: {selectedDate}
+              <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+                <div className="flex items-center mb-6">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                  >
+                    <Clock className="w-4 h-4 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                    Chọn khung giờ
+                  </h2>
                 </div>
-                
+
                 {loadingTimeSlots ? (
-                  <div className="flex justify-center items-center py-8">
+                  <div className="flex justify-center items-center py-12">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-2"></div>
-                      <p className="text-gray-600">Đang tải danh sách giờ...</p>
+                      <div
+                        className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent mx-auto mb-4"
+                        style={{ borderColor: '#3a99b7', borderTopColor: 'transparent' }}
+                      ></div>
+                      <p className="text-gray-600 font-medium">Đang tải danh sách khung giờ...</p>
                     </div>
                   </div>
                 ) : timeSlots.filter(ts => ts.slotDate === selectedDate).length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 mb-4">
-                      <Clock className="h-12 w-12 mx-auto text-gray-300" />
+                  <div className="text-center py-12">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                      style={{ background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))' }}
+                    >
+                      <Clock className="h-8 w-8" style={{ color: '#3a99b7' }} />
                     </div>
-                    <p className="text-gray-600 font-medium">Không có slot trống cho ngày này</p>
-                    <p className="text-gray-500 text-sm">Vui lòng chọn ngày khác</p>
+                    <p className="text-gray-700 font-semibold text-lg mb-2">Không có khung giờ trống</p>
+                    <p className="text-gray-500">Vui lòng chọn ngày khác để xem các khung giờ có sẵn</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -507,21 +730,30 @@ const STITesting = () => {
                           <div
                             key={timeSlot.timeSlotId}
                             onClick={() => setSelectedTimeSlot(timeSlot)}
-                            className={`bg-white rounded-lg p-4 shadow-sm text-center cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                : 'hover:shadow-md'
+                            className={`bg-white rounded-xl p-4 text-center cursor-pointer transition-all duration-300 border-2 hover:shadow-lg transform hover:-translate-y-1 ${
+                              isSelected
+                                ? 'shadow-lg scale-105'
+                                : 'shadow-md hover:shadow-lg'
                             }`}
+                            style={{
+                              borderColor: isSelected ? '#3a99b7' : '#e5e7eb',
+                              background: isSelected
+                                ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))'
+                                : 'white'
+                            }}
                           >
-                            <div className="font-semibold text-gray-900">
+                            <div
+                              className="font-bold text-lg mb-2"
+                              style={{ color: isSelected ? '#3a99b7' : '#374151' }}
+                            >
                               {timeSlot.startTime} - {timeSlot.endTime}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="text-sm text-gray-600 mb-2">
                               Còn {timeSlot.availableSlots} chỗ
                             </div>
                             {isSelected && (
-                              <div className="mt-2 text-xs text-blue-600 font-medium">
-                                Đã chọn
+                              <div className="text-xs font-medium" style={{ color: '#3a99b7' }}>
+                                ✓ Đã chọn
                               </div>
                             )}
                           </div>
@@ -534,13 +766,28 @@ const STITesting = () => {
 
             {/* Booking Button */}
             {selectedTest && selectedLocation && selectedDate && selectedTimeSlot && (
-              <div className="text-center mt-6">
+              <div className="text-center mt-8">
                 <button
                   onClick={handleBooking}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium"
+                  className="text-white px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #3a99b7, #2d7a91)',
+                    boxShadow: '0 4px 15px rgba(58, 153, 183, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, #2d7a91, #1e5a6b)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(58, 153, 183, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, #3a99b7, #2d7a91)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(58, 153, 183, 0.3)';
+                  }}
                 >
-                  Xác nhận đặt lịch xét nghiệm
+                  🔬 Xác nhận đặt lịch xét nghiệm
                 </button>
+                <p className="text-gray-600 text-sm mt-3">
+                  Bạn sẽ được chuyển đến trang xác nhận thông tin
+                </p>
               </div>
             )}
           </div>
@@ -548,68 +795,132 @@ const STITesting = () => {
 
         {/* History Tab */}
         {activeTab === 'history' && (
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Lịch sử xét nghiệm
-            </h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+            <div className="flex items-center mb-8">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+              >
+                <Clock className="w-4 h-4 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                Theo dõi xét nghiệm
+              </h2>
+            </div>
+            <div className="space-y-6">
               {loadingHistory ? (
-                <div>Đang tải...</div>
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-center">
+                    <div
+                      className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent mx-auto mb-4"
+                      style={{ borderColor: '#3a99b7', borderTopColor: 'transparent' }}
+                    ></div>
+                    <p className="text-gray-600 font-medium">Đang tải lịch sử xét nghiệm...</p>
+                  </div>
+                </div>
               ) : bookingHistory.length === 0 ? (
-                <div>Chưa có lịch sử xét nghiệm</div>
+                <div className="text-center py-12">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))' }}
+                  >
+                    <FileText className="h-8 w-8" style={{ color: '#3a99b7' }} />
+                  </div>
+                  <p className="text-gray-700 font-semibold text-lg mb-2">Chưa có lịch sử xét nghiệm</p>
+                  <p className="text-gray-500">Hãy đặt lịch xét nghiệm đầu tiên của bạn</p>
+                </div>
               ) : (
                 bookingHistory.map(record => (
                   <div
                     key={record.bookingId}
-                    className="bg-white rounded-lg p-6 shadow-sm"
+                    className="bg-white rounded-xl p-6 shadow-md border-2 hover:shadow-lg transition-all duration-300"
+                    style={{ borderColor: '#e5e7eb' }}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <Calendar className="h-5 w-5 text-gray-500 mr-2" />
-                          <span className="font-semibold text-gray-900">
-                            {record.bookingDate ? format(new Date(record.bookingDate), 'dd/MM/yyyy') : ''}
-                          </span>
-                          <span
-                            className={`ml-3 px-2 py-1 text-xs rounded-full ${
-                              record.status === 'COMPLETED'
-                                ? 'bg-green-100 text-green-800'
-                                : record.status === 'PENDING'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
+                        <div className="flex items-center mb-4">
+                          <div
+                            className="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+                            style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
                           >
-                            {record.status === 'COMPLETED'
-                              ? 'Hoàn thành'
-                              : record.status === 'PENDING'
-                              ? 'Đang chờ'
-                              : record.status}
-                          </span>
+                            <TestTube className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-lg text-gray-900">
+                              {record.bookingDate ? format(new Date(record.bookingDate), 'dd/MM/yyyy') : ''}
+                            </span>
+                            <div className="flex items-center mt-1">
+                              <span
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                  record.status === 'COMPLETED'
+                                    ? 'bg-green-100 text-green-800'
+                                    : record.status === 'PENDING'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : record.status === 'CONFIRMED'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : record.status === 'CANCELLED'
+                                    ? 'bg-red-100 text-red-800'
+                                    : record.status === 'SAMPLE_COLLECTED'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : record.status === 'TESTING'
+                                    ? 'bg-indigo-100 text-indigo-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {record.status === 'COMPLETED'
+                                  ? '✅ Hoàn thành'
+                                  : record.status === 'PENDING'
+                                  ? '⏳ Đang chờ'
+                                  : record.status === 'CONFIRMED'
+                                  ? '📅 Đã xác nhận'
+                                  : record.status === 'CANCELLED'
+                                  ? '❌ Đã hủy'
+                                  : record.status === 'SAMPLE_COLLECTED'
+                                  ? '🧪 Đã lấy mẫu'
+                                  : record.status === 'TESTING'
+                                  ? '🔬 Đang xét nghiệm'
+                                  : record.status}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>
-                            <strong>Xét nghiệm:</strong> {record.serviceName}
-                          </p>
-                          <p>
-                            <strong>Ngày hẹn:</strong> {record.slotDate ? format(new Date(record.slotDate), 'dd/MM/yyyy') : ''}
-                          </p>
-                          <p>
-                            <strong>Giờ:</strong> {record.startTime} - {record.endTime}
-                          </p>
-                          <p>
-                            <strong>Ngày có kết quả:</strong>{' '}
-                            {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : '---'}
-                          </p>
-                          <p>
-                            <strong>Chi phí:</strong>{' '}
-                            {record.servicePrice?.toLocaleString('vi-VN')}đ
-                          </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <span className="text-gray-500 w-24">Xét nghiệm:</span>
+                              <span className="font-semibold text-gray-900">{record.serviceName}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-gray-500 w-24">Ngày hẹn:</span>
+                              <span className="font-medium text-gray-700">
+                                {record.slotDate ? format(new Date(record.slotDate), 'dd/MM/yyyy') : '---'}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-gray-500 w-24">Giờ:</span>
+                              <span className="font-medium text-gray-700">{record.startTime} - {record.endTime}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <span className="text-gray-500 w-28">Kết quả:</span>
+                              <span className="font-medium text-gray-700">
+                                {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : 'Chưa có'}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-gray-500 w-28">Chi phí:</span>
+                              <span className="font-bold text-lg" style={{ color: '#3a99b7' }}>
+                                {record.servicePrice?.toLocaleString('vi-VN')}đ
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        
+
                         {/* Feedback Status for completed bookings */}
                         {record.status === 'COMPLETED' && (
-                          <div className="mt-3">
-                            <FeedbackStatus 
+                          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                            <FeedbackStatus
                               bookingId={record.bookingId}
                               onFeedbackSubmitted={handleFeedbackSubmitted}
                               onFeedbackClick={() => handleFeedbackClick(record)}
@@ -617,20 +928,44 @@ const STITesting = () => {
                           </div>
                         )}
                       </div>
-                      <div className="ml-4 flex flex-col gap-2">
+                      <div className="ml-6 flex flex-col gap-3">
                         <button
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                          className="text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg"
+                          style={{
+                            background: 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                          }}
                           onClick={() => {
                             navigate(`/sti-testing/tracking/${record.bookingId}`);
                           }}
                         >
-                          Tracking trạng thái
+                          📊 Theo dõi
                         </button>
-                        
+
+                        {/* Cancel button for pending/confirmed bookings */}
+                        {(record.status === 'PENDING' || record.status === 'CONFIRMED') && (
+                          <button
+                            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleCancelClick(record)}
+                            disabled={cancellingBookingId === record.bookingId}
+                          >
+                            {cancellingBookingId === record.bookingId ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Đang hủy...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4" />
+                                Hủy lịch hẹn
+                              </>
+                            )}
+                          </button>
+                        )}
+
                         {/* Feedback button for completed bookings */}
                         {record.status === 'COMPLETED' && (
                           <button
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-1"
+                            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg"
                             onClick={() => handleFeedbackClick(record)}
                           >
                             <Star className="h-4 w-4" />
@@ -684,20 +1019,39 @@ const STITesting = () => {
 
         {/* Results Tab */}
         {activeTab === 'results' && (
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Kết quả xét nghiệm
-            </h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
+            <div className="flex items-center mb-8">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
+                style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+              >
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                Kết quả xét nghiệm
+              </h2>
+            </div>
+            <div className="space-y-6">
               {loadingHistory ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Đang tải kết quả...</p>
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-center">
+                    <div
+                      className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent mx-auto mb-4"
+                      style={{ borderColor: '#3a99b7', borderTopColor: 'transparent' }}
+                    ></div>
+                    <p className="text-gray-600 font-medium">Đang tải kết quả xét nghiệm...</p>
+                  </div>
                 </div>
               ) : bookingHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Chưa có kết quả xét nghiệm nào</p>
+                <div className="text-center py-12">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))' }}
+                  >
+                    <FileText className="h-8 w-8" style={{ color: '#3a99b7' }} />
+                  </div>
+                  <p className="text-gray-700 font-semibold text-lg mb-2">Chưa có kết quả xét nghiệm</p>
+                  <p className="text-gray-500">Kết quả sẽ hiển thị sau khi xét nghiệm hoàn tất</p>
                 </div>
               ) : (
                 bookingHistory
@@ -705,21 +1059,38 @@ const STITesting = () => {
                   .map(record => (
                     <div
                       key={record.bookingId}
-                      className="bg-white rounded-lg p-6 shadow-sm"
+                      className="bg-white rounded-xl p-6 shadow-md border-2 hover:shadow-lg transition-all duration-300"
+                      style={{ borderColor: '#e5e7eb' }}
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            Kết quả ngày{' '}
-                            {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : 'N/A'}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {record.serviceName}
-                          </p>
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center">
+                          <div
+                            className="w-12 h-12 rounded-lg flex items-center justify-center mr-4"
+                            style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                          >
+                            <FileText className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-xl text-gray-900">
+                              Kết quả ngày{' '}
+                              {record.resultDate ? format(new Date(record.resultDate), 'dd/MM/yyyy') : 'N/A'}
+                            </h3>
+                            <p className="text-gray-600 mt-1">
+                              {record.serviceName}
+                            </p>
+                            <div className="flex items-center mt-2">
+                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                ✅ Đã có kết quả
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
                           <button
-                            className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                            className="flex items-center text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg"
+                            style={{
+                              background: 'linear-gradient(135deg, #3a99b7, #2d7a91)'
+                            }}
                             onClick={() => {
                               setSelectedResult(record);
                               setIsResultModalOpen(true);
@@ -729,7 +1100,7 @@ const STITesting = () => {
                             Xem chi tiết
                           </button>
                           <button
-                            className="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm"
+                            className="flex items-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-lg"
                             onClick={() => {
                               // Download result as PDF or print
                               toast.info('Tính năng tải về đang được phát triển');
@@ -741,16 +1112,24 @@ const STITesting = () => {
                         </div>
                       </div>
 
-                      <div className="border-t pt-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h4 className="font-medium text-gray-900 mb-2">Kết quả xét nghiệm:</h4>
-                          <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                      <div className="border-t pt-6" style={{ borderColor: '#e5e7eb' }}>
+                        <div
+                          className="rounded-xl p-6 border-2"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.05), rgba(45, 122, 145, 0.05))',
+                            borderColor: '#3a99b7'
+                          }}
+                        >
+                          <h4 className="font-bold text-lg mb-4" style={{ color: '#2d7a91' }}>
+                            📋 Kết quả xét nghiệm:
+                          </h4>
+                          <div className="bg-white rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap border border-gray-200">
                             {record.result || 'Chưa có kết quả chi tiết'}
                           </div>
                           {record.description && (
-                            <div className="mt-3">
-                              <h5 className="font-medium text-gray-900 mb-1">Ghi chú:</h5>
-                              <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                            <div className="mt-4">
+                              <h5 className="font-semibold text-gray-900 mb-2">💬 Ghi chú từ bác sĩ:</h5>
+                              <div className="bg-white rounded-lg p-4 text-sm text-gray-600 whitespace-pre-wrap border border-gray-200">
                                 {record.description}
                               </div>
                             </div>
@@ -764,11 +1143,16 @@ const STITesting = () => {
               {/* Show message if no completed results */}
               {!loadingHistory && bookingHistory.length > 0 &&
                bookingHistory.filter(record => record.status === 'COMPLETED' && record.result).length === 0 && (
-                <div className="text-center py-8">
-                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Chưa có kết quả xét nghiệm hoàn thành</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Kết quả sẽ hiển thị sau khi xét nghiệm hoàn thành
+                <div className="text-center py-12">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))' }}
+                  >
+                    <FileText className="h-8 w-8" style={{ color: '#3a99b7' }} />
+                  </div>
+                  <p className="text-gray-700 font-semibold text-lg mb-2">Chưa có kết quả xét nghiệm hoàn thành</p>
+                  <p className="text-gray-500">
+                    Kết quả sẽ hiển thị sau khi quá trình xét nghiệm hoàn tất
                   </p>
                 </div>
               )}
@@ -778,109 +1162,175 @@ const STITesting = () => {
       </div>
 
       {/* Result Detail Modal */}
-      {isResultModalOpen && selectedResult && (
+      <TestResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => {
+          setIsResultModalOpen(false);
+          setSelectedResult(null);
+        }}
+        result={selectedResult}
+        patientInfo={selectedResult?.sampleCollectionProfile ? {
+          fullName: selectedResult.sampleCollectionProfile.collectorFullName,
+          dateOfBirth: selectedResult.sampleCollectionProfile.collectorDateOfBirth,
+          gender: selectedResult.sampleCollectionProfile.collectorGender,
+          phoneNumber: selectedResult.sampleCollectionProfile.collectorPhoneNumber,
+          address: selectedResult.sampleCollectionProfile.collectorAddress,
+          id: selectedResult.sampleCollectionProfile.collectorIdCard,
+          relationship: selectedResult.sampleCollectionProfile.relationshipToBooker
+        } : user}
+      />
+
+      {/* Booking Confirmation Modal */}
+      {isBookingModalOpen && bookingData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Chi tiết kết quả xét nghiệm
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {selectedResult.serviceName}
-                </p>
+            <div
+              className="p-6 border-b-4"
+              style={{ borderBottomColor: '#3a99b7' }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center mr-4"
+                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
+                  >
+                    <TestTube className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
+                      Xác nhận đặt lịch xét nghiệm
+                    </h3>
+                    <p className="text-gray-600 mt-1">
+                      Vui lòng kiểm tra thông tin trước khi xác nhận
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsBookingModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  disabled={isSubmittingBooking}
+                >
+                  <X className="h-6 w-6" />
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setIsResultModalOpen(false);
-                  setSelectedResult(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
 
             {/* Modal Body */}
             <div className="p-6 space-y-6">
-              {/* Test Information */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Thông tin xét nghiệm</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {/* Service Info */}
+              <div
+                className="rounded-xl p-6 border-2"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.05), rgba(45, 122, 145, 0.05))',
+                  borderColor: '#3a99b7'
+                }}
+              >
+                <h4 className="font-bold text-lg mb-4" style={{ color: '#2d7a91' }}>
+                  🔬 Thông tin xét nghiệm
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span className="font-medium text-gray-700">Ngày xét nghiệm:</span>
-                    <p className="text-gray-900">
-                      {selectedResult.resultDate ? format(new Date(selectedResult.resultDate), 'dd/MM/yyyy') : 'N/A'}
+                    <span className="text-gray-600 text-sm">Dịch vụ:</span>
+                    <p className="font-semibold text-gray-900">{bookingData.serviceName}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 text-sm">Chi phí:</span>
+                    <p className="font-bold text-xl" style={{ color: '#3a99b7' }}>
+                      {bookingData.price?.toLocaleString('vi-VN')}đ
                     </p>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Loại xét nghiệm:</span>
-                    <p className="text-gray-900">{selectedResult.serviceName}</p>
+                </div>
+                {bookingData.serviceDescription && (
+                  <div className="mt-3">
+                    <span className="text-gray-600 text-sm">Mô tả:</span>
+                    <p className="text-gray-700 text-sm mt-1">{bookingData.serviceDescription}</p>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Mã booking:</span>
-                    <p className="text-gray-900">#{selectedResult.bookingId}</p>
+                )}
+              </div>
+
+              {/* Location & Time Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Location */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" style={{ color: '#3a99b7' }} />
+                    Địa điểm
+                  </h5>
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium">{bookingData.locationName}</p>
+                    <p className="text-gray-600">{bookingData.locationAddress}</p>
+                    <p className="text-gray-600">📞 {bookingData.locationPhone}</p>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Trạng thái:</span>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      selectedResult.resultType === 'Bình thường'
-                        ? 'bg-green-100 text-green-800'
-                        : selectedResult.resultType === 'Bất thường'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {selectedResult.resultType || 'Chưa xác định'}
-                    </span>
+                </div>
+
+                {/* Date & Time */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" style={{ color: '#3a99b7' }} />
+                    Thời gian
+                  </h5>
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium">
+                      {new Date(bookingData.selectedDate).toLocaleDateString('vi-VN', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-gray-600">
+                      🕒 {bookingData.selectedTimeSlot.startTime} - {bookingData.selectedTimeSlot.endTime}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Test Results */}
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Kết quả xét nghiệm</h4>
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono">
-                    {selectedResult.result || 'Chưa có kết quả'}
-                  </pre>
-                </div>
+              {/* Important Notes */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <h5 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                  ⚠️ Lưu ý quan trọng
+                </h5>
+                <ul className="text-yellow-700 text-sm space-y-1">
+                  <li>• Vui lòng đến đúng giờ đã đặt để tránh ảnh hưởng đến lịch trình</li>
+                  <li>• Mang theo CMND/CCCD và thẻ bảo hiểm y tế (nếu có)</li>
+                  <li>• Nhịn ăn 8-12 tiếng trước khi xét nghiệm (nếu cần thiết)</li>
+                  <li>• Liên hệ trung tâm nếu cần thay đổi lịch hẹn</li>
+                </ul>
               </div>
-
-              {/* Notes */}
-              {selectedResult.notes && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Ghi chú</h4>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-900">
-                      {selectedResult.notes}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-4 p-6 border-t border-gray-200">
               <button
-                onClick={() => {
-                  toast.info('Tính năng tải về đang được phát triển');
-                }}
-                className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                onClick={() => setIsBookingModalOpen(false)}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSubmittingBooking}
               >
-                <Download className="h-4 w-4 mr-2" />
-                Tải về PDF
+                Hủy
               </button>
               <button
-                onClick={() => {
-                  setIsResultModalOpen(false);
-                  setSelectedResult(null);
+                onClick={handleConfirmBooking}
+                disabled={isSubmittingBooking}
+                className="px-8 py-2 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                style={{
+                  background: isSubmittingBooking
+                    ? '#9ca3af'
+                    : 'linear-gradient(135deg, #3a99b7, #2d7a91)'
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
               >
-                Đóng
+                {isSubmittingBooking ? (
+                  <>
+                    <div
+                      className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"
+                    ></div>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    ✅ Xác nhận đặt lịch
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -894,6 +1344,57 @@ const STITesting = () => {
         booking={selectedBooking}
         onFeedbackSubmitted={handleFeedbackSubmitted}
       />
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <XCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Xác nhận hủy lịch hẹn</h3>
+                <p className="text-sm text-gray-600">Booking #{bookingToCancel?.bookingId}</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700 mb-2">
+                Bạn có chắc chắn muốn hủy lịch hẹn xét nghiệm này không?
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Lưu ý:</strong> Sau khi hủy, bạn sẽ không thể khôi phục lại lịch hẹn này.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelCancel}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Không hủy
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                disabled={cancellingBookingId}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {cancellingBookingId ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Đang hủy...
+                  </>
+                ) : (
+                  'Xác nhận hủy'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

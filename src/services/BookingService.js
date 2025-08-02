@@ -166,4 +166,5 @@ class BookingService {
   }
 }
 
-export default new BookingService(); 
+export default new BookingService();
+export { createBookingAPI };

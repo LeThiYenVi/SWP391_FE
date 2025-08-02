@@ -56,9 +56,9 @@ class NotificationService {
 
     this.notifications.unshift(newNotification);
     
-    // Giới hạn số lượng thông báo
-    if (this.notifications.length > 50) {
-      this.notifications = this.notifications.slice(0, 50);
+    // Giới hạn số lượng thông báo - giảm xuống 10
+    if (this.notifications.length > 10) {
+      this.notifications = this.notifications.slice(0, 10);
     }
 
     this.notify();
@@ -423,9 +423,9 @@ class NotificationService {
 
       this.notifications.unshift(newNotification);
       
-      // Giới hạn số lượng thông báo
-      if (this.notifications.length > 50) {
-        this.notifications = this.notifications.slice(0, 50);
+      // Giới hạn số lượng thông báo - giảm xuống 10
+      if (this.notifications.length > 10) {
+        this.notifications = this.notifications.slice(0, 10);
       }
 
       this.notify();

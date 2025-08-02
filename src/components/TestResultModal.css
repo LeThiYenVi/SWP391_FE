@@ -1,0 +1,284 @@
+/* Print styles for Test Result Modal */
+@media print {
+  /* Hide everything except the modal content */
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-content,
+  .print-content * {
+    visibility: visible;
+  }
+  
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Page settings */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+  
+  /* Hide modal controls when printing */
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Ensure proper spacing for print */
+  .print-content .p-8 {
+    padding: 1rem !important;
+  }
+  
+  /* Table styles for print */
+  table {
+    page-break-inside: avoid;
+    border-collapse: collapse !important;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure colors are preserved in print */
+  .bg-green-100 {
+    background-color: #dcfce7 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-red-100 {
+    background-color: #fee2e2 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-yellow-100 {
+    background-color: #fef3c7 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-blue-50 {
+    background-color: #eff6ff !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .text-green-800 {
+    color: #166534 !important;
+  }
+  
+  .text-red-800 {
+    color: #991b1b !important;
+  }
+  
+  .text-yellow-800 {
+    color: #92400e !important;
+  }
+  
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+  
+  .text-blue-900 {
+    color: #1e3a8a !important;
+  }
+  
+  /* Border styles for print */
+  .border-blue-600 {
+    border-color: #2563eb !important;
+  }
+  
+  .border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+  
+  /* Signature box styling for print */
+  .signature-box {
+    border: 1px solid #d1d5db !important;
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
+
+/* Regular screen styles */
+.test-result-modal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.clinic-logo {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Enhanced spacing and typography */
+.test-result-modal h1 {
+  letter-spacing: -0.025em;
+}
+
+.test-result-modal h2 {
+  letter-spacing: -0.025em;
+}
+
+.test-result-modal h3 {
+  letter-spacing: -0.025em;
+}
+
+.signature-box {
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+/* Hover effects for interactive elements */
+.modal-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+/* Table styling improvements */
+.result-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.result-table th,
+.result-table td {
+  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.result-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.result-table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.result-table tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* Status badge styling */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.status-normal {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-abnormal {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-unknown {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Enhanced gradients and shadows */
+.patient-info-card {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.test-info-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.conclusion-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .test-result-modal .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .test-result-modal .max-w-4xl {
+    max-width: 100%;
+    margin: 0.5rem;
+  }
+
+  .test-result-modal .p-8 {
+    padding: 1.5rem;
+  }
+
+  .test-result-modal .text-3xl {
+    font-size: 1.875rem;
+  }
+
+  .test-result-modal .w-36 {
+    width: 8rem;
+  }
+
+  .test-result-modal .grid-cols-3 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Animation for modal appearance */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.modal-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}

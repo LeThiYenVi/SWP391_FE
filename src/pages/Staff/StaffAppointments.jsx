@@ -3,6 +3,8 @@ import { getAllBookingsForStaffAPI } from '../../services/TestingService';
 import { updateBookingStatusAPI } from '../../services/StaffService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'react-toastify';
+import { useWebSocket } from '../../hooks/useWebSocketCompat';
 import {
   Box,
   Typography,
@@ -43,6 +45,9 @@ const StaffAppointments = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // WebSocket hook để nhận real-time updates
+  const { connected, notifications } = useWebSocket();
+
   const [dateFilter, setDateFilter] = useState('');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
 
@@ -62,9 +67,44 @@ const StaffAppointments = () => {
     fetchAppointments();
   }, [currentPage]);
 
+  // Debug WebSocket connection
+  useEffect(() => {
+    console.log('🔌 WebSocket connected:', connected);
+    console.log('📱 Notifications count:', notifications.length);
+  }, [connected, notifications]);
+
   useEffect(() => {
     filterAppointments();
   }, [searchTerm, dateFilter, appointments]);
+
+  // WebSocket effect để listen real-time updates từ notifications
+  useEffect(() => {
+    if (!connected || notifications.length === 0) return;
+
+    // Lấy notification mới nhất
+    const latestNotification = notifications[notifications.length - 1];
+
+    console.log('📱 Staff received notification:', latestNotification);
+
+    // Kiểm tra nếu là booking update
+    if (latestNotification && latestNotification.bookingId) {
+      // Tự động reload data khi có update
+      setTimeout(() => {
+        fetchAppointments();
+      }, 500);
+
+      // Hiển thị toast notification với toastId để tránh duplicate
+      toast.info(`Lịch hẹn #${latestNotification.bookingId} đã được cập nhật`, {
+        toastId: `booking-update-${latestNotification.bookingId}`, // Prevent duplicates
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+      });
+    }
+  }, [notifications, connected]);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -122,13 +162,30 @@ const StaffAppointments = () => {
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
       await updateBookingStatusAPI(appointmentId, newStatus);
-      // Refresh data to get updated statistics
-      await fetchAppointments();
-      // Show success message - you can replace this with a toast notification
-      alert(`Trạng thái lịch hẹn đã được cập nhật thành ${newStatus}`);
+
+      // WebSocket sẽ tự động reload data khi nhận được notification từ backend
+      // Không cần gọi fetchAppointments() ở đây để tránh double reload
+
+      // Show success toast with status translation
+      const statusText = getStatusText(newStatus);
+      toast.success(`✅ Đã cập nhật trạng thái thành "${statusText}" thành công!`, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch (err) {
       console.error('Error updating appointment status:', err);
-      alert('Không thể cập nhật trạng thái lịch hẹn. Vui lòng thử lại sau.');
+      toast.error('❌ Không thể cập nhật trạng thái lịch hẹn. Vui lòng thử lại sau.', {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   };
 
@@ -252,16 +309,42 @@ const StaffAppointments = () => {
 
   return (
     <Box>
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 700,
-          color: '#354766',
-          mb: 3,
-        }}
-      >
-        Lịch xét nghiệm chờ xác nhận
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 700,
+            color: '#354766',
+          }}
+        >
+          Lịch xét nghiệm chờ xác nhận
+        </Typography>
+
+        {/* Debug WebSocket Status */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Chip
+            label={connected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}
+            color={connected ? 'success' : 'error'}
+            size="small"
+          />
+          <Chip
+            label={`📱 ${notifications.length} notifications`}
+            color="info"
+            size="small"
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              console.log('🔄 Manual refresh');
+              fetchAppointments();
+            }}
+            startIcon={<RefreshIcon />}
+          >
+            Refresh
+          </Button>
+        </Box>
+      </Box>
 
       {/* Statistics Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>

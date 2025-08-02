@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuth } from './AuthContext';
-import { useWebSocket } from './WebSocketContext';
+import { useWebSocket } from '../hooks/useWebSocketCompat';
 import ChatService from '../services/ChatService';
 import { toast } from 'react-toastify';
 

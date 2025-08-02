@@ -104,7 +104,7 @@ const GlobalNotificationToast = ({ notification, onClose }) => {
             </div>
             <div className="ml-3 flex-1">
               <div className="text-sm font-semibold text-gray-900 flex items-center">
-                🔔 Booking #{notification.bookingId}
+                Booking #{notification.bookingId}
                 <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
                   notification.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                   notification.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :

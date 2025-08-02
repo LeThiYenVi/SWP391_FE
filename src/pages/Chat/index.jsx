@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useWebSocket } from '../../context/WebSocketContext';
+import { useWebSocket } from '../../hooks/useWebSocketCompat';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import './ChatPage.css';

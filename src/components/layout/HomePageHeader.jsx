@@ -356,7 +356,16 @@ export const HomePageHeader = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                  style={{
+                    background: 'linear-gradient(to right, #3a99b7, #2d7a91)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#2d7a91';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'linear-gradient(to right, #3a99b7, #2d7a91)';
+                  }}
                 >
                   Đăng ký
                 </Link>

@@ -28,7 +28,12 @@ export const WebSocketProvider = ({ children }) => {
     console.log('🔌 WebSocket connection check - Auth:', isAuthenticated, 'User:', !!user, 'Client:', !!clientRef.current);
 
     if (isAuthenticated && user && !clientRef.current) {
-      connectWebSocket();
+      // ✅ Delay connection để đảm bảo authentication stable
+      setTimeout(() => {
+        if (isAuthenticated && user) { // Double check
+          connectWebSocket();
+        }
+      }, 1000);
     } else if (!isAuthenticated && clientRef.current) {
       disconnectWebSocket();
     }
@@ -57,8 +62,10 @@ export const WebSocketProvider = ({ children }) => {
 
     // Lấy token từ localStorage
     const token = localStorage.getItem('authToken');
-    if (!token) {
-      console.error('❌ No auth token found for WebSocket connection');
+    const savedUser = localStorage.getItem('user');
+
+    if (!token || !savedUser || !user || !isAuthenticated) {
+      console.error('❌ Missing authentication data for WebSocket connection');
       return;
     }
 
@@ -88,7 +95,10 @@ export const WebSocketProvider = ({ children }) => {
         console.error('❌ STOMP error:', frame.headers['message']);
         console.error('❌ Full error frame:', frame);
         setConnected(false);
-        // toast.error('Lỗi kết nối WebSocket: ' + (frame.headers['message'] || 'Unknown error'));
+
+        // ✅ KHÔNG logout user khi có lỗi WebSocket
+        // ✅ KHÔNG hiển thị toast error để tránh spam
+        // WebSocket error không có nghĩa là authentication failed
       },
       onWebSocketError: (event) => {
         console.error('❌ WebSocket error:', event);
@@ -206,30 +216,15 @@ export const WebSocketProvider = ({ children }) => {
         read: false
       };
 
-      setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Giữ tối đa 50 notifications
+      setNotifications(prev => [notification, ...prev.slice(0, 9)]); // Giảm xuống 10 notifications
 
-      // Tắt tất cả toast notifications để tránh spam
-      // Chỉ hiển thị simple toast, không dùng GlobalNotificationToast để tránh lỗi
-      // if (update.status && update.message && update.bookingId) {
-      //   const toastMessage = `Booking #${update.bookingId}: ${update.message}`;
-      //   switch (update.status) {
-      //     case 'CONFIRMED':
-      //     case 'SAMPLE_COLLECTED':
-      //     case 'COMPLETED':
-      //     case 'Results Ready':
-      //       toast.success(toastMessage);
-      //       break;
-      //     case 'CANCELLED':
-      //       toast.error(toastMessage);
-      //       break;
-      //     default:
-      //       toast.info(toastMessage);
-      //   }
-      // }
+      // ✅ KHÔNG gọi bất kỳ API nào từ đây để tránh authentication issues
+      // ✅ KHÔNG hiển thị toast để tránh spam
+      // Chỉ update state, để component tự handle việc refresh data nếu cần
+
     } catch (error) {
-      console.error('Error handling booking update:', error);
-      // Tắt toast error
-      // toast.error('Có lỗi khi xử lý thông báo cập nhật');
+      console.error('❌ Error handling booking update:', error);
+      // ✅ KHÔNG throw error để tránh crash app và logout
     }
   };
 
@@ -239,18 +234,35 @@ export const WebSocketProvider = ({ children }) => {
 
     const subscriptionKey = `booking_${bookingId}`;
     if (subscriptionsRef.current[subscriptionKey]) {
+      console.log(`⚠️ Already subscribed to booking #${bookingId}`);
       return subscriptionsRef.current[subscriptionKey];
     }
 
-    const subscription = clientRef.current.subscribe(`/topic/booking-updates/${bookingId}`, (message) => {
-      const update = JSON.parse(message.body);
-      if (onMessage) onMessage(update);
-      handleBookingUpdate(update);
-    });
+    try {
+      const subscription = clientRef.current.subscribe(`/topic/booking-updates/${bookingId}`, (message) => {
+        try {
+          const update = JSON.parse(message.body);
+          if (onMessage) {
+            // ✅ Wrap onMessage trong try-catch để tránh crash
+            try {
+              onMessage(update);
+            } catch (error) {
+              console.error('❌ Error in onMessage callback:', error);
+            }
+          }
+          handleBookingUpdate(update);
+        } catch (error) {
+          console.error('❌ Error parsing WebSocket message:', error);
+        }
+      });
 
-    subscriptionsRef.current[subscriptionKey] = subscription;
-    console.log(`📱 Subscribed to booking #${bookingId}`);
-    return subscription;
+      subscriptionsRef.current[subscriptionKey] = subscription;
+      console.log(`📱 Subscribed to booking #${bookingId}`);
+      return subscription;
+    } catch (error) {
+      console.error('❌ Error subscribing to booking:', error);
+      return null;
+    }
   };
 
   // Unsubscribe khỏi booking cụ thể

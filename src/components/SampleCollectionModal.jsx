@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { X, TestTube, CheckCircle, FileText } from 'lucide-react';
 
-const SampleCollectionModal = ({ 
-  isOpen, 
-  onClose, 
-  booking, 
+const SampleCollectionModal = ({
+  isOpen,
+  onClose,
+  booking,
   onSubmit,
-  isUpdating = false 
+  isUpdating = false
 }) => {
   const [sampleCollectionDate, setSampleCollectionDate] = useState('');
   const [resultDeliveryDate, setResultDeliveryDate] = useState('');
   const [sampleNotes, setSampleNotes] = useState('');
+
+  // New fields for sample collector information
+  const [collectorFullName, setCollectorFullName] = useState('');
+  const [collectorIdCard, setCollectorIdCard] = useState('');
+  const [collectorPhoneNumber, setCollectorPhoneNumber] = useState('');
+  const [collectorDateOfBirth, setCollectorDateOfBirth] = useState('');
+  const [collectorGender, setCollectorGender] = useState('');
+  const [relationshipToBooker, setRelationshipToBooker] = useState('SELF');
 
   useEffect(() => {
     if (isOpen && booking) {
@@ -29,12 +37,26 @@ const SampleCollectionModal = ({
       setResultDeliveryDate(localDeliveryDateTime);
 
       // If updating, load existing data
-      if (isUpdating && booking.sampleCollectionDate) {
-        setSampleCollectionDate(booking.sampleCollectionDate);
+      if (isUpdating && booking.sampleCollectionProfile) {
+        const profile = booking.sampleCollectionProfile;
+        setSampleCollectionDate(profile.sampleCollectionDate || '');
         setResultDeliveryDate(booking.resultDeliveryDate || '');
-        setSampleNotes(booking.sampleNotes || '');
+        setSampleNotes(profile.notes || '');
+        setCollectorFullName(profile.collectorFullName || '');
+        setCollectorIdCard(profile.collectorIdCard || '');
+        setCollectorPhoneNumber(profile.collectorPhoneNumber || '');
+        setCollectorDateOfBirth(profile.collectorDateOfBirth || '');
+        setCollectorGender(profile.collectorGender || '');
+        setRelationshipToBooker(profile.relationshipToBooker || 'SELF');
       } else {
         setSampleNotes('');
+        // Pre-fill with customer information for SELF option
+        setCollectorFullName(booking.customerFullName || '');
+        setCollectorIdCard('');
+        setCollectorPhoneNumber(booking.customerPhone || '');
+        setCollectorDateOfBirth('');
+        setCollectorGender('');
+        setRelationshipToBooker('SELF');
       }
     }
   }, [isOpen, booking, isUpdating]);
@@ -57,16 +79,33 @@ const SampleCollectionModal = ({
       return;
     }
 
-    if (!sampleNotes || sampleNotes.trim() === '') {
-      alert('Vui lòng nhập ghi chú về quá trình lấy mẫu');
+    if (!collectorFullName.trim()) {
+      alert('Vui lòng nhập họ tên người lấy mẫu');
+      return;
+    }
+
+    if (!collectorIdCard.trim()) {
+      alert('Vui lòng nhập số CCCD/CMND');
+      return;
+    }
+
+    // Validate ID card format (9-12 digits)
+    const idCardRegex = /^[0-9]{9,12}$/;
+    if (!idCardRegex.test(collectorIdCard.trim())) {
+      alert('Số CCCD/CMND phải từ 9-12 chữ số');
       return;
     }
 
     onSubmit({
       bookingId: booking.bookingId || booking.id,
+      collectorFullName: collectorFullName.trim(),
+      collectorIdCard: collectorIdCard.trim(),
+      collectorPhoneNumber: collectorPhoneNumber.trim() || null,
+      collectorDateOfBirth: collectorDateOfBirth || null,
+      collectorGender: collectorGender || null,
+      relationshipToBooker,
       sampleCollectionDate,
-      resultDeliveryDate,
-      sampleNotes
+      notes: sampleNotes?.trim() || null
     });
   };
 
@@ -74,104 +113,247 @@ const SampleCollectionModal = ({
     setSampleCollectionDate('');
     setResultDeliveryDate('');
     setSampleNotes('');
+    setCollectorFullName('');
+    setCollectorIdCard('');
+    setCollectorPhoneNumber('');
+    setCollectorDateOfBirth('');
+    setCollectorGender('');
+    setRelationshipToBooker('SELF');
     onClose();
+  };
+
+  // Handle relationship change to auto-fill customer info for SELF
+  const handleRelationshipChange = (value) => {
+    setRelationshipToBooker(value);
+    if (value === 'SELF') {
+      setCollectorFullName(booking.customerFullName || '');
+      setCollectorPhoneNumber(booking.customerPhone || '');
+    } else {
+      setCollectorFullName('');
+      setCollectorPhoneNumber('');
+      setCollectorDateOfBirth('');
+      setCollectorGender('');
+    }
   };
 
   if (!isOpen || !booking) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">
-            {isUpdating ? 'Cập nhật thông tin mẫu' : 'Lấy mẫu xét nghiệm'}
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                {isUpdating ? (
+                  <FileText className="h-6 w-6 text-white" />
+                ) : (
+                  <TestTube className="h-6 w-6 text-white" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {isUpdating ? 'Cập nhật thông tin mẫu' : 'Lấy mẫu xét nghiệm'}
+                </h2>
+                <p className="text-blue-100 text-sm">
+                  {isUpdating ? 'Chỉnh sửa thông tin mẫu đã lấy' : 'Thực hiện quy trình lấy mẫu'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleClose}
+              className="text-white hover:text-blue-200 transition-colors p-2 hover:bg-white hover:bg-opacity-20 rounded-lg"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
           {/* Thông tin khách hàng */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">Thông tin khách hàng</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">Khách hàng:</span> {booking.customerFullName}
-              </p>
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">Dịch vụ:</span> {booking.serviceName}
-              </p>
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">Ngày hẹn:</span> {formatDate(booking.appointmentDate)}
-              </p>
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">ID Booking:</span> #{booking.bookingId || booking.id}
-              </p>
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">
+                  {booking.customerFullName?.charAt(0)?.toUpperCase()}
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Thông tin khách hàng</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Khách hàng</p>
+                <p className="text-sm font-medium text-gray-900">{booking.customerFullName}</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Dịch vụ</p>
+                <p className="text-sm font-medium text-gray-900">{booking.serviceName}</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Ngày hẹn</p>
+                <p className="text-sm font-medium text-gray-900">{formatDate(booking.appointmentDate)}</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">ID Booking</p>
+                <p className="text-sm font-medium text-gray-900">#{booking.bookingId || booking.id}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Thông tin người lấy mẫu */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin người lấy mẫu</h3>
+
+            {/* Mối quan hệ */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mối quan hệ với người đặt lịch <span className="text-red-500">*</span>
+              </label>
+              <select
+                className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                value={relationshipToBooker}
+                onChange={(e) => handleRelationshipChange(e.target.value)}
+              >
+                <option value="SELF">Chính chủ</option>
+                <option value="FAMILY_MEMBER">Người nhà</option>
+                <option value="FRIEND">Bạn bè</option>
+                <option value="OTHER">Khác</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Họ tên */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Họ tên người lấy mẫu <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Nhập họ tên đầy đủ"
+                  value={collectorFullName}
+                  onChange={(e) => setCollectorFullName(e.target.value)}
+                />
+              </div>
+
+              {/* Số CCCD */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Số CCCD/CMND <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Nhập số CCCD/CMND (9-12 chữ số)"
+                  value={collectorIdCard}
+                  onChange={(e) => setCollectorIdCard(e.target.value)}
+                />
+              </div>
+
+              {/* Số điện thoại */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Số điện thoại
+                </label>
+                <input
+                  type="text"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Nhập số điện thoại (tùy chọn)"
+                  value={collectorPhoneNumber}
+                  onChange={(e) => setCollectorPhoneNumber(e.target.value)}
+                />
+              </div>
+
+              {/* Ngày sinh */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Ngày sinh
+                </label>
+                <input
+                  type="date"
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={collectorDateOfBirth}
+                  onChange={(e) => setCollectorDateOfBirth(e.target.value)}
+                />
+              </div>
+
+              {/* Giới tính */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Giới tính
+                </label>
+                <select
+                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  value={collectorGender}
+                  onChange={(e) => setCollectorGender(e.target.value)}
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Form lấy mẫu */}
-          <div className={`${isUpdating ? 'bg-orange-50 border-orange-200' : 'bg-yellow-50 border-yellow-200'} p-4 rounded-lg border`}>
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-              {isUpdating ? (
-                <FileText className="h-5 w-5 mr-2 text-orange-600" />
-              ) : (
-                <TestTube className="h-5 w-5 mr-2 text-yellow-600" />
-              )}
-              {isUpdating ? 'Cập nhật thông tin mẫu đã lấy' : 'Thực hiện lấy mẫu'}
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`${
+            isUpdating
+              ? 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-200'
+              : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
+          } p-6 rounded-xl border-2`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-3 rounded-lg ${
+                isUpdating ? 'bg-orange-100' : 'bg-green-100'
+              }`}>
+                {isUpdating ? (
+                  <FileText className={`h-6 w-6 ${isUpdating ? 'text-orange-600' : 'text-green-600'}`} />
+                ) : (
+                  <TestTube className={`h-6 w-6 ${isUpdating ? 'text-orange-600' : 'text-green-600'}`} />
+                )}
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Thời gian lấy mẫu <span className="text-red-500">*</span>
-                </label>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {isUpdating ? 'Cập nhật thông tin mẫu đã lấy' : 'Thực hiện lấy mẫu'}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {isUpdating ? 'Chỉnh sửa thông tin mẫu' : 'Điền thông tin lấy mẫu xét nghiệm'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Thời gian lấy mẫu <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
                 <input
                   type="datetime-local"
-                  className={`w-full border border-gray-300 rounded-lg p-3 focus:ring-2 ${
-                    isUpdating 
-                      ? 'focus:ring-orange-500 focus:border-orange-500' 
+                  className={`w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                    isUpdating
+                      ? 'focus:ring-orange-500 focus:border-orange-500'
                       : 'focus:ring-blue-500 focus:border-blue-500'
-                  }`}
+                  } bg-white shadow-sm`}
                   value={sampleCollectionDate}
                   onChange={(e) => setSampleCollectionDate(e.target.value)}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dự kiến trả kết quả
-                </label>
-                <input
-                  type="datetime-local"
-                  className={`w-full border border-gray-300 rounded-lg p-3 focus:ring-2 ${
-                    isUpdating 
-                      ? 'focus:ring-orange-500 focus:border-orange-500' 
-                      : 'focus:ring-blue-500 focus:border-blue-500'
-                  }`}
-                  value={resultDeliveryDate}
-                  onChange={(e) => setResultDeliveryDate(e.target.value)}
-                />
-              </div>
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ghi chú {isUpdating ? 'về mẫu' : 'lấy mẫu'}
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Ghi chú {isUpdating ? 'về mẫu' : 'lấy mẫu'} <span className="text-gray-400">(Tùy chọn)</span>
               </label>
               <textarea
-                rows="3"
-                className={`w-full border border-gray-300 rounded-lg p-3 focus:ring-2 ${
-                  isUpdating 
-                    ? 'focus:ring-orange-500 focus:border-orange-500' 
+                rows="4"
+                className={`w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
+                  isUpdating
+                    ? 'focus:ring-orange-500 focus:border-orange-500'
                     : 'focus:ring-blue-500 focus:border-blue-500'
-                }`}
-                placeholder={`Nhập ghi chú về ${isUpdating ? 'mẫu xét nghiệm' : 'quá trình lấy mẫu'}...`}
+                } bg-white shadow-sm resize-none`}
+                placeholder={`Nhập ghi chú chi tiết về ${isUpdating ? 'mẫu xét nghiệm' : 'quá trình lấy mẫu'} (không bắt buộc)...`}
                 value={sampleNotes}
                 onChange={(e) => setSampleNotes(e.target.value)}
               />
@@ -180,24 +362,26 @@ const SampleCollectionModal = ({
         </div>
 
         {/* Footer */}
-        <div className="flex space-x-3 p-6 border-t bg-gray-50">
-          <button
-            onClick={handleSubmit}
-            className={`flex-1 text-white py-3 px-6 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium flex items-center justify-center ${
-              isUpdating 
-                ? 'bg-orange-600 focus:ring-orange-500' 
-                : 'bg-blue-600 focus:ring-blue-500'
-            }`}
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            {isUpdating ? 'Cập nhật thông tin' : 'Xác nhận lấy mẫu'}
-          </button>
-          <button
-            onClick={handleClose}
-            className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-medium"
-          >
-            Hủy
-          </button>
+        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleSubmit}
+              className={`flex-1 text-white py-4 px-6 rounded-xl font-semibold flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                isUpdating
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                  : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+              }`}
+            >
+              <CheckCircle className="h-5 w-5 mr-2" />
+              {isUpdating ? 'Cập nhật thông tin' : 'Xác nhận lấy mẫu'}
+            </button>
+            <button
+              onClick={handleClose}
+              className="flex-1 bg-white text-gray-700 py-4 px-6 rounded-xl hover:bg-gray-100 border-2 border-gray-300 hover:border-gray-400 font-semibold transition-all duration-200"
+            >
+              Hủy bỏ
+            </button>
+          </div>
         </div>
       </div>
     </div>

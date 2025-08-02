@@ -1,17 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useBookingTracking } from '../../../hooks/useBookingTracking';
+import { useSimpleWebSocket } from '../../../context/SimpleWebSocketContext';
 import { Loader, CheckCircle, XCircle, Clock, FlaskConical, Check, AlertTriangle, RefreshCw } from 'lucide-react';
+import { toast } from 'react-toastify';
 import bookingService from '../../../services/BookingService';
-import StatusUpdateNotification from '../../../components/StatusUpdateNotification';
+// ✅ Removed StatusUpdateNotification import - using only toast notifications
 
 const steps = [
-  {
-    key: 'PENDING',
-    label: 'Chờ xác nhận',
-    icon: <Clock size={28} />,
-    color: '#fbbf24',
-  },
   {
     key: 'CONFIRMED',
     label: 'Đã xác nhận',
@@ -47,13 +42,13 @@ const steps = [
 
 const statusToStepIndex = status => {
   switch (status) {
-    case 'PENDING': return 0;
-    case 'CONFIRMED': return 1;
-    case 'SAMPLE_COLLECTED': return 2;
-    case 'TESTING': return 3;
-    case 'COMPLETED': return 4;
-    case 'CANCELLED': return 5;
-    default: return 0;
+    case 'PENDING': return -1; // Chưa có step nào active
+    case 'CONFIRMED': return 0; // Step "Đã xác nhận" active
+    case 'SAMPLE_COLLECTED': return 1; // Step "Đã lấy mẫu" active
+    case 'TESTING': return 2; // Step "Đang xét nghiệm" active
+    case 'COMPLETED': return 3; // Step "Hoàn thành" active
+    case 'CANCELLED': return 4; // Step "Đã hủy" active
+    default: return -1;
   }
 };
 
@@ -63,17 +58,29 @@ const TrackingPage = () => {
   const [status, setStatus] = useState(null);
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [showNotification, setShowNotification] = useState(false);
-  const { connected, subscribeToBooking, unsubscribeFromBooking } = useBookingTracking();
+  // ✅ Removed notification state - using only toast notifications
+  const { connected, subscribeToBooking, unsubscribeFromBooking } = useSimpleWebSocket();
 
+  // Get status message - memoized để tránh infinite loop - ĐỊNH NGHĨA TRƯỚC
+  const getStatusMessage = useCallback((status) => {
+    switch (status) {
+      case 'PENDING': return 'Booking đang chờ xác nhận từ nhân viên';
+      case 'CONFIRMED': return 'Booking đã được xác nhận, vui lòng đến đúng giờ hẹn';
+      case 'SAMPLE_COLLECTED': return 'Đã lấy mẫu xét nghiệm thành công';
+      case 'TESTING': return 'Mẫu đang được xét nghiệm';
+      case 'COMPLETED': return 'Xét nghiệm hoàn thành, kết quả đã sẵn sàng';
+      case 'CANCELLED': return 'Booking đã bị hủy';
+      default: return 'Trạng thái không xác định';
+    }
+  }, []);
 
   // Fetch booking data
-  const fetchBookingData = useCallback(async () => {
+  const fetchBookingData = useCallback(async (forceRefresh = false) => {
     if (!bookingId) return;
 
     setLoading(true);
     try {
+      // ✅ Sửa lỗi URL - không thêm timestamp vào bookingId
       const result = await bookingService.getBookingById(bookingId);
 
       if (result.success) {
@@ -86,46 +93,14 @@ const TrackingPage = () => {
         });
       }
     } catch (error) {
+      console.error('❌ Error fetching booking data:', error);
       // Handle error silently or show user-friendly message
     } finally {
       setLoading(false);
     }
-  }, [bookingId]);
+  }, [bookingId, getStatusMessage]); // ✅ Thêm getStatusMessage dependency
 
-  // Get status message
-  const getStatusMessage = (status) => {
-    switch (status) {
-      case 'PENDING': return 'Booking đang chờ xác nhận từ nhân viên';
-      case 'SAMPLE_COLLECTED': return 'Đã lấy mẫu xét nghiệm thành công';
-      case 'TESTING': return 'Mẫu đang được xét nghiệm';
-      case 'COMPLETED': return 'Xét nghiệm hoàn thành, kết quả đã sẵn sàng';
-      case 'CANCELLED': return 'Booking đã bị hủy';
-      default: return 'Trạng thái không xác định';
-    }
-  };
-
-  // Show notification when status changes
-  const showStatusNotification = (update) => {
-    const message = `Trạng thái booking đã được cập nhật thành: ${steps.find(s => s.key === update.status)?.label || update.status}`;
-    setNotification({
-      message,
-      status: update.status,
-      timestamp: new Date(),
-      canReload: true
-    });
-    setShowNotification(true);
-
-    // Auto hide after 10 seconds
-    setTimeout(() => {
-      setShowNotification(false);
-    }, 10000);
-  };
-
-  // Handle reload booking data
-  const handleReloadData = () => {
-    setShowNotification(false);
-    fetchBookingData();
-  };
+  // ✅ Removed showStatusNotification and handleReloadData - using only toast notifications
 
   // Initial data fetch
   useEffect(() => {
@@ -138,14 +113,39 @@ const TrackingPage = () => {
     }
 
     const subscription = subscribeToBooking(bookingId, (update) => {
-      // Update status
-      setStatus(prevStatus => {
-        // Only show notification if status actually changed
-        if (!prevStatus || prevStatus.status !== update.status) {
-          showStatusNotification(update);
-        }
-        return update;
-      });
+      console.log('📱 Customer received booking update:', update);
+
+      // ✅ Single clean toast notification
+      if (update.status && update.message) {
+        // Create status labels mapping
+        const statusLabels = {
+          'PENDING': 'Chờ xác nhận',
+          'CONFIRMED': 'Đã xác nhận',
+          'SAMPLE_COLLECTED': 'Đã lấy mẫu',
+          'TESTING': 'Đang xét nghiệm',
+          'COMPLETED': 'Hoàn thành',
+          'CANCELLED': 'Đã hủy'
+        };
+
+        const statusLabel = statusLabels[update.status] || update.status;
+        const message = `Trạng thái đã được cập nhật: ${statusLabel}`;
+
+        toast.success(message, {
+          toastId: `booking-update-${bookingId}-${update.status}`, // Prevent duplicates
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+
+      // ✅ Update status locally - KHÔNG gọi API để tránh authentication issues
+      setStatus(update);
+
+      // ✅ KHÔNG force reload API để tránh authentication conflict
+      // Update từ WebSocket đã đủ accurate, không cần gọi API thêm
     });
 
     return () => {
@@ -153,26 +153,35 @@ const TrackingPage = () => {
         unsubscribeFromBooking(bookingId);
       }
     };
-  }, [bookingId, connected, subscribeToBooking, unsubscribeFromBooking]);
+  }, [bookingId, connected, subscribeToBooking, unsubscribeFromBooking]); // ✅ Loại bỏ fetchBookingData dependency
 
-  // Calculate current step - when a status is achieved, that step is completed and next step becomes active
+  // ✅ XÓA useEffect này vì nó gây infinite loop và duplicate với WebSocket subscription ở trên
+  // WebSocket subscription ở useEffect trước đã handle việc nhận notification rồi
+
+  // Calculate current step - the current status step should be active, previous steps completed
   const getStepStatus = (status) => {
-    if (!status) return { currentStep: 0, completedSteps: [] };
+    if (!status) return { currentStep: -1, completedSteps: [] };
 
     const statusIndex = statusToStepIndex(status.status);
 
-    // When a status is achieved, that step and all previous steps are completed
-    // The next step becomes the current active step
+    // For PENDING status, no steps are completed
+    if (status.status === 'PENDING') {
+      return { currentStep: -1, completedSteps: [] };
+    }
+
+    // For COMPLETED status, all steps are completed
+    if (status.status === 'COMPLETED') {
+      return { currentStep: 3, completedSteps: [0, 1, 2, 3] };
+    }
+
+    // For other statuses, current step and all previous steps are completed
+    const currentStep = statusIndex;
     const completedSteps = [];
+
+    // Include all steps up to and including current step
     for (let i = 0; i <= statusIndex; i++) {
       completedSteps.push(i);
     }
-
-    // Current active step is the next step after the completed status
-    // Unless it's the final step or cancelled
-    const currentStep = status.status === 'COMPLETED' || status.status === 'CANCELLED'
-      ? statusIndex
-      : Math.min(statusIndex + 1, steps.length - 1);
 
     return { currentStep, completedSteps };
   };
@@ -183,16 +192,10 @@ const TrackingPage = () => {
 
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center py-8 bg-gray-50">
-      {/* Status Change Notification */}
-      <StatusUpdateNotification
-        notification={notification}
-        show={showNotification}
-        onReload={handleReloadData}
-        onClose={() => setShowNotification(false)}
-      />
+    <div className="min-h-screen py-8 bg-gray-50">
+      {/* ✅ Removed StatusUpdateNotification component - using only toast notifications */}
 
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 mx-auto mt-8">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 mx-auto mt-8 mb-8">
         <button
           onClick={() => navigate(-1)}
           className="mb-6 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition"
@@ -204,7 +207,7 @@ const TrackingPage = () => {
             Tracking trạng thái Booking #{bookingId}
           </h2>
           <button
-            onClick={handleReloadData}
+            onClick={fetchBookingData}
             disabled={loading}
             className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -224,62 +227,98 @@ const TrackingPage = () => {
 
 
         </div>
-        {/* Stepper */}
-        <div className="flex items-center justify-between mb-8">
-          {steps.slice(0, isCancelled ? 5 : 4).map((step, idx) => {
-            const isActive = idx === currentStep && (!isCancelled || step.isCancel);
-            const isCompleted = completedSteps.includes(idx) && !isCancelled && idx !== currentStep;
-            const isFuture = idx > currentStep && !isCancelled;
-            return (
-              <div key={step.key} className="flex-1 flex flex-col items-center relative">
-                <div
-                  className={`flex items-center justify-center rounded-full border-2 mb-2 transition-all ${
-                    isActive
-                      ? 'border-blue-600 bg-blue-50 shadow-lg scale-110'
-                      : isCompleted
-                      ? 'border-green-500 bg-green-50'
-                      : isFuture
-                      ? 'border-gray-300 bg-gray-100 opacity-60'
-                      : step.isCancel && isActive
-                      ? 'border-red-500 bg-red-50'
-                      : ''
-                  }`}
-                  style={{ width: 48, height: 48, borderColor: step.color }}
-                >
-                  {isCompleted ? <Check size={28} color="#22c55e" /> : step.icon}
-                </div>
-                <div
-                  className={`text-xs font-semibold text-center ${
-                    isActive
-                      ? 'text-blue-700'
-                      : isCompleted
-                      ? 'text-green-600'
-                      : isFuture
-                      ? 'text-gray-400'
-                      : step.isCancel && isActive
-                      ? 'text-red-600'
-                      : 'text-gray-500'
-                  }`}
-                  style={{ maxWidth: 80 }}
-                >
-                  {step.label}
-                </div>
-                {/* Line */}
-                {idx < (isCancelled ? 4 : 3) && (
-                  <div
-                    className={`absolute top-6 left-full h-1 w-10 ${
-                      isCompleted
-                        ? 'bg-green-400'
-                        : isActive
-                        ? 'bg-blue-400'
-                        : 'bg-gray-200'
-                    }`}
-                    style={{ zIndex: 0 }}
-                  ></div>
-                )}
-              </div>
-            );
-          })}
+        {/* Stepper - Layout cải tiến với alignment cố định */}
+        <div className="mb-8 px-4">
+          {/* Container cho circles và lines */}
+          <div className="flex items-center justify-center mb-4">
+            {steps.slice(0, isCancelled ? 5 : 4).map((step, idx) => {
+              const isCompleted = completedSteps.includes(idx) && !isCancelled;
+              const isActive = idx === currentStep && (!isCancelled || step.isCancel) && !isCompleted;
+              const isFuture = idx > currentStep && !isCancelled;
+              const isLastStep = idx === (isCancelled ? 4 : 3);
+
+              return (
+                <React.Fragment key={step.key}>
+                  {/* Step Circle - cố định alignment */}
+                  <div className="flex items-center justify-center">
+                    <div
+                      className={`flex items-center justify-center rounded-full border-2 transition-all ${
+                        isActive
+                          ? 'border-blue-600 bg-blue-50 shadow-lg scale-110'
+                          : isCompleted
+                          ? 'border-green-500 bg-green-50'
+                          : isFuture
+                          ? 'border-gray-300 bg-gray-100 opacity-60'
+                          : step.isCancel && isActive
+                          ? 'border-red-500 bg-red-50'
+                          : ''
+                      }`}
+                      style={{ width: 48, height: 48, borderColor: step.color }}
+                    >
+                      {isCompleted ? <Check size={28} color="#22c55e" /> : step.icon}
+                    </div>
+                  </div>
+
+                  {/* Connector Line - cùng level với circles */}
+                  {!isLastStep && (
+                    <div className="flex-1 flex items-center justify-center mx-4">
+                      <div
+                        className={`h-1 w-full ${
+                          completedSteps.includes(idx)
+                            ? 'bg-green-400'
+                            : idx === currentStep
+                            ? 'bg-blue-400'
+                            : 'bg-gray-200'
+                        }`}
+                        style={{ minWidth: '60px' }}
+                      ></div>
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Container cho labels - tách riêng để không ảnh hưởng alignment */}
+          <div className="flex items-start justify-center">
+            {steps.slice(0, isCancelled ? 5 : 4).map((step, idx) => {
+              const isCompleted = completedSteps.includes(idx) && !isCancelled;
+              const isActive = idx === currentStep && (!isCancelled || step.isCancel) && !isCompleted;
+              const isFuture = idx > currentStep && !isCancelled;
+              const isLastStep = idx === (isCancelled ? 4 : 3);
+
+              return (
+                <React.Fragment key={`label-${step.key}`}>
+                  {/* Step Label - cố định width để đều nhau */}
+                  <div className="flex justify-center" style={{ width: 48 }}>
+                    <div
+                      className={`text-xs font-semibold text-center ${
+                        isActive
+                          ? 'text-blue-700'
+                          : isCompleted
+                          ? 'text-green-600'
+                          : isFuture
+                          ? 'text-gray-400'
+                          : step.isCancel && isActive
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                      }`}
+                      style={{ maxWidth: 80, minHeight: 32 }}
+                    >
+                      {step.label}
+                    </div>
+                  </div>
+
+                  {/* Spacer cho labels - tương ứng với connector lines */}
+                  {!isLastStep && (
+                    <div className="flex-1 mx-4" style={{ minWidth: '60px' }}>
+                      {/* Empty spacer */}
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
         {/* Status detail */}
         {connected ? (
@@ -315,7 +354,7 @@ const TrackingPage = () => {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8">
+          <div className="flex flex-col items-center py-8">
             <Loader size={48} className="animate-spin mb-4" color="#3b82f6" />
             <div className="text-lg font-semibold text-gray-700 mb-2">Đang kết nối tới hệ thống tracking...</div>
           </div>

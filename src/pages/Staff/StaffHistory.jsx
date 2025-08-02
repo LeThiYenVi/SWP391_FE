@@ -121,23 +121,23 @@ const StaffHistory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-3 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <CheckCircle className="h-8 w-8 mr-3 text-green-600" />
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+                <CheckCircle className="h-6 w-6 md:h-8 md:w-8 mr-3 text-green-600" />
                 Lịch sử xét nghiệm
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm md:text-base text-gray-600 mt-2">
                 Xem lại tất cả các xét nghiệm đã hoàn thành
               </p>
             </div>
             <button
               onClick={fetchCompletedBookings}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+              className="mobile-button bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center text-sm md:text-base"
             >
               <TestTube className="h-4 w-4 mr-2" />
               Làm mới
@@ -146,19 +146,19 @@ const StaffHistory = () => {
         </div>
 
         {/* Search and Stats */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+        <div className="bg-white rounded-lg shadow-md p-3 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 md:h-5 md:w-5" />
               <input
                 type="text"
                 placeholder="Tìm theo tên khách hàng, dịch vụ hoặc ID..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex items-center space-x-6 text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs md:text-sm text-gray-600">
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
                 <span>Tổng: {completedBookings.length} xét nghiệm</span>
@@ -180,111 +180,161 @@ const StaffHistory = () => {
 
         {/* History Table */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-              <FileText className="h-5 w-5 mr-2 text-blue-600" />
+          <div className="p-3 md:p-6 border-b border-gray-200">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
+              <FileText className="h-4 w-4 md:h-5 md:w-5 mr-2 text-blue-600" />
               Danh sách xét nghiệm hoàn thành
             </h2>
           </div>
 
           {filteredBookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <CheckCircle className="h-16 w-16 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-center text-lg mb-2">
+            <div className="flex flex-col items-center justify-center py-12 md:py-16 px-4">
+              <CheckCircle className="h-12 w-12 md:h-16 md:w-16 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-center text-base md:text-lg mb-2">
                 {searchTerm ? 'Không tìm thấy kết quả phù hợp' : 'Chưa có xét nghiệm nào hoàn thành'}
               </p>
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="mobile-button text-blue-600 hover:text-blue-800 text-sm md:text-base"
                 >
                   Xóa bộ lọc
                 </button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Khách hàng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Dịch vụ
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày hẹn
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày lấy mẫu
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày có kết quả
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Kết quả
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+            <>
+              {/* Mobile Card Layout */}
+              <div className="md:hidden">
+                <div className="space-y-4 p-4">
                   {filteredBookings.map((booking) => (
-                    <tr key={booking.bookingId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{booking.bookingId}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <div key={booking.bookingId} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center">
+                          <span className="text-sm font-medium text-gray-900">#{booking.bookingId}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {booking.resultDate ? formatDate(booking.resultDate) : 'N/A'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
                         <div className="flex items-center">
                           <User className="h-4 w-4 text-gray-400 mr-2" />
                           <span className="text-sm text-gray-900">{booking.customerName}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.serviceName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(booking.appointmentDate)}
+
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">Dịch vụ:</span> {booking.serviceName}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.sampleCollectionDate ? (
-                          <div>
-                            <div>{formatDate(booking.sampleCollectionDate)}</div>
-                            <div className="text-xs text-gray-400">
-                              {formatTime(booking.sampleCollectionDate)}
-                            </div>
-                          </div>
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.resultDate ? (
-                          <div>
-                            <div>{formatDate(booking.resultDate)}</div>
-                            <div className="text-xs text-gray-400">
-                              {formatTime(booking.resultDate)}
-                            </div>
-                          </div>
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                        <div className="truncate" title={booking.result}>
-                          {booking.result || 'Chưa có kết quả'}
+
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                          <span>Hẹn: {formatDate(booking.appointmentDate)}</span>
                         </div>
-                      </td>
-                    </tr>
+
+                        {booking.sampleCollectionDate && (
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Lấy mẫu:</span> {formatDate(booking.sampleCollectionDate)} {formatTime(booking.sampleCollectionDate)}
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">Kết quả:</span>
+                          <div className="mt-1 text-xs bg-white p-2 rounded border">
+                            {booking.result || 'Chưa có kết quả'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+
+              {/* Desktop Table Layout */}
+              <div className="hidden md:block table-container overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Khách hàng
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dịch vụ
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ngày hẹn
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ngày lấy mẫu
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ngày kết quả
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Kết quả
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredBookings.map((booking) => (
+                      <tr key={booking.bookingId} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{booking.bookingId}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 text-gray-400 mr-2" />
+                            <span className="text-sm text-gray-900">{booking.customerName}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {booking.serviceName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            {formatDate(booking.appointmentDate)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {booking.sampleCollectionDate ? (
+                            <div>
+                              <div>{formatDate(booking.sampleCollectionDate)}</div>
+                              <div className="text-xs text-gray-400">
+                                {formatTime(booking.sampleCollectionDate)}
+                              </div>
+                            </div>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {booking.resultDate ? (
+                            <div>
+                              <div>{formatDate(booking.resultDate)}</div>
+                              <div className="text-xs text-gray-400">
+                                {formatTime(booking.resultDate)}
+                              </div>
+                            </div>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                          <div className="truncate" title={booking.result}>
+                            {booking.result || 'Chưa có kết quả'}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

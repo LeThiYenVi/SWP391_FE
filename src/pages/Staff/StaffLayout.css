@@ -80,7 +80,8 @@
 /* Content Area */
 .staff-content {
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* Cho phép cuộn dọc */
+  overflow-x: hidden; /* Ngăn cuộn ngang */
 }
 
 .staff-content::before {
@@ -139,24 +140,24 @@
 
 /* Staff Buttons */
 .staff-button-primary {
-  background: linear-gradient(135deg, #354766, #4a6b75) !important;
+  background: linear-gradient(135deg, #568392, #2d5a66) !important;
   color: white !important;
   border-radius: 12px !important;
   font-weight: 600 !important;
   padding: 12px 24px !important;
   border: none !important;
-  box-shadow: 0 4px 16px rgba(53, 71, 102, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(86, 131, 146, 0.3) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .staff-button-primary:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(53, 71, 102, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(86, 131, 146, 0.4) !important;
 }
 
 .staff-button-secondary {
   background: rgba(255, 255, 255, 0.8) !important;
-  color: #354766 !important;
+  color: #568392 !important;
   border-radius: 12px !important;
   font-weight: 600 !important;
   padding: 12px 24px !important;
@@ -178,11 +179,12 @@
   border-radius: 24px !important;
   box-shadow: 0 8px 32px rgba(179, 204, 212, 0.25), 0 2px 8px rgba(179, 204, 212, 0.15) !important;
   border: 1px solid rgba(179, 204, 212, 0.3) !important;
-  overflow: hidden !important;
+  overflow-x: auto !important; /* Chỉ cuộn ngang khi cần thiết cho table */
+  overflow-y: visible !important; /* Cho phép nội dung mở rộng theo chiều dọc */
 }
 
 .staff-table-header {
-  background: linear-gradient(135deg, #354766, #4a6b75) !important;
+  background: linear-gradient(135deg, #568392, #2d5a66) !important;
   color: white !important;
   font-weight: 700 !important;
 }
@@ -206,8 +208,8 @@
 }
 
 .staff-input:focus {
-  border-color: #354766 !important;
-  box-shadow: 0 0 0 2px rgba(53, 71, 102, 0.2) !important;
+  border-color: #568392 !important;
+  box-shadow: 0 0 0 2px rgba(86, 131, 146, 0.2) !important;
 }
 
 /* Loading States */
@@ -216,21 +218,70 @@
   align-items: center !important;
   justify-content: center !important;
   min-height: 200px !important;
-  color: #354766 !important;
+  color: #568392 !important;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .staff-sidebar {
-    width: 240px !important;
+    width: 280px !important;
   }
-  
+
   .staff-card {
-    padding: 16px !important;
+    padding: 12px !important;
+    margin: 8px 0 !important;
   }
-  
+
   .staff-form-container {
-    padding: 16px !important;
+    padding: 12px !important;
+  }
+
+  /* Mobile specific styles */
+  .staff-content {
+    padding: 8px !important;
+  }
+
+  /* Ensure tables are scrollable on mobile */
+  .table-container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important; /* Đảm bảo không vượt quá chiều rộng container */
+  }
+
+  /* Mobile button adjustments */
+  .mobile-button {
+    padding: 8px 12px !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Mobile form adjustments */
+  .mobile-form-field {
+    margin-bottom: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .staff-sidebar {
+    width: 260px !important;
+  }
+
+  .staff-card {
+    padding: 8px !important;
+    margin: 4px 0 !important;
+  }
+
+  .staff-content {
+    padding: 4px !important;
+  }
+
+  /* Very small screen adjustments */
+  .mobile-text-small {
+    font-size: 0.75rem !important;
+  }
+
+  .mobile-hide {
+    display: none !important;
   }
 }
 
@@ -280,4 +331,52 @@
 
 .staff-content::-webkit-scrollbar-thumb:hover {
   background: rgba(179, 204, 212, 0.7);
+}
+
+/* Smooth scrolling for all staff containers */
+.staff-content,
+.staff-table-container,
+.staff-form-container {
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Ensure main content area can scroll vertically */
+.staff-main-content {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: 100vh !important;
+  scroll-behavior: smooth !important;
+}
+
+/* Responsive table improvements */
+@media (max-width: 1024px) {
+  .staff-main-content table {
+    font-size: 0.875rem !important;
+  }
+
+  .staff-main-content th,
+  .staff-main-content td {
+    padding: 0.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .staff-main-content {
+    padding: 0.75rem !important;
+  }
+
+  .staff-main-content table {
+    font-size: 0.75rem !important;
+  }
+
+  .staff-main-content th,
+  .staff-main-content td {
+    padding: 0.25rem !important;
+  }
+
+  /* Hide less important columns on mobile */
+  .staff-main-content .mobile-hide {
+    display: none !important;
+  }
 }

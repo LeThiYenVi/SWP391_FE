@@ -53,12 +53,17 @@ const updateBookingStatusAPI = async (bookingId, status) => {
 const markSampleCollectedAPI = async (bookingId, sampleData) => {
   try {
     const requestData = {
-      status: 'SAMPLE_COLLECTED',
-      description: sampleData.notes || sampleData.sampleNotes,
-      resultDate: sampleData.resultDeliveryDate || sampleData.resultDate
+      collectorFullName: sampleData.collectorFullName,
+      collectorIdCard: sampleData.collectorIdCard,
+      collectorPhoneNumber: sampleData.collectorPhoneNumber || null,
+      collectorDateOfBirth: sampleData.collectorDateOfBirth || null,
+      collectorGender: sampleData.collectorGender || null,
+      relationshipToBooker: sampleData.relationshipToBooker,
+      sampleCollectionDate: sampleData.sampleCollectionDate,
+      notes: sampleData.notes || null
     };
 
-    const response = await instance.patch(`/api/bookings/${bookingId}/status`, requestData);
+    const response = await instance.post(`/api/bookings/${bookingId}/sample-collection`, requestData);
     console.log('Mark sample collected success:', response.data);
     return response.data;
   } catch (error) {
@@ -93,18 +98,20 @@ const getTestResultAPI = async (bookingId) => {
 // =============Staff Service Management APIs============
 const getAllTestingServicesAPI = async () => {
   try {
-    const response = await instance.get('/api/services/testing-services');
-    console.log('Get all testing services success:', response.data);
+    console.log('🚀 Calling API: /api/staff/testing-services');
+    const response = await instance.get('/api/staff/testing-services');
+    console.log('✅ Get all testing services success:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Get all testing services error:', error.response?.data || error.message);
+    console.error('❌ Get all testing services error:', error.response?.data || error.message);
+    console.error('❌ Full error:', error);
     throw error;
   }
 };
 
 const createTestingServiceAPI = async (serviceData) => {
   try {
-    const response = await instance.post('/api/admin/testing-services', serviceData);
+    const response = await instance.post('/api/staff/testing-services', serviceData);
     console.log('Create testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -115,7 +122,7 @@ const createTestingServiceAPI = async (serviceData) => {
 
 const updateTestingServiceAPI = async (serviceId, serviceData) => {
   try {
-    const response = await instance.patch(`/api/admin/testing-services/${serviceId}`, serviceData);
+    const response = await instance.patch(`/api/staff/testing-services/${serviceId}`, serviceData);
     console.log('Update testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -126,7 +133,7 @@ const updateTestingServiceAPI = async (serviceId, serviceData) => {
 
 const deleteTestingServiceAPI = async (serviceId) => {
   try {
-    const response = await instance.delete(`/api/admin/testing-services/${serviceId}`);
+    const response = await instance.delete(`/api/staff/testing-services/${serviceId}`);
     console.log('Delete testing service success:', response.data);
     return response.data;
   } catch (error) {
@@ -168,6 +175,26 @@ const updateTestResultAPI = async (bookingId, resultData) => {
     return response.data;
   } catch (error) {
     console.error('Update test result error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Test Result Delivery API
+const deliverTestResultAPI = async (bookingId, resultData) => {
+  try {
+    console.log('📤 Delivering test result for booking:', bookingId, resultData);
+
+    const requestData = {
+      resultDeliveryDate: resultData.resultDeliveryDate,
+      resultNotes: resultData.resultNotes || null,
+      testResult: resultData.testResult || null
+    };
+
+    const response = await instance.post(`/api/bookings/${bookingId}/test-result-delivery`, requestData);
+    console.log('✅ Test result delivered successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error delivering test result:', error);
     throw error;
   }
 };
@@ -279,11 +306,9 @@ class StaffService {
   async getAllTestingServices() {
     try {
       const data = await getAllTestingServicesAPI();
-      if (data.success === true) {
-        return { success: true, data: data.data || data.content, message: data.message };
-      } else {
-        return { success: false, message: data.message };
-      }
+      // Interceptor đã tự động extract data từ ApiResponse
+      // data bây giờ là array services trực tiếp
+      return { success: true, data: data, message: 'Lấy danh sách dịch vụ thành công' };
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
       return { success: false, message: errorMessage };
@@ -375,6 +400,65 @@ class StaffService {
       return { success: false, message: errorMessage };
     }
   }
+
+  // Deliver Test Result
+  async deliverTestResult(bookingId, resultData) {
+    try {
+      const data = await deliverTestResultAPI(bookingId, resultData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+
+
+  async createTestingService(serviceData) {
+    try {
+      const data = await createTestingServiceAPI(serviceData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  async updateTestingService(serviceId, serviceData) {
+    try {
+      const data = await updateTestingServiceAPI(serviceId, serviceData);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
+
+  async deleteTestingService(serviceId) {
+    try {
+      const data = await deleteTestingServiceAPI(serviceId);
+      if (data.success === true) {
+        return { success: true, data: data.data || data.content, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      return { success: false, message: errorMessage };
+    }
+  }
 }
 
 const staffService = new StaffService();
@@ -394,5 +478,6 @@ export {
   deleteTestingServiceAPI,
   getStaffDashboardStatsAPI,
   getBookingsByDateRangeAPI,
-  updateTestResultAPI
+  updateTestResultAPI,
+  deliverTestResultAPI
 };

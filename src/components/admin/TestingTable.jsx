@@ -173,7 +173,7 @@ const TestingTable = ({ searchTerm, refreshKey }) => {
       serviceName: service.serviceName || '',
       description: service.description || '',
       price: service.price || 0,
-      duration: service.durationMinutes || 30, // Map from durationMinutes to duration for backend
+      durationMinutes: service.durationMinutes || 30,
       status: service.status || 'ACTIVE'
     });
     setEditModalOpen(true);
@@ -197,7 +197,7 @@ const TestingTable = ({ searchTerm, refreshKey }) => {
         serviceName: editForm.serviceName,
         description: editForm.description,
         price: editForm.price,
-        duration: editForm.duration, // Backend expects 'duration' not 'durationMinutes'
+        durationMinutes: editForm.durationMinutes,
         status: editForm.status
       };
       
@@ -596,8 +596,8 @@ const TestingTable = ({ searchTerm, refreshKey }) => {
                   fullWidth
                   label="Thời gian thực hiện (phút)"
                   type="number"
-                  value={editForm.duration}
-                  onChange={(e) => setEditForm({...editForm, duration: parseInt(e.target.value) || 30})}
+                  value={editForm.durationMinutes}
+                  onChange={(e) => setEditForm({...editForm, durationMinutes: parseInt(e.target.value) || 30})}
                   variant="outlined"
                   size="medium"
                   helperText="Thời gian thực hiện dịch vụ tính bằng phút"

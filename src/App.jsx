@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-// import { ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
-import { WebSocketProvider } from './context/WebSocketContext';
+import { SimpleWebSocketProvider } from './context/SimpleWebSocketContext';
 import { ChatProvider } from './context/ChatContext';
 import { CycleProvider } from './context/CycleContext';
 import { AppointmentProvider } from './context/AppointmentContext';
@@ -22,30 +23,32 @@ function App() {
     <HelmetProvider>
       <ErrorBoundary>
         <AuthProvider>
-          <WebSocketProvider>
+          <SimpleWebSocketProvider>
             <ChatProvider>
               <CycleProvider>
                 <AppointmentProvider>
                   <ConsultantProvider>
                     <RouterProvider router={router} />
-                    {/* Tắt ToastContainer để loại bỏ tất cả thông báo */}
-                    {/* <ToastContainer
+                    <ToastContainer
                       position="top-right"
                       autoClose={3000}
                       hideProgressBar={false}
-                      newestOnTop={false}
+                      newestOnTop={true}
                       closeOnClick
                       rtl={false}
-                      pauseOnFocusLoss
+                      pauseOnFocusLoss={false}
                       draggable
-                      pauseOnHover
+                      pauseOnHover={true}
                       theme="light"
-                    /> */}
+                      limit={3}
+                      preventDuplicates={true}
+                      toastClassName="custom-toast"
+                    />
                   </ConsultantProvider>
                 </AppointmentProvider>
               </CycleProvider>
             </ChatProvider>
-          </WebSocketProvider>
+          </SimpleWebSocketProvider>
         </AuthProvider>
       </ErrorBoundary>
     </HelmetProvider>

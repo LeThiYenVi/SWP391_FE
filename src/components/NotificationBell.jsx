@@ -15,7 +15,7 @@ import {
   NotificationsNone as NotificationsNoneIcon,
   Circle as CircleIcon
 } from '@mui/icons-material';
-import { useWebSocket } from '../context/WebSocketContext';
+import { useWebSocket } from '../hooks/useWebSocketCompat';
 
 const NotificationBell = () => {
   const { connected, notifications, markAsRead, clearNotifications } = useWebSocket();

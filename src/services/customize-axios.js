@@ -47,14 +47,24 @@ instance.interceptors.response.use(
       }
 
       if (error.response.status === 401) {
+        // ✅ KHÔNG logout nếu đang ở trang tracking hoặc có WebSocket notification
+        const isTrackingPage = window.location.pathname.includes('/tracking');
+        const isWebSocketRelated = error.config?.url?.includes('/ws') ||
+                                  error.config?.headers?.['Upgrade'] === 'websocket';
+
         if (
           window.location.pathname !== routes.login &&
           !error.config.url.includes('/api/auth/') &&
-          !error.config.url.includes('/api/chat/')
+          !error.config.url.includes('/api/chat/') &&
+          !isTrackingPage &&
+          !isWebSocketRelated
         ) {
+          console.warn('⚠️ 401 error detected, logging out user');
           localStorage.clear();
           localStorage.setItem("sessionExpired", "true");
           window.location.href = routes.landing;
+        } else {
+          console.warn('⚠️ 401 error detected but not logging out (tracking page or WebSocket)');
         }
       }
     } else if (error.request) {
