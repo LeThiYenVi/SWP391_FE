@@ -62,7 +62,7 @@ const NotificationBell = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'CONFIRMED': return 'Đã xác nhận';
+      case 'CONFIRMED': return 'Xác nhận';
       case 'CANCELLED': return 'Đã hủy';
       case 'COMPLETED': return 'Hoàn thành';
       case 'SAMPLE_COLLECTED': return 'Đã lấy mẫu';

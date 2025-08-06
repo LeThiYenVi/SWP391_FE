@@ -124,7 +124,7 @@ const MyConsultations = () => {
       case 'SCHEDULED':
         return 'Đã lên lịch';
       case 'CONFIRMED':
-        return 'Đã xác nhận';
+        return 'Xác nhận';
       case 'IN_PROGRESS':
         return 'Đang diễn ra';
       case 'COMPLETED':

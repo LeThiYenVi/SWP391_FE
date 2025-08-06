@@ -1,0 +1,614 @@
+.timeslot-picker {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #b0b9bc 0%, #568392 100%);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(86, 131, 146, 0.15);
+  position: relative;
+  isolation: isolate;
+}
+
+.timeslot-picker * {
+  box-sizing: border-box;
+}
+
+.timeslot-picker::before,
+.timeslot-picker::after {
+  display: none !important;
+}
+
+/* Reset any potential interfering styles */
+.timeslot-picker .calendar-container::before,
+.timeslot-picker .calendar-container::after,
+.timeslot-picker .calendar-grid::before,
+.timeslot-picker .calendar-grid::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Ensure no pseudo elements create white bars */
+.timeslot-picker *::before,
+.timeslot-picker *::after {
+  background: transparent !important;
+}
+
+/* Hide any potential white columns or bars */
+.timeslot-picker .calendar-container > *:not(.calendar-header):not(.calendar-grid) {
+  display: none !important;
+}
+
+.timeslot-picker .calendar-grid > *:not(.weekdays):not(.dates-grid) {
+  display: none !important;
+}
+
+/* Force hide any white vertical elements */
+.timeslot-picker .calendar-container::before,
+.timeslot-picker .calendar-container::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Aggressive approach to hide white columns */
+.timeslot-picker .calendar-grid::before,
+.timeslot-picker .calendar-grid::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide any element that might be creating white bars */
+.timeslot-picker div[style*="background: white"],
+.timeslot-picker div[style*="background-color: white"],
+.timeslot-picker div[style*="background: #fff"],
+.timeslot-picker div[style*="background-color: #fff"] {
+  display: none !important;
+}
+
+/* Target potential white columns by position */
+.timeslot-picker .calendar-container > div:first-child:not(.calendar-header) {
+  display: none !important;
+}
+
+/* Hide any absolutely positioned white elements */
+.timeslot-picker [style*="position: absolute"][style*="background: white"],
+.timeslot-picker [style*="position: absolute"][style*="background-color: white"] {
+  display: none !important;
+}
+
+/* Simple approach: Hide only empty divs and problematic elements */
+.timeslot-picker div:empty:not(.date-cell) {
+  display: none !important;
+}
+
+/* Hide any white bars that are not date cells */
+.timeslot-picker div[style*="background: white"]:not(.date-cell):not(.calendar-container):not(.calendar-header):not(.calendar-grid):not(.weekdays):not(.dates-grid):not(.weekday) {
+  display: none !important;
+}
+
+/* Override Tailwind CSS grid columns */
+.timeslot-picker .calendar-container,
+.timeslot-picker .calendar-grid {
+  grid-template-columns: none !important;
+  grid-auto-columns: none !important;
+}
+
+/* Force specific grid layout */
+.timeslot-picker .weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  grid-auto-columns: none !important;
+}
+
+.timeslot-picker .dates-grid {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  grid-auto-columns: none !important;
+}
+
+/* Hide any Tailwind generated columns */
+.timeslot-picker [class*="col-"],
+.timeslot-picker [class*="grid-cols-"],
+.timeslot-picker .grid > div:empty {
+  display: none !important;
+}
+
+/* Restore beautiful styling with brand colors */
+.timeslot-picker .date-cell.available {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--primary-color) !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+.timeslot-picker .date-cell.available:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(86, 131, 146, 0.3) !important;
+  background: white !important;
+  color: var(--primary-dark) !important;
+}
+
+.timeslot-picker .date-cell.selected {
+  background: var(--primary-gradient) !important;
+  color: white !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 8px 25px rgba(86, 131, 146, 0.4) !important;
+}
+
+.timeslot-picker .date-cell.today {
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Calendar Container */
+.calendar-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.calendar-icon {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.calendar-title h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.month-year {
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  min-width: 140px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.calendar-grid {
+  position: relative;
+  z-index: 1;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  padding: 8px;
+}
+
+.dates-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.date-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  min-height: 60px;
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.date-cell.other-month {
+  opacity: 0.5;
+  pointer-events: none;
+  color: var(--primary-light);
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.date-cell.available {
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--primary-dark);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.date-cell.available:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(86, 131, 146, 0.3);
+  background: white;
+  color: #1a3a42;
+  font-weight: 700;
+}
+
+.date-cell.selected {
+  background: var(--primary-gradient);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(86, 131, 146, 0.4);
+}
+
+.date-cell.today {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  color: var(--primary-dark);
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.date-number {
+  font-weight: 600;
+  font-size: 16px;
+  z-index: 2;
+}
+
+.availability-indicator {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(86, 131, 146, 0.3);
+}
+
+.today-indicator {
+  position: absolute;
+  bottom: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #f59e0b;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Timeslots Container */
+.timeslots-container {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.timeslots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f7fafc;
+}
+
+.timeslots-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #2d3748;
+}
+
+.clock-icon {
+  width: 24px;
+  height: 24px;
+  color: #667eea;
+}
+
+.timeslots-title h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.selected-date-info {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.timeslots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.timeslots-grid.animating {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timeslot-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  animation: slideInCard 0.5s ease-out forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes slideInCard {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timeslot-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.timeslot-card.selected {
+  background: var(--primary-gradient);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(86, 131, 146, 0.3);
+}
+
+.timeslot-card.popular {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.timeslot-card.popular.selected {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.popular-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.time-display {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.availability,
+.location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.selected-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkmark {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.no-slots {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.no-slots-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  opacity: 0.5;
+}
+
+.no-slots h4 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.no-slots p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .timeslot-picker {
+    padding: 16px;
+  }
+  
+  .calendar-container,
+  .timeslots-container {
+    padding: 20px;
+  }
+  
+  .calendar-header,
+  .timeslots-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .timeslots-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-cell {
+    min-height: 50px;
+  }
+  
+  .calendar-title h3 {
+    font-size: 20px;
+  }
+  
+  .month-navigation {
+    order: -1;
+  }
+}

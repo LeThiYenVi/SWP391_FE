@@ -54,11 +54,14 @@ const cancelBookingAPI = async (id) => {
   }
 };
 
-const getAllBookingsForStaffAPI = async () => {
+const getAllBookingsForStaffAPI = async (status = 'PENDING', pageNumber = 1, pageSize = 10) => {
   try {
-    const response = await instance.get('/api/admin/bookings');
+    // Use Staff endpoint instead of Admin endpoint
+    const response = await instance.get(`/api/bookings/status/${status}?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+    console.log('📋 getAllBookingsForStaffAPI response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('❌ getAllBookingsForStaffAPI error:', error.response?.data || error.message);
     throw error;
   }
 };

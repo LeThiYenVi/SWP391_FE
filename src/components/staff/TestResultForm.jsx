@@ -11,6 +11,7 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
     result: '',
     resultType: 'Bình thường',
     notes: '',
+    doctorName: '', // Tên bác sĩ phụ trách
     resultDate: new Date().toISOString().slice(0, 16), // Format for datetime-local input
     sampleDate: new Date().toISOString().slice(0, 16), // Thời gian lấy mẫu
     // Thông tin người lấy mẫu (read-only từ sampleCollectionProfile)
@@ -51,10 +52,20 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
 
       setFormData(prev => ({
         ...prev,
+        // Pre-fill existing result data if editing
+        result: booking.result || '',
+        resultType: booking.resultType || 'Bình thường',
+        notes: booking.notes || '',
+        doctorName: sampleProfile?.doctorName || booking.doctorName || '',
+        resultDate: booking.resultDate
+          ? new Date(booking.resultDate).toISOString().slice(0, 16)
+          : new Date().toISOString().slice(0, 16),
         // Nếu có sampleCollectionProfile, sử dụng thời gian lấy mẫu từ đó
         sampleDate: sampleProfile?.sampleCollectionDate
           ? new Date(sampleProfile.sampleCollectionDate).toISOString().slice(0, 16)
-          : prev.sampleDate,
+          : (booking.sampleCollectionDate
+            ? new Date(booking.sampleCollectionDate).toISOString().slice(0, 16)
+            : prev.sampleDate),
         patientInfo: {
           fullName: sampleProfile?.collectorFullName || booking.customerFullName || booking.fullName || '',
           age: sampleProfile?.collectorDateOfBirth ? calculateAge(sampleProfile.collectorDateOfBirth) :
@@ -138,18 +149,14 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log('🔄 Form submitted');
-    console.log('📝 Form data:', formData);
-
     if (!validateForm()) {
-      console.log('❌ Form validation failed');
       return;
     }
 
-    console.log('✅ Form validation passed');
-
     setLoading(true);
     try {
+      // WORKFLOW STEP 6: Staff cập nhật kết quả xét nghiệm
+      // API Call: PATCH /api/bookings/{id}/test-result
       const resultData = {
         result: formData.result.trim(),
         resultType: formData.resultType,
@@ -157,10 +164,28 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
         resultDate: new Date(formData.resultDate).toISOString()
       };
 
-      console.log('📤 Sending result data:', resultData);
-      console.log('📤 Booking ID:', booking.bookingId);
-
       const response = await BookingService.updateTestResult(booking.bookingId, resultData);
+
+      // WORKFLOW STEP 6.1: Cập nhật tên bác sĩ trong SampleCollectionProfile
+      // API Call: PUT /api/bookings/{id}/sample-collection
+      // Chỉ gọi nếu có doctorName và đã có sample collection profile
+      if (formData.doctorName.trim() && booking.sampleCollectionProfile) {
+        const sampleCollectionData = {
+          collectorFullName: booking.sampleCollectionProfile.collectorFullName,
+          collectorIdCard: booking.sampleCollectionProfile.collectorIdCard,
+          collectorPhoneNumber: booking.sampleCollectionProfile.collectorPhoneNumber || '',
+          collectorDateOfBirth: booking.sampleCollectionProfile.collectorDateOfBirth,
+          collectorGender: booking.sampleCollectionProfile.collectorGender,
+          relationshipToBooker: booking.sampleCollectionProfile.relationshipToBooker,
+          sampleCollectionDate: booking.sampleCollectionProfile.sampleCollectionDate,
+          notes: booking.sampleCollectionProfile.notes || '',
+          // WORKFLOW: Cập nhật tên bác sĩ phụ trách
+          doctorName: formData.doctorName.trim()
+        };
+
+        // Gọi API để cập nhật SampleCollectionProfile với doctorName mới
+        await BookingService.updateSampleCollectionProfile(booking.bookingId, sampleCollectionData);
+      }
 
       if (response.success) {
         toast.success('✅ Đã cập nhật kết quả xét nghiệm thành công!', {
@@ -177,7 +202,6 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
         throw new Error(response.message || 'Có lỗi xảy ra');
       }
     } catch (error) {
-      console.error('Error updating test result:', error);
       toast.error(`Lỗi khi cập nhật kết quả: ${error.message}`, {
         toastId: `test-result-form-error-${booking.bookingId}`, // Prevent duplicates
         position: "top-right",
@@ -412,10 +436,21 @@ const TestResultForm = ({ booking, onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Debug Info */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs mb-3">
-          <strong>Debug:</strong> Result: "{formData.result}", Date: "{formData.resultDate}", Errors: {JSON.stringify(errors)}
+        {/* Doctor Name Section */}
+        <div className="border border-gray-200 rounded p-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Bác sĩ phụ trách
+          </label>
+          <input
+            type="text"
+            value={formData.doctorName}
+            onChange={(e) => handleInputChange('doctorName', e.target.value)}
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+            placeholder="Nhập tên bác sĩ phụ trách (VD: BS. Nguyễn Văn A)..."
+          />
         </div>
+
+
 
         {/* Action Buttons */}
         <div className="flex space-x-2 pt-3">

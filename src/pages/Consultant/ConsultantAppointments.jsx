@@ -70,11 +70,16 @@ const ConsultantAppointments = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const data = await getConsultantBookingsAPI();
-      setBookings(data || []);
+      const response = await getConsultantBookingsAPI();
+      console.log('API Response:', response);
+      // API trả về { success: boolean, message: string, data: array }
+      const bookingsData = response?.data || [];
+      console.log('Bookings data:', bookingsData);
+      setBookings(bookingsData);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      toast.error('Không thể tải danh sách lịch hẹn');
+      toast.error(error.response?.data?.message || 'Không thể tải danh sách lịch hẹn');
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -110,7 +115,7 @@ const ConsultantAppointments = () => {
       
       const result = await confirmWithMeetingLinkAPI(booking.id);
       
-      toast.success(`Đã xác nhận lịch hẹn và tạo meeting link tự động! Link: ${result.meetingLink}`);
+      toast.success(`Đã xác nhận lịch hẹn và tạo meeting link tự động! Link: ${result?.meetingLink || result?.data?.meetingLink}`);
       fetchBookings(); // Refresh the list
       
     } catch (error) {
@@ -134,9 +139,9 @@ const ConsultantAppointments = () => {
       
       const result = await confirmConsultationAPI(selectedBooking.id, confirmationForm);
       
-             toast.success(confirmationForm.status === 'CONFIRMED' 
-         ? 'Đã xác nhận lịch hẹn và gửi link meeting!' 
-         : 'Đã hủy lịch hẹn');
+      toast.success(confirmationForm.status === 'CONFIRMED' 
+        ? 'Đã xác nhận lịch hẹn và gửi link meeting!' 
+        : 'Đã hủy lịch hẹn');
       
       setConfirmationDialogOpen(false);
       setSelectedBooking(null);
@@ -175,7 +180,7 @@ const ConsultantAppointments = () => {
   const getStatusText = (status) => {
     const texts = {
       'SCHEDULED': 'Đã lên lịch',
-      'CONFIRMED': 'Đã xác nhận',
+      'CONFIRMED': 'Xác nhận',
       'IN_PROGRESS': 'Đang diễn ra',
       'COMPLETED': 'Hoàn thành',
       'CANCELLED': 'Đã hủy'
@@ -208,7 +213,16 @@ const ConsultantAppointments = () => {
         Quản lý và xác nhận các lịch hẹn tư vấn
       </Typography>
 
-      {bookings.length === 0 ? (
+      {loading ? (
+        <Card>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              Đang tải danh sách lịch hẹn...
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : !Array.isArray(bookings) || bookings.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">

@@ -1,0 +1,9 @@
+{
+  "name": "timeslot-picker",
+  "version": "1.0.0",
+  "description": "Enhanced timeslot picker component with modern design",
+  "main": "index.jsx",
+  "keywords": ["react", "timeslot", "calendar", "picker", "booking"],
+  "author": "SWP391 Team",
+  "license": "MIT"
+}

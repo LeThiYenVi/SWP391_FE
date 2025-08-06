@@ -38,14 +38,11 @@ const FeedbackStatus = ({ consultationId, bookingId, onFeedbackSubmitted, onFeed
         throw new Error('Không có consultationId hoặc bookingId');
       }
       
-      // Response đã được xử lý bởi customize-axios interceptor
-      // Kiểm tra xem response có phải là object gốc không (có field success)
-      if (response && typeof response === 'object' && response.success !== undefined) {
-        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
-        setFeedback(null);
-      } else if (response && response !== null) {
-        // Đây là data thực tế (đã có feedback)
-        setFeedback(response);
+      // Response từ customize-axios sẽ có cấu trúc { success, message, data }
+      // Nếu success = true và data = null, có nghĩa là chưa có feedback
+      // Nếu success = true và data != null, có nghĩa là đã có feedback
+      if (response && response.success && response.data) {
+        setFeedback(response.data);
       } else {
         setFeedback(null); // Không có feedback
       }
@@ -67,6 +64,20 @@ const FeedbackStatus = ({ consultationId, bookingId, onFeedbackSubmitted, onFeed
       loadFeedback();
     }
   }, [onFeedbackSubmitted]);
+
+  // Refresh feedback khi component được re-render với key mới
+  useEffect(() => {
+    if (consultationId || bookingId) {
+      loadFeedback();
+    }
+  }, [consultationId, bookingId]);
+
+  // Refresh feedback khi bookingId hoặc consultationId thay đổi
+  useEffect(() => {
+    if (consultationId || bookingId) {
+      loadFeedback();
+    }
+  }, [consultationId, bookingId]);
 
   if (loading) {
     return (

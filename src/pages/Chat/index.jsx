@@ -89,12 +89,10 @@ const ChatPage = () => {
     conversationSubscriptionRef.current = subscribeToConversation(
       conversationId,
       (message) => {
-        console.log('📨 Received message in chat page:', message);
         setMessages(prev => [...prev, message]);
         updateConversationLastMessage(conversationId, message);
       },
       (typingMsg) => {
-        console.log('⌨️ Typing notification:', typingMsg);
         setTypingUser(typingMsg);
         setIsTyping(true);
 
@@ -108,7 +106,6 @@ const ChatPage = () => {
         }, 3000);
       },
       (readMsg) => {
-        console.log('👁️ Read notification:', readMsg);
         // Handle read notifications
       }
     );

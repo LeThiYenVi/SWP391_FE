@@ -382,10 +382,10 @@
 }
 
 .calendar-day.ovulation {
-  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  background: linear-gradient(135deg, #B0B9BC, #568392);
   color: white;
   font-weight: 700;
-  box-shadow: 0 3px 8px 0 rgba(79, 195, 247, 0.3);
+  box-shadow: 0 3px 8px 0 rgba(176, 185, 188, 0.3);
   animation: pulse 2s infinite;
   position: relative;
 }
@@ -506,8 +506,8 @@
 }
 
 .legend-dot.ovulation {
-  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
-  border: 2px solid #00b894;
+  background: linear-gradient(135deg, #B0B9BC, #568392);
+  border: 2px solid #568392;
   animation: pulse 2s infinite;
   position: relative;
 }

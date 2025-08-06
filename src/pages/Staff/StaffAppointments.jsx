@@ -4,7 +4,7 @@ import { updateBookingStatusAPI } from '../../services/StaffService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { toast } from 'react-toastify';
-import { useWebSocket } from '../../hooks/useWebSocketCompat';
+
 import {
   Box,
   Typography,
@@ -45,8 +45,7 @@ const StaffAppointments = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // WebSocket hook để nhận real-time updates
-  const { connected, notifications } = useWebSocket();
+
 
   const [dateFilter, setDateFilter] = useState('');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
@@ -67,52 +66,23 @@ const StaffAppointments = () => {
     fetchAppointments();
   }, [currentPage]);
 
-  // Debug WebSocket connection
-  useEffect(() => {
-    console.log('🔌 WebSocket connected:', connected);
-    console.log('📱 Notifications count:', notifications.length);
-  }, [connected, notifications]);
+
 
   useEffect(() => {
     filterAppointments();
   }, [searchTerm, dateFilter, appointments]);
 
-  // WebSocket effect để listen real-time updates từ notifications
-  useEffect(() => {
-    if (!connected || notifications.length === 0) return;
 
-    // Lấy notification mới nhất
-    const latestNotification = notifications[notifications.length - 1];
-
-    console.log('📱 Staff received notification:', latestNotification);
-
-    // Kiểm tra nếu là booking update
-    if (latestNotification && latestNotification.bookingId) {
-      // Tự động reload data khi có update
-      setTimeout(() => {
-        fetchAppointments();
-      }, 500);
-
-      // Hiển thị toast notification với toastId để tránh duplicate
-      toast.info(`Lịch hẹn #${latestNotification.bookingId} đã được cập nhật`, {
-        toastId: `booking-update-${latestNotification.bookingId}`, // Prevent duplicates
-        position: "top-right",
-        autoClose: 2000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-      });
-    }
-  }, [notifications, connected]);
 
   const fetchAppointments = async () => {
     setLoading(true);
     try {
       // Lấy appointments theo status PENDING
-      const response = await instance.get(`/api/bookings/status/PENDING?pageNumber=${currentPage}&pageSize=${pageSize}`);
+      const response = await getAllBookingsForStaffAPI('PENDING', currentPage, pageSize);
+      console.log('📋 Staff appointments response:', response);
 
-      if (response.data && response.data.content) {
+      if (response && response.data && response.data.content) {
+        console.log('✅ Setting appointments:', response.data.content);
         setAppointments(response.data.content);
         setFilteredAppointments(response.data.content);
         setTotalPages(response.data.totalPages);
@@ -123,10 +93,16 @@ const StaffAppointments = () => {
           completedBookings: response.data.completedBookings || 0,
           cancelledBookings: response.data.cancelledBookings || 0
         });
+      } else {
+        console.log('❌ No content in response:', response);
+        setAppointments([]);
+        setFilteredAppointments([]);
       }
     } catch (err) {
       console.error('Error fetching appointments:', err);
       setError('Không thể tải danh sách lịch hẹn. Vui lòng thử lại sau.');
+      setAppointments([]);
+      setFilteredAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -238,7 +214,7 @@ const StaffAppointments = () => {
       case 'PENDING':
         return 'Chờ xác nhận';
       case 'CONFIRMED':
-        return 'Đã xác nhận';
+        return 'Xác nhận';
       case 'SAMPLE_COLLECTED':
         return 'Đã lấy mẫu';
       case 'TESTING':
@@ -320,30 +296,16 @@ const StaffAppointments = () => {
           Lịch xét nghiệm chờ xác nhận
         </Typography>
 
-        {/* Debug WebSocket Status */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Chip
-            label={connected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}
-            color={connected ? 'success' : 'error'}
-            size="small"
-          />
-          <Chip
-            label={`📱 ${notifications.length} notifications`}
-            color="info"
-            size="small"
-          />
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => {
-              console.log('🔄 Manual refresh');
-              fetchAppointments();
-            }}
-            startIcon={<RefreshIcon />}
-          >
-            Refresh
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => {
+            fetchAppointments();
+          }}
+          startIcon={<RefreshIcon />}
+        >
+          Làm mới
+        </Button>
       </Box>
 
       {/* Statistics Cards */}
@@ -648,26 +610,50 @@ const StaffAppointments = () => {
                       />
 
                       {appointment.status === 'PENDING' && (
-                        <Button
-                          size="small"
-                          onClick={() => handleStatusUpdate(appointment.bookingId, 'CONFIRMED')}
-                          sx={{
-                            backgroundColor: '#354766',
-                            color: 'white',
-                            borderRadius: '6px',
-                            fontWeight: 500,
-                            textTransform: 'none',
-                            px: 2,
-                            py: 0.5,
-                            fontSize: '12px',
-                            minWidth: 'auto',
-                            '&:hover': {
-                              backgroundColor: '#2a3a52',
-                            },
-                          }}
-                        >
-                          Xác nhận
-                        </Button>
+                        <>
+                          <Button
+                            size="small"
+                            onClick={() => handleStatusUpdate(appointment.bookingId, 'CONFIRMED')}
+                            sx={{
+                              backgroundColor: '#354766',
+                              color: 'white',
+                              borderRadius: '6px',
+                              fontWeight: 500,
+                              textTransform: 'none',
+                              px: 2,
+                              py: 0.5,
+                              fontSize: '12px',
+                              minWidth: 'auto',
+                              '&:hover': {
+                                backgroundColor: '#2a3a52',
+                              },
+                            }}
+                          >
+                            Xác nhận
+                          </Button>
+
+                          <Button
+                            size="small"
+                            onClick={() => handleStatusUpdate(appointment.bookingId, 'CANCELLED')}
+                            sx={{
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              borderRadius: '6px',
+                              fontWeight: 500,
+                              textTransform: 'none',
+                              px: 2,
+                              py: 0.5,
+                              fontSize: '12px',
+                              minWidth: 'auto',
+                              ml: 1,
+                              '&:hover': {
+                                backgroundColor: '#c82333',
+                              },
+                            }}
+                          >
+                            Hủy
+                          </Button>
+                        </>
                       )}
 
                       <Button

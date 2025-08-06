@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
@@ -11,13 +11,36 @@ import { AppointmentProvider } from './context/AppointmentContext';
 import { ConsultantProvider } from './context/ConsultantContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { checkVersionAndClearCache } from './utils/cacheUtils';
-import router from './router';
+import router from './router/index.js';
 // import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
     checkVersionAndClearCache();
+    // Add small delay to ensure all contexts are ready
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  if (!isReady) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <HelmetProvider>

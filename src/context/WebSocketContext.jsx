@@ -25,7 +25,7 @@ export const WebSocketProvider = ({ children }) => {
 
   // Kết nối WebSocket khi user đăng nhập
   useEffect(() => {
-    console.log('🔌 WebSocket connection check - Auth:', isAuthenticated, 'User:', !!user, 'Client:', !!clientRef.current);
+
 
     if (isAuthenticated && user && !clientRef.current) {
       // ✅ Delay connection để đảm bảo authentication stable
@@ -54,18 +54,14 @@ export const WebSocketProvider = ({ children }) => {
 
   const connectWebSocket = () => {
     if (clientRef.current) {
-      console.log('⚠️ WebSocket already exists, skipping connection');
       return;
     }
-
-    console.log('🔌 Connecting to WebSocket...');
 
     // Lấy token từ localStorage
     const token = localStorage.getItem('authToken');
     const savedUser = localStorage.getItem('user');
 
     if (!token || !savedUser || !user || !isAuthenticated) {
-      console.error('❌ Missing authentication data for WebSocket connection');
       return;
     }
 
@@ -78,34 +74,21 @@ export const WebSocketProvider = ({ children }) => {
       reconnectDelay: 0, // ✅ Tắt auto-reconnect để tránh loop
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: (str) => {
-        // ✅ Chỉ log khi cần thiết
-        if (!str.includes('Connection closed') && !str.includes('scheduling reconnection')) {
-          console.log('STOMP Debug:', str);
-        }
+      debug: () => {
+        // Silent debug
       },
       onConnect: (frame) => {
-        console.log('✅ WebSocket connected:', frame);
         setConnected(true);
         subscribeToTopics();
-        // Tắt toast notification để tránh spam
-        // toast.success('Đã kết nối thông báo real-time!');
       },
       onStompError: (frame) => {
-        console.error('❌ STOMP error:', frame.headers['message']);
-        console.error('❌ Full error frame:', frame);
         setConnected(false);
-
-        // ✅ KHÔNG logout user khi có lỗi WebSocket
-        // ✅ KHÔNG hiển thị toast error để tránh spam
         // WebSocket error không có nghĩa là authentication failed
       },
       onWebSocketError: (event) => {
-        console.error('❌ WebSocket error:', event);
-        // ✅ Không hiển thị toast error để tránh spam
+        // Silent error handling
       },
       onDisconnect: () => {
-        console.log('🔌 WebSocket disconnected');
         setConnected(false);
         setNotifications([]);
       }
@@ -117,7 +100,6 @@ export const WebSocketProvider = ({ children }) => {
 
   const disconnectWebSocket = () => {
     if (clientRef.current) {
-      console.log('🔌 Disconnecting WebSocket...');
       
       // Unsubscribe tất cả subscriptions
       Object.values(subscriptionsRef.current).forEach(subscription => {
@@ -165,7 +147,7 @@ export const WebSocketProvider = ({ children }) => {
       //   toast.error(error);
       // });
 
-      console.log('📱 Customer subscribed to booking and chat updates');
+
     }
 
     if (user.role === 'ROLE_STAFF' || user.role === 'staff' ||
@@ -182,7 +164,7 @@ export const WebSocketProvider = ({ children }) => {
         handleBookingUpdate(update);
       });
 
-      console.log('👨‍💼 Staff/Admin subscribed to booking updates');
+
     }
 
     if (user.role === 'ROLE_CONSULTANT' || user.role === 'consultant') {
@@ -199,13 +181,12 @@ export const WebSocketProvider = ({ children }) => {
       //   toast.error(error);
       // });
 
-      console.log('👩‍⚕️ Consultant chat subscriptions disabled');
+
     }
   };
 
   const handleBookingUpdate = (update, isPrivate = false) => {
     try {
-      console.log('📨 Received booking update:', update);
 
       // Thêm notification vào state
       const notification = {
@@ -223,8 +204,7 @@ export const WebSocketProvider = ({ children }) => {
       // Chỉ update state, để component tự handle việc refresh data nếu cần
 
     } catch (error) {
-      console.error('❌ Error handling booking update:', error);
-      // ✅ KHÔNG throw error để tránh crash app và logout
+      // Silent error handling
     }
   };
 
@@ -234,7 +214,6 @@ export const WebSocketProvider = ({ children }) => {
 
     const subscriptionKey = `booking_${bookingId}`;
     if (subscriptionsRef.current[subscriptionKey]) {
-      console.log(`⚠️ Already subscribed to booking #${bookingId}`);
       return subscriptionsRef.current[subscriptionKey];
     }
 
@@ -247,20 +226,18 @@ export const WebSocketProvider = ({ children }) => {
             try {
               onMessage(update);
             } catch (error) {
-              console.error('❌ Error in onMessage callback:', error);
+              // Silent error handling
             }
           }
           handleBookingUpdate(update);
         } catch (error) {
-          console.error('❌ Error parsing WebSocket message:', error);
+          // Silent error handling
         }
       });
 
       subscriptionsRef.current[subscriptionKey] = subscription;
-      console.log(`📱 Subscribed to booking #${bookingId}`);
       return subscription;
     } catch (error) {
-      console.error('❌ Error subscribing to booking:', error);
       return null;
     }
   };
@@ -273,7 +250,6 @@ export const WebSocketProvider = ({ children }) => {
     if (subscription) {
       subscription.unsubscribe();
       delete subscriptionsRef.current[subscriptionKey];
-      console.log(`📱 Unsubscribed from booking #${bookingId}`);
     }
   };
 
@@ -300,17 +276,13 @@ export const WebSocketProvider = ({ children }) => {
 
     // Subscribe to conversation messages
     const messageSubscription = clientRef.current.subscribe(`/topic/chat/conversation/${conversationId}`, (message) => {
-      console.log('📨 Received conversation message:', message.body);
       try {
         const chatMessage = JSON.parse(message.body);
-        console.log('📨 Parsed message data:', chatMessage);
         if (onMessage) {
           onMessage(chatMessage);
-        } else {
-          console.warn('⚠️ No onMessage handler');
         }
       } catch (error) {
-        console.error('❌ Error parsing message:', error);
+        // Silent error handling
       }
     });
 
@@ -338,7 +310,6 @@ export const WebSocketProvider = ({ children }) => {
       }
     };
 
-    console.log(`📱 Subscribed to conversation #${conversationId}`);
     return subscriptionsRef.current[subscriptionKey];
   };
 
@@ -350,7 +321,6 @@ export const WebSocketProvider = ({ children }) => {
     if (subscription) {
       subscription.unsubscribe();
       delete subscriptionsRef.current[subscriptionKey];
-      console.log(`📱 Unsubscribed from conversation #${conversationId}`);
     }
   };
 

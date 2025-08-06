@@ -1,4 +1,4 @@
-# SWP391 - Healthcare Management System
+<!--  --># SWP391 - Healthcare Management System
 
 Hệ thống quản lý dịch vụ chăm sóc sức khỏe phụ khoa với Spring Boot Backend và React Frontend.
 

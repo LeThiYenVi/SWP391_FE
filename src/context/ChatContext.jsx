@@ -33,7 +33,6 @@ export const ChatProvider = ({ children }) => {
   // Load conversations khi user thay đổi - chỉ load một lần
   useEffect(() => {
     // ❌ Tạm thời disable để tránh gọi API chat
-    console.log('🚫 ChatContext disabled - không load conversations');
 
     if (!isAuthenticated) {
       hasLoadedRef.current = false;
@@ -57,14 +56,12 @@ export const ChatProvider = ({ children }) => {
 
   const subscribeToChatTopics = () => {
     // Sử dụng WebSocketContext thay vì tạo connection riêng
-    console.log('📱 Subscribing to chat topics via WebSocketContext');
-    
+
     // Chat topics sẽ được handle qua WebSocketContext
     // Không cần tạo connection riêng nữa
   };
 
   const handleNewMessage = (message) => {
-    console.log('📨 New chat message:', message);
     
     // Kiểm tra xem tin nhắn đã tồn tại chưa (tránh duplicate)
     setMessages(prev => {
@@ -85,12 +82,10 @@ export const ChatProvider = ({ children }) => {
   };
 
   const handleMessageConfirmation = (message) => {
-    console.log('✅ Message confirmed:', message);
     // Có thể cập nhật trạng thái tin nhắn nếu cần
   };
 
   const handleTypingNotification = (typingUser) => {
-    console.log('⌨️ Typing notification:', typingUser);
     setTypingUsers(prev => new Set([...prev, typingUser]));
     
     // Tự động xóa typing indicator sau 3 giây
@@ -104,7 +99,6 @@ export const ChatProvider = ({ children }) => {
   };
 
   const handleReadNotification = (readNotification) => {
-    console.log('👁️ Read notification:', readNotification);
     // Có thể cập nhật trạng thái tin nhắn đã đọc
   };
 

@@ -197,7 +197,8 @@ const TestResultModal = ({ isOpen, onClose, result, patientInfo }) => {
                 <div className="flex items-center">
                   <span className="font-medium text-gray-700 w-36">Ngày lấy mẫu:</span>
                   <span className="text-gray-900">
-                    {result.sampleDate ? format(new Date(result.sampleDate), 'dd/MM/yyyy HH:mm', { locale: vi }) :
+                    {result.sampleCollectionDate ? format(new Date(result.sampleCollectionDate), 'dd/MM/yyyy HH:mm', { locale: vi }) :
+                     result.sampleDate ? format(new Date(result.sampleDate), 'dd/MM/yyyy HH:mm', { locale: vi }) :
                      result.appointmentDate ? format(new Date(result.appointmentDate), 'dd/MM/yyyy', { locale: vi }) :
                      format(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), 'dd/MM/yyyy HH:mm', { locale: vi })}
                   </span>
@@ -211,7 +212,9 @@ const TestResultModal = ({ isOpen, onClose, result, patientInfo }) => {
                 </div>
                 <div className="flex items-center">
                   <span className="font-medium text-gray-700 w-36">Bác sĩ phụ trách:</span>
-                  <span className="text-gray-900">{doctorInfo.name}</span>
+                  {/* WORKFLOW: Hiển thị tên bác sĩ từ API thay vì hardcode */}
+                  {/* Ưu tiên: result.doctorName > sampleCollectionProfile.doctorName > fallback */}
+                  <span className="text-gray-900">{result.doctorName || result.sampleCollectionProfile?.doctorName || doctorInfo.name}</span>
                 </div>
                 <div className="flex items-center">
                   <span className="font-medium text-gray-700 w-36">Trạng thái:</span>
@@ -344,7 +347,8 @@ const TestResultModal = ({ isOpen, onClose, result, patientInfo }) => {
               {/* Right: Doctor Signature */}
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-2">Bác sĩ phụ trách:</p>
-                <p className="text-base font-bold text-gray-900 mb-1">{doctorInfo.name}</p>
+                {/* WORKFLOW: Hiển thị tên bác sĩ trong chữ ký từ API data */}
+                <p className="text-base font-bold text-gray-900 mb-1">{result.doctorName || result.sampleCollectionProfile?.doctorName || doctorInfo.name}</p>
                 <p className="text-xs text-gray-600 mb-1">{doctorInfo.title}</p>
                 <p className="text-xs text-gray-500 mb-3">{doctorInfo.license}</p>
                 <div className="w-32 h-16 signature-box mx-auto">

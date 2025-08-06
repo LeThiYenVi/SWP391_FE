@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { TestTube, MapPin, Clock, FileText, Download, Eye, Calendar, Star, X, XCircle } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getTestingServicesAPI } from '../../../services/TestingService';
 import { getLocationsAPI } from '../../../services/LocationService';
-import TimeSlotService from '../../../services/TimeSlotService';
+
 import instance from '../../../services/customize-axios';
 import BookingService, { createBookingAPI } from '../../../services/BookingService';
 import { useWebSocket } from '../../../hooks/useWebSocketCompat';
@@ -14,6 +14,7 @@ import { useAuth } from '../../../context/AuthContext';
 import FeedbackModal from '../../../components/FeedbackModal';
 import FeedbackStatus from '../../../components/FeedbackStatus';
 import TestResultModal from '../../../components/TestResultModal';
+import TimeslotPicker from '../../../components/TimeslotPicker';
 
 const STITesting = () => {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ const STITesting = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [activeTab, setActiveTab] = useState('booking'); // booking, history, results
   const [availableTests, setAvailableTests] = useState([]);
+
+
   const [locations, setLocations] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
@@ -35,6 +38,7 @@ const STITesting = () => {
   const [trackingBookingId, setTrackingBookingId] = useState(null);
   const [trackingStatus, setTrackingStatus] = useState(null);
   const [trackingOpen, setTrackingOpen] = useState(false);
+  const [feedbackRefreshKey, setFeedbackRefreshKey] = useState(0);
   const [selectedResult, setSelectedResult] = useState(null);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
@@ -55,20 +59,34 @@ const STITesting = () => {
 
 
   useEffect(() => {
-    console.log("STITesting useEffect chạy");
     getTestingServicesAPI()
-      .then(data => setAvailableTests(data.content || data))
+      .then(data => {
+        // ApiResponse format: { success, message, data: PageResponse }
+        // PageResponse format: { content: [...], pageNumber, pageSize, ... }
+        // Tests array nằm trong data.data.content
+        const testsArray = data.data?.content || [];
+        setAvailableTests(testsArray);
+      })
       .catch(err => {
+        console.error("API TestService error:", err);
         toast.error('Không thể tải danh sách dịch vụ xét nghiệm!');
       });
-  }, []); // ✅ Đây là useEffect chỉ chạy một lần khi component mount, không có vấn đề
+  }, []);
+
+
 
   // Gọi API location khi đã chọn dịch vụ
   useEffect(() => {
     if (selectedTest) {
       getLocationsAPI()
-        .then(data => setLocations(data))
+        .then(data => {
+          // ApiResponse format: { success, message, data: List<LocationResponseDTO> }
+          // Locations array nằm trong data.data
+          const locationsArray = data.data || [];
+          setLocations(locationsArray);
+        })
         .catch(err => {
+          console.error("API Locations error:", err);
           toast.error('Không thể tải danh sách địa điểm!');
         });
     } else {
@@ -78,53 +96,34 @@ const STITesting = () => {
 
   // Gọi API time slot khi đã chọn dịch vụ, địa điểm
   useEffect(() => {
-    console.log('selectedTest:', selectedTest, 'selectedLocation:', selectedLocation);
     if (selectedTest && selectedLocation) {
-      console.log('GỌI API TIMESLOT');
       // Lấy khoảng ngày hiển thị (ví dụ: 14 ngày tới)
       const today = new Date();
       const fromDate = today.toISOString().slice(0, 10);
-      
+
       setLoadingTimeSlots(true);
-      
-      // Gọi API facility time slots
-      TimeSlotService.getAvailableFacilityTimeSlots(fromDate)
-        .then(result => {
-          console.log('Time slot API response:', result);
-          if (result.success) {
-            setTimeSlots(result.data || []);
-            console.log('Set time slots:', result.data);
-            if (!result.data || result.data.length === 0) {
-              toast.info('Không có slot trống cho ngày hôm nay, vui lòng chọn ngày khác');
-            }
-          } else {
-            console.log('Time slot API error:', result);
-            toast.error('Không thể tải danh sách ngày giờ!');
-            setTimeSlots([]);
-          }
-        })
-        .catch(err => {
-          console.error('Time slot API error:', err);
-          // Thử trực tiếp với API call
-          instance.get('/api/time-slots/facility', {
-            params: { date: fromDate }
-          })
-          .then(response => {
-            console.log('Direct API response:', response.data);
-            setTimeSlots(response.data || []);
-            if (!response.data || response.data.length === 0) {
-              toast.info('Không có slot trống cho ngày hôm nay, vui lòng chọn ngày khác');
-            }
-          })
-          .catch(directErr => {
-            console.error('Direct API error:', directErr);
-            toast.error('Không thể tải danh sách ngày giờ! Vui lòng thử lại sau.');
-            setTimeSlots([]);
-          });
-        })
-        .finally(() => {
-          setLoadingTimeSlots(false);
-        });
+
+      // Gọi API facility time slots trực tiếp
+      instance.get('/api/time-slots/facility', {
+        params: { date: fromDate }
+      })
+      .then(response => {
+        // ApiResponse format: { success, message, data: List<TimeSlotResponseDTO> }
+        // TimeSlots array nằm trong response.data.data
+        const timeSlotData = response.data?.data || [];
+        setTimeSlots(timeSlotData);
+        if (timeSlotData.length === 0) {
+          toast.info('Không có slot trống cho ngày hôm nay, vui lòng chọn ngày khác');
+        }
+      })
+      .catch(err => {
+        console.error('TimeSlots API error:', err);
+        toast.error('Không thể tải danh sách ngày giờ! Vui lòng thử lại sau.');
+        setTimeSlots([]);
+      })
+      .finally(() => {
+        setLoadingTimeSlots(false);
+      });
     } else {
       setTimeSlots([]);
       setLoadingTimeSlots(false);
@@ -135,9 +134,12 @@ const STITesting = () => {
     if (activeTab === 'history' || activeTab === 'results') {
       setLoadingHistory(true);
       BookingService.getUserBookings().then(result => {
+        console.log('BookingService.getUserBookings result:', result);
         if (result.success) {
+          console.log('Setting bookingHistory with data:', result.data);
           setBookingHistory(result.data);
         } else {
+          console.log('BookingService failed:', result.message);
           setBookingHistory([]);
           toast.error(result.message || 'Không thể tải lịch sử xét nghiệm');
         }
@@ -150,7 +152,7 @@ const STITesting = () => {
     if (trackingBookingId && trackingOpen) {
       // Sử dụng useWebSocket hook thay vì deprecated BookingTrackingService
       const subscription = subscribeToBooking(trackingBookingId, (update) => {
-        console.log('📱 Received booking update:', update);
+
         setTrackingStatus(update);
       });
 
@@ -163,39 +165,18 @@ const STITesting = () => {
     }
   }, [trackingBookingId, trackingOpen, subscribeToBooking, unsubscribeFromBooking]);
 
-  const testLocations = [
-    {
-      id: 'center1',
-      name: 'Trung tâm Y tế Gynexa - Quận 1',
-      address: '123 Đường Nguyễn Huệ, Quận 1, TP.HCM',
-      phone: '028 1234 5678',
-      hours: 'T2-T7: 7:00-17:00, CN: 7:00-12:00',
-    },
-    {
-      id: 'center2',
-      name: 'Trung tâm Y tế Gynexa - Quận 3',
-      address: '456 Đường Võ Văn Tần, Quận 3, TP.HCM',
-      phone: '028 8765 4321',
-      hours: 'T2-T7: 7:00-17:00, CN: Nghỉ',
-    },
-    {
-      id: 'center3',
-      name: 'Trung tâm Y tế Gynexa - Thủ Đức',
-      address: '789 Đường Võ Văn Ngân, TP. Thủ Đức, TP.HCM',
-      phone: '028 9999 8888',
-      hours: 'T2-T7: 6:30-16:30, CN: 7:00-11:00',
-    },
-  ];
+
 
   // Removed mock data - using real API data from bookingHistory state
 
   const handleTestSelection = (serviceId) => {
     setSelectedTest(Number(serviceId));
-    console.log('Chọn dịch vụ:', serviceId);
+
   };
 
   // Sửa calculateTotal chỉ tính cho 1 dịch vụ
   const calculateTotal = () => {
+    if (!Array.isArray(availableTests)) return 0;
     const test = availableTests.find(t => t.serviceId === selectedTest);
     return test ? test.price : 0;
   };
@@ -209,6 +190,8 @@ const STITesting = () => {
   const handleFeedbackSubmitted = () => {
     setFeedbackModalOpen(false);
     setSelectedBooking(null);
+    // Force refresh FeedbackStatus components
+    setFeedbackRefreshKey(prev => prev + 1);
     // Refresh booking history to show updated feedback status
     if (activeTab === 'history') {
       fetchBookingHistory();
@@ -274,7 +257,7 @@ const STITesting = () => {
     }
 
     // Lấy thông tin dịch vụ đã chọn
-    const selectedService = availableTests.find(t => t.serviceId === selectedTest);
+    const selectedService = Array.isArray(availableTests) ? availableTests.find(t => t.serviceId === selectedTest) : null;
     const selectedLocationData = locations.find(l => l.id === selectedLocation);
 
     // Tạo booking data
@@ -333,15 +316,10 @@ const STITesting = () => {
     }
   };
 
-  const generateAvailableDates = () => {
-    return Array.from({ length: 14 }, (_, i) => {
-      const date = addDays(new Date(), i + 1);
-      return format(date, 'yyyy-MM-dd');
-    });
-  };
+
 
   // Nếu có hiển thị tên dịch vụ đã chọn
-  const selectedService = availableTests.find(t => t.serviceId === selectedTest);
+  const selectedService = Array.isArray(availableTests) ? availableTests.find(t => t.serviceId === selectedTest) : null;
   const selectedServiceName = selectedService ? selectedService.serviceName : '';
 
   return (
@@ -402,6 +380,7 @@ const STITesting = () => {
         </div>
 
         {/* Booking Tab */}
+
         {activeTab === 'booking' && (
           <div className="space-y-8">
             {/* Available Tests */}
@@ -418,7 +397,7 @@ const STITesting = () => {
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {availableTests.map(test => (
+                {Array.isArray(availableTests) && availableTests.map((test, index) => (
                   <div
                     key={test.serviceId}
                     onClick={() => handleTestSelection(test.serviceId)}
@@ -502,6 +481,19 @@ const STITesting = () => {
                     </div>
                   </div>
                 ))}
+
+                {/* Debug fallback */}
+                {!Array.isArray(availableTests) && (
+                  <div className="col-span-full text-center text-red-500">
+                    ❌ availableTests không phải là Array
+                  </div>
+                )}
+
+                {Array.isArray(availableTests) && availableTests.length === 0 && (
+                  <div className="col-span-full text-center text-gray-500">
+                    📭 Không có test nào available
+                  </div>
+                )}
               </div>
 
               {selectedTest && (
@@ -555,12 +547,12 @@ const STITesting = () => {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {locations.map(loc => (
+                  {Array.isArray(locations) && locations.map(loc => (
                     <div
                       key={loc.id}
                       onClick={() => {
                         setSelectedLocation(loc.id);
-                        console.log('Chọn địa điểm:', loc.id);
+
                       }}
                       className={`bg-white rounded-xl p-6 cursor-pointer transition-all duration-300 border-2 hover:shadow-xl transform hover:-translate-y-1 ${
                         selectedLocation === loc.id
@@ -629,139 +621,17 @@ const STITesting = () => {
               </div>
             )}
 
-            {/* Date Selection */}
+            {/* Enhanced Timeslot Picker */}
             {selectedTest && selectedLocation && (
-              <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
-                <div className="flex items-center mb-6">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
-                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
-                  >
-                    <Calendar className="w-4 h-4 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
-                    Chọn ngày xét nghiệm
-                  </h2>
-                </div>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
-                  {Array.from(new Set(timeSlots.map(ts => ts.slotDate))).map(date => {
-                    const d = new Date(date);
-                    const day = d.toLocaleDateString('en-US', { weekday: 'short' });
-                    const dayNum = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-                    const isSelected = selectedDate === date;
-                    return (
-                      <div
-                        key={date}
-                        onClick={() => setSelectedDate(date)}
-                        className={`bg-white rounded-xl p-4 text-center cursor-pointer transition-all duration-300 border-2 hover:shadow-lg transform hover:-translate-y-1 ${
-                          isSelected
-                            ? 'shadow-lg scale-105'
-                            : 'shadow-md hover:shadow-lg'
-                        }`}
-                        style={{
-                          borderColor: isSelected ? '#3a99b7' : '#e5e7eb',
-                          background: isSelected
-                            ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))'
-                            : 'white'
-                        }}
-                      >
-                        <div className="font-semibold text-gray-600 text-sm">{day}</div>
-                        <div
-                          className="text-lg font-bold mt-1"
-                          style={{ color: isSelected ? '#3a99b7' : '#374151' }}
-                        >
-                          {dayNum}
-                        </div>
-                        {isSelected && (
-                          <div className="mt-2 text-xs font-medium" style={{ color: '#3a99b7' }}>
-                            Đã chọn
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Time Slots for Selected Date */}
-            {selectedTest && selectedLocation && selectedDate && (
-              <div className="bg-white rounded-xl shadow-lg p-6 border" style={{ borderColor: '#3a99b7' }}>
-                <div className="flex items-center mb-6">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mr-3"
-                    style={{ background: 'linear-gradient(135deg, #3a99b7, #2d7a91)' }}
-                  >
-                    <Clock className="w-4 h-4 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold" style={{ color: '#2d7a91' }}>
-                    Chọn khung giờ
-                  </h2>
-                </div>
-
-                {loadingTimeSlots ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="text-center">
-                      <div
-                        className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent mx-auto mb-4"
-                        style={{ borderColor: '#3a99b7', borderTopColor: 'transparent' }}
-                      ></div>
-                      <p className="text-gray-600 font-medium">Đang tải danh sách khung giờ...</p>
-                    </div>
-                  </div>
-                ) : timeSlots.filter(ts => ts.slotDate === selectedDate).length === 0 ? (
-                  <div className="text-center py-12">
-                    <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                      style={{ background: 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))' }}
-                    >
-                      <Clock className="h-8 w-8" style={{ color: '#3a99b7' }} />
-                    </div>
-                    <p className="text-gray-700 font-semibold text-lg mb-2">Không có khung giờ trống</p>
-                    <p className="text-gray-500">Vui lòng chọn ngày khác để xem các khung giờ có sẵn</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {timeSlots
-                      .filter(ts => ts.slotDate === selectedDate)
-                      .map(timeSlot => {
-                        const isSelected = selectedTimeSlot?.timeSlotId === timeSlot.timeSlotId;
-                        return (
-                          <div
-                            key={timeSlot.timeSlotId}
-                            onClick={() => setSelectedTimeSlot(timeSlot)}
-                            className={`bg-white rounded-xl p-4 text-center cursor-pointer transition-all duration-300 border-2 hover:shadow-lg transform hover:-translate-y-1 ${
-                              isSelected
-                                ? 'shadow-lg scale-105'
-                                : 'shadow-md hover:shadow-lg'
-                            }`}
-                            style={{
-                              borderColor: isSelected ? '#3a99b7' : '#e5e7eb',
-                              background: isSelected
-                                ? 'linear-gradient(135deg, rgba(58, 153, 183, 0.1), rgba(45, 122, 145, 0.1))'
-                                : 'white'
-                            }}
-                          >
-                            <div
-                              className="font-bold text-lg mb-2"
-                              style={{ color: isSelected ? '#3a99b7' : '#374151' }}
-                            >
-                              {timeSlot.startTime} - {timeSlot.endTime}
-                            </div>
-                            <div className="text-sm text-gray-600 mb-2">
-                              Còn {timeSlot.availableSlots} chỗ
-                            </div>
-                            {isSelected && (
-                              <div className="text-xs font-medium" style={{ color: '#3a99b7' }}>
-                                ✓ Đã chọn
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
+              <TimeslotPicker
+                timeSlots={timeSlots}
+                selectedDate={selectedDate}
+                selectedTimeSlot={selectedTimeSlot}
+                onDateSelect={setSelectedDate}
+                onTimeSlotSelect={setSelectedTimeSlot}
+                loading={loadingTimeSlots}
+                className="mb-8"
+              />
             )}
 
             {/* Booking Button */}
@@ -830,7 +700,7 @@ const STITesting = () => {
                   <p className="text-gray-500">Hãy đặt lịch xét nghiệm đầu tiên của bạn</p>
                 </div>
               ) : (
-                bookingHistory.map(record => (
+                Array.isArray(bookingHistory) && bookingHistory.map(record => (
                   <div
                     key={record.bookingId}
                     className="bg-white rounded-xl p-6 shadow-md border-2 hover:shadow-lg transition-all duration-300"
@@ -921,6 +791,7 @@ const STITesting = () => {
                         {record.status === 'COMPLETED' && (
                           <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                             <FeedbackStatus
+                              key={`${record.bookingId}-${feedbackRefreshKey}`}
                               bookingId={record.bookingId}
                               onFeedbackSubmitted={handleFeedbackSubmitted}
                               onFeedbackClick={() => handleFeedbackClick(record)}
@@ -1054,7 +925,7 @@ const STITesting = () => {
                   <p className="text-gray-500">Kết quả sẽ hiển thị sau khi xét nghiệm hoàn tất</p>
                 </div>
               ) : (
-                bookingHistory
+                Array.isArray(bookingHistory) && bookingHistory
                   .filter(record => record.status === 'COMPLETED' && record.result)
                   .map(record => (
                     <div

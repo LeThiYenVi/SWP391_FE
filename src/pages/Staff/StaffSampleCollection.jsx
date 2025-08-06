@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Calendar, TestTube, CheckCircle, AlertCircle, Clock, FileText, X } from 'lucide-react';
-import { getAllBookingsAPI, getBookingsByStatusAPI, markSampleCollectedAPI } from '../../services/StaffService';
+import { getBookingsByStatusAPI, markSampleCollectedAPI } from '../../services/StaffService';
 import SampleCollectionModal from '../../components/SampleCollectionModal';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useWebSocket } from '../../hooks/useWebSocketCompat';
+
 import { toast } from 'react-toastify';
 
 const StaffSampleCollection = () => {
-  const { connected, notifications } = useWebSocket();
+
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,22 +29,7 @@ const StaffSampleCollection = () => {
     filterBookings();
   }, [searchTerm, dateFilter, bookings]);
 
-  // Listen for WebSocket notifications to auto-refresh
-  useEffect(() => {
-    if (connected && notifications.length > 0) {
-      const latestNotification = notifications[notifications.length - 1];
-      console.log('📨 Staff received notification:', latestNotification);
 
-      // If it's a booking status update, refresh the list
-      if (latestNotification.type === 'booking_status_update' ||
-          latestNotification.message?.includes('booking') ||
-          latestNotification.message?.includes('lịch hẹn')) {
-        console.log('🔄 Auto-refreshing bookings due to notification');
-        toast.info('Danh sách đã được cập nhật tự động');
-        fetchBookings();
-      }
-    }
-  }, [notifications, connected]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -52,13 +37,22 @@ const StaffSampleCollection = () => {
       // Chỉ lấy bookings có status CONFIRMED để lấy mẫu
       const response = await getBookingsByStatusAPI('CONFIRMED', 1, 100);
 
-      if (response && response.content) {
+      console.log('🔍 Sample Collection API Response:', response);
+
+      if (response && response.data && response.data.content) {
+        console.log('✅ Using response.data.content:', response.data.content);
+        setBookings(response.data.content);
+        setFilteredBookings(response.data.content);
+      } else if (response && response.content) {
+        console.log('✅ Using response.content:', response.content);
         setBookings(response.content);
         setFilteredBookings(response.content);
       } else if (response && Array.isArray(response)) {
+        console.log('✅ Using response array:', response);
         setBookings(response);
         setFilteredBookings(response);
       } else {
+        console.log('❌ No valid data found, setting empty arrays');
         setBookings([]);
         setFilteredBookings([]);
       }
@@ -100,7 +94,10 @@ const StaffSampleCollection = () => {
     try {
       const response = await getBookingsByStatusAPI(status, 1, 100);
 
-      if (response && response.content) {
+      if (response && response.data && response.data.content) {
+        setBookings(response.data.content);
+        setFilteredBookings(response.data.content);
+      } else if (response && response.content) {
         setBookings(response.content);
         setFilteredBookings(response.content);
       } else if (response && Array.isArray(response)) {
@@ -222,7 +219,7 @@ const StaffSampleCollection = () => {
       case 'PENDING':
         return 'Chờ xác nhận';
       case 'CONFIRMED':
-        return 'Đã xác nhận';
+        return 'Xác nhận';
       case 'SAMPLE_COLLECTED':
         return 'Đã lấy mẫu';
       case 'TESTING':
@@ -283,18 +280,7 @@ const StaffSampleCollection = () => {
               </div>
             </div>
 
-            {/* Status Card */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 border border-green-200">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    WebSocket: {connected ? 'Đã kết nối' : 'Mất kết nối'}
-                  </p>
-                  <p className="text-xs text-gray-500">{notifications.length} thông báo</p>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
 

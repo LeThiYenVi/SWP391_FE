@@ -93,16 +93,16 @@
   }
   
   .text-blue-600 {
-    color: #2563eb !important;
+    color: #568392 !important;
   }
-  
+
   .text-blue-900 {
-    color: #1e3a8a !important;
+    color: #2d5a66 !important;
   }
-  
+
   /* Border styles for print */
   .border-blue-600 {
-    border-color: #2563eb !important;
+    border-color: #568392 !important;
   }
   
   .border-gray-300 {

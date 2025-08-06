@@ -167,7 +167,7 @@ const UpcomingAppointments = () => {
                 <div className="text-right">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {booking.status === 'PENDING' ? 'Chờ xác nhận' :
-                     booking.status === 'CONFIRMED' ? 'Đã xác nhận' : booking.status}
+                     booking.status === 'CONFIRMED' ? 'Xác nhận' : booking.status}
                   </span>
                 </div>
               </div>
@@ -213,7 +213,7 @@ const UpcomingAppointments = () => {
                 <div className="text-right">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     {consultation.status === 'PENDING' ? 'Chờ xác nhận' :
-                     consultation.status === 'CONFIRMED' ? 'Đã xác nhận' : consultation.status}
+                     consultation.status === 'CONFIRMED' ? 'Xác nhận' : consultation.status}
                   </span>
                 </div>
               </div>
@@ -1063,7 +1063,7 @@ const UserProfile = () => {
                             <AlertCircle className="h-5 w-5 text-blue-600 mr-3" />
                             <span className="text-blue-800 font-medium">
                               {booking.status === 'PENDING' && 'Đang chờ xác nhận từ phòng khám'}
-                              {booking.status === 'CONFIRMED' && 'Đã xác nhận, vui lòng đến đúng giờ hẹn'}
+                              {booking.status === 'CONFIRMED' && 'Xác nhận, vui lòng đến đúng giờ hẹn'}
                               {booking.status === 'SAMPLE_COLLECTED' && 'Đã lấy mẫu, đang chờ kết quả xét nghiệm'}
                               {booking.status === 'TESTING' && 'Đang tiến hành xét nghiệm, kết quả sẽ có sớm'}
                             </span>

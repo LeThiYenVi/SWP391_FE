@@ -33,7 +33,8 @@ const getAvailableFacilityTimeSlotsAPI = async (date) => {
       params: { date }
     });
     console.log('Get available facility time slots success:', response.data);
-    return response.data;
+    // Backend trả về ApiResponse wrapper, cần lấy data từ response.data.data
+    return response.data?.data || response.data;
   } catch (error) {
     console.error('Get available facility time slots error:', error.response?.data || error.message);
     throw error;

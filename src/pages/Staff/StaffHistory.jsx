@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, TestTube, Search, Calendar, User, FileText } from 'lucide-react';
+import { CheckCircle, TestTube, Search, Calendar, User, FileText, Edit } from 'lucide-react';
 import { getBookingsByStatusAPI } from '../../services/StaffService';
+import TestResultForm from '../../components/staff/TestResultForm';
 
 const StaffHistory = () => {
   const [completedBookings, setCompletedBookings] = useState([]);
@@ -8,6 +9,8 @@ const StaffHistory = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredBookings, setFilteredBookings] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchCompletedBookings();
@@ -36,7 +39,10 @@ const StaffHistory = () => {
       const response = await getBookingsByStatusAPI('COMPLETED', 1, 100);
       console.log('API Response:', response);
 
-      if (response && response.content) {
+      if (response && response.data && response.data.content) {
+        setCompletedBookings(response.data.content);
+        setFilteredBookings(response.data.content);
+      } else if (response && response.content) {
         setCompletedBookings(response.content);
         setFilteredBookings(response.content);
       } else if (response && Array.isArray(response)) {
@@ -105,6 +111,25 @@ const StaffHistory = () => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleEditResult = (booking) => {
+    setSelectedBooking(booking);
+    setShowEditModal(true);
+  };
+
+  const handleEditSuccess = (updatedBooking) => {
+    // Update the booking in the list
+    const updatedBookings = completedBookings.map(booking =>
+      booking.bookingId === updatedBooking.bookingId ? updatedBooking : booking
+    );
+    setCompletedBookings(updatedBookings);
+    setFilteredBookings(updatedBookings);
+    setShowEditModal(false);
+    setSelectedBooking(null);
+
+    // Refresh the list to get latest data
+    fetchCompletedBookings();
   };
 
   if (loading) {
@@ -221,7 +246,7 @@ const StaffHistory = () => {
                       <div className="space-y-2">
                         <div className="flex items-center">
                           <User className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">{booking.customerName}</span>
+                          <span className="text-sm text-gray-900">{booking.customerFullName || booking.customerName}</span>
                         </div>
 
                         <div className="text-sm text-gray-600">
@@ -230,12 +255,12 @@ const StaffHistory = () => {
 
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                          <span>Hẹn: {formatDate(booking.appointmentDate)}</span>
+                          <span>Hẹn: {formatDate(booking.slotDate || booking.appointmentDate)}</span>
                         </div>
 
-                        {booking.sampleCollectionDate && (
+                        {(booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate) && (
                           <div className="text-sm text-gray-600">
-                            <span className="font-medium">Lấy mẫu:</span> {formatDate(booking.sampleCollectionDate)} {formatTime(booking.sampleCollectionDate)}
+                            <span className="font-medium">Lấy mẫu:</span> {formatDate(booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate)} {formatTime(booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate)}
                           </div>
                         )}
 
@@ -244,6 +269,16 @@ const StaffHistory = () => {
                           <div className="mt-1 text-xs bg-white p-2 rounded border">
                             {booking.result || 'Chưa có kết quả'}
                           </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <button
+                            onClick={() => handleEditResult(booking)}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Sửa kết quả
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -277,6 +312,9 @@ const StaffHistory = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Kết quả
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Thao tác
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -288,7 +326,7 @@ const StaffHistory = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <User className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="text-sm text-gray-900">{booking.customerName}</span>
+                            <span className="text-sm text-gray-900">{booking.customerFullName || booking.customerName}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -297,15 +335,15 @@ const StaffHistory = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
-                            {formatDate(booking.appointmentDate)}
+                            {formatDate(booking.slotDate || booking.appointmentDate)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {booking.sampleCollectionDate ? (
+                          {booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate ? (
                             <div>
-                              <div>{formatDate(booking.sampleCollectionDate)}</div>
+                              <div>{formatDate(booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate)}</div>
                               <div className="text-xs text-gray-400">
-                                {formatTime(booking.sampleCollectionDate)}
+                                {formatTime(booking.sampleCollectionDate || booking.sampleCollectionProfile?.sampleCollectionDate)}
                               </div>
                             </div>
                           ) : (
@@ -329,6 +367,16 @@ const StaffHistory = () => {
                             {booking.result || 'Chưa có kết quả'}
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <button
+                            onClick={() => handleEditResult(booking)}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            title="Sửa kết quả"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Sửa
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -338,6 +386,39 @@ const StaffHistory = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Result Modal */}
+      {showEditModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Sửa kết quả xét nghiệm - #{selectedBooking.bookingId}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedBooking(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+
+              <TestResultForm
+                booking={selectedBooking}
+                onSuccess={handleEditSuccess}
+                onCancel={() => {
+                  setShowEditModal(false);
+                  setSelectedBooking(null);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

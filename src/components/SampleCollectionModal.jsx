@@ -20,6 +20,9 @@ const SampleCollectionModal = ({
   const [collectorGender, setCollectorGender] = useState('');
   const [relationshipToBooker, setRelationshipToBooker] = useState('SELF');
 
+  // Error states
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
     if (isOpen && booking) {
       // Set current time as default for sample collection
@@ -58,6 +61,8 @@ const SampleCollectionModal = ({
         setCollectorGender('');
         setRelationshipToBooker('SELF');
       }
+      // Clear errors when modal opens
+      setErrors({});
     }
   }, [isOpen, booking, isUpdating]);
 
@@ -74,25 +79,38 @@ const SampleCollectionModal = ({
   };
 
   const handleSubmit = () => {
+    const newErrors = {};
+
     if (!sampleCollectionDate) {
-      alert('Vui lòng nhập thời gian lấy mẫu');
-      return;
+      newErrors.sampleCollectionDate = 'Vui lòng nhập thời gian lấy mẫu';
     }
 
     if (!collectorFullName.trim()) {
-      alert('Vui lòng nhập họ tên người lấy mẫu');
-      return;
+      newErrors.collectorFullName = 'Vui lòng nhập họ tên người lấy mẫu';
     }
 
     if (!collectorIdCard.trim()) {
-      alert('Vui lòng nhập số CCCD/CMND');
-      return;
+      newErrors.collectorIdCard = 'Vui lòng nhập số CCCD/CMND';
+    } else {
+      // Validate ID card format (9-12 digits)
+      const idCardRegex = /^[0-9]{9,12}$/;
+      if (!idCardRegex.test(collectorIdCard.trim())) {
+        newErrors.collectorIdCard = 'Số CCCD/CMND phải từ 9-12 chữ số';
+      }
     }
 
-    // Validate ID card format (9-12 digits)
-    const idCardRegex = /^[0-9]{9,12}$/;
-    if (!idCardRegex.test(collectorIdCard.trim())) {
-      alert('Số CCCD/CMND phải từ 9-12 chữ số');
+    // Validate phone number if provided (must be 10 digits)
+    if (collectorPhoneNumber.trim()) {
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(collectorPhoneNumber.trim())) {
+        newErrors.collectorPhoneNumber = 'Số điện thoại phải có đúng 10 chữ số';
+      }
+    }
+
+    setErrors(newErrors);
+
+    // If there are errors, don't submit
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -182,7 +200,7 @@ const SampleCollectionModal = ({
               </div>
               <h3 className="text-lg font-semibold text-gray-800">Thông tin khách hàng</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Khách hàng</p>
                 <p className="text-sm font-medium text-gray-900">{booking.customerFullName}</p>
@@ -193,7 +211,15 @@ const SampleCollectionModal = ({
               </div>
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Ngày hẹn</p>
-                <p className="text-sm font-medium text-gray-900">{formatDate(booking.appointmentDate)}</p>
+                <p className="text-sm font-medium text-gray-900">{formatDate(booking.slotDate)}</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Giờ hẹn</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {booking.startTime && booking.endTime
+                    ? `${booking.startTime} - ${booking.endTime}`
+                    : 'Chưa xác định'}
+                </p>
               </div>
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">ID Booking</p>
@@ -231,11 +257,21 @@ const SampleCollectionModal = ({
                 </label>
                 <input
                   type="text"
-                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className={`w-full border-2 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.collectorFullName ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Nhập họ tên đầy đủ"
                   value={collectorFullName}
-                  onChange={(e) => setCollectorFullName(e.target.value)}
+                  onChange={(e) => {
+                    setCollectorFullName(e.target.value);
+                    if (errors.collectorFullName) {
+                      setErrors(prev => ({ ...prev, collectorFullName: '' }));
+                    }
+                  }}
                 />
+                {errors.collectorFullName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.collectorFullName}</p>
+                )}
               </div>
 
               {/* Số CCCD */}
@@ -245,11 +281,21 @@ const SampleCollectionModal = ({
                 </label>
                 <input
                   type="text"
-                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className={`w-full border-2 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.collectorIdCard ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Nhập số CCCD/CMND (9-12 chữ số)"
                   value={collectorIdCard}
-                  onChange={(e) => setCollectorIdCard(e.target.value)}
+                  onChange={(e) => {
+                    setCollectorIdCard(e.target.value);
+                    if (errors.collectorIdCard) {
+                      setErrors(prev => ({ ...prev, collectorIdCard: '' }));
+                    }
+                  }}
                 />
+                {errors.collectorIdCard && (
+                  <p className="text-red-500 text-sm mt-1">{errors.collectorIdCard}</p>
+                )}
               </div>
 
               {/* Số điện thoại */}
@@ -259,11 +305,21 @@ const SampleCollectionModal = ({
                 </label>
                 <input
                   type="text"
-                  className="w-full border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Nhập số điện thoại (tùy chọn)"
+                  className={`w-full border-2 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.collectorPhoneNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Nhập số điện thoại (10 chữ số, tùy chọn)"
                   value={collectorPhoneNumber}
-                  onChange={(e) => setCollectorPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    setCollectorPhoneNumber(e.target.value);
+                    if (errors.collectorPhoneNumber) {
+                      setErrors(prev => ({ ...prev, collectorPhoneNumber: '' }));
+                    }
+                  }}
                 />
+                {errors.collectorPhoneNumber && (
+                  <p className="text-red-500 text-sm mt-1">{errors.collectorPhoneNumber}</p>
+                )}
               </div>
 
               {/* Ngày sinh */}
@@ -331,15 +387,25 @@ const SampleCollectionModal = ({
               <div className="relative">
                 <input
                   type="datetime-local"
-                  className={`w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
-                    isUpdating
-                      ? 'focus:ring-orange-500 focus:border-orange-500'
-                      : 'focus:ring-blue-500 focus:border-blue-500'
-                  } bg-white shadow-sm`}
+                  className={`w-full border-2 rounded-xl p-4 focus:ring-2 focus:ring-offset-2 transition-all duration-200 bg-white shadow-sm ${
+                    errors.sampleCollectionDate
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                      : isUpdating
+                        ? 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                        : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
                   value={sampleCollectionDate}
-                  onChange={(e) => setSampleCollectionDate(e.target.value)}
+                  onChange={(e) => {
+                    setSampleCollectionDate(e.target.value);
+                    if (errors.sampleCollectionDate) {
+                      setErrors(prev => ({ ...prev, sampleCollectionDate: '' }));
+                    }
+                  }}
                 />
               </div>
+              {errors.sampleCollectionDate && (
+                <p className="text-red-500 text-sm mt-1">{errors.sampleCollectionDate}</p>
+              )}
             </div>
 
             <div className="mt-6">

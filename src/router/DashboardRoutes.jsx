@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import Dashboard from '../pages/User/Dashboard';
 import CycleTracking from '../pages/User/CycleTracking';
 import Consultation from '../pages/User/Consultation';
+import ConsultationNew from '../pages/User/Consultation/ConsultationNew';
 import STITesting from '../pages/User/STITesting';
 import BookingConfirmation from '../pages/User/STITesting/BookingConfirmation';
 import BookingConfirmationNew from '../pages/User/BookingConfirmation';
@@ -35,6 +36,14 @@ const DashboardRoutes = [
     element: (
       <ProtectedRoute>
         <Consultation />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/consultation-new',
+    element: (
+      <ProtectedRoute>
+        <ConsultationNew />
       </ProtectedRoute>
     ),
   },

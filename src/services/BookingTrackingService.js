@@ -1,5 +1,23 @@
-// Legacy service - Sử dụng WebSocketContext thay thế
-// Giữ lại để tương thích với code cũ
+/**
+ * WORKFLOW: Legacy BookingTrackingService - DEPRECATED
+ *
+ * MỤC ĐÍCH:
+ * - Service cũ để tracking booking qua WebSocket
+ * - Hiện tại đã deprecated, thay thế bằng WebSocketContext + useWebSocket hook
+ * - Giữ lại để tương thích với code cũ (backward compatibility)
+ *
+ * KIẾN TRÚC MỚI:
+ * - WebSocketContext: Global WebSocket connection management
+ * - useWebSocket hook: Component-level WebSocket operations
+ * - BookingTrackingService: Legacy wrapper (deprecated)
+ *
+ * WORKFLOW TRACKING:
+ * 1. Customer mở trang tracking
+ * 2. useWebSocket hook tự động connect WebSocket
+ * 3. Subscribe /topic/booking/{bookingId}
+ * 4. Nhận real-time updates từ backend
+ * 5. Auto-cleanup khi unmount component
+ */
 
 class BookingTrackingService {
   constructor() {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { useAuth } from './AuthContext';
+import { AuthContext } from './AuthContext';
 
 const SimpleWebSocketContext = createContext();
 
@@ -14,7 +14,16 @@ export const useSimpleWebSocket = () => {
 };
 
 export const SimpleWebSocketProvider = ({ children }) => {
-  const { user } = useAuth();
+  // Safely get auth context with error handling
+  const authContext = useContext(AuthContext);
+
+  // If AuthContext is not available, don't crash - just return children
+  if (!authContext) {
+    console.warn('SimpleWebSocketProvider: AuthContext not available yet');
+    return children;
+  }
+
+  const user = authContext?.user;
   const [connected, setConnected] = useState(false);
   const clientRef = useRef(null);
   const subscriptionsRef = useRef({});
@@ -22,11 +31,8 @@ export const SimpleWebSocketProvider = ({ children }) => {
   // Connect to WebSocket
   const connect = () => {
     if (clientRef.current?.connected) {
-      console.log('🔌 WebSocket already connected');
       return;
     }
-
-    console.log('🔌 Connecting to WebSocket...');
     
     const client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
@@ -34,17 +40,14 @@ export const SimpleWebSocketProvider = ({ children }) => {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('✅ WebSocket connected');
         setConnected(true);
       },
       onDisconnect: () => {
-        console.log('❌ WebSocket disconnected');
         setConnected(false);
         // Clear all subscriptions
         subscriptionsRef.current = {};
       },
       onStompError: (frame) => {
-        console.error('❌ WebSocket STOMP error:', frame);
         setConnected(false);
       }
     });
@@ -56,7 +59,7 @@ export const SimpleWebSocketProvider = ({ children }) => {
   // Disconnect from WebSocket
   const disconnect = () => {
     if (clientRef.current) {
-      console.log('🔌 Disconnecting WebSocket...');
+
       
       // Unsubscribe from all topics
       Object.values(subscriptionsRef.current).forEach(subscription => {
@@ -75,7 +78,6 @@ export const SimpleWebSocketProvider = ({ children }) => {
   // Subscribe to booking-specific topic
   const subscribeToBooking = (bookingId, onMessage) => {
     if (!clientRef.current?.connected) {
-      console.warn('⚠️ WebSocket not connected, cannot subscribe to booking');
       return null;
     }
 
@@ -84,7 +86,6 @@ export const SimpleWebSocketProvider = ({ children }) => {
 
     // Check if already subscribed
     if (subscriptionsRef.current[subscriptionKey]) {
-      console.log(`⚠️ Already subscribed to booking #${bookingId}`);
       return subscriptionsRef.current[subscriptionKey];
     }
 
@@ -92,21 +93,18 @@ export const SimpleWebSocketProvider = ({ children }) => {
       const subscription = clientRef.current.subscribe(topic, (message) => {
         try {
           const update = JSON.parse(message.body);
-          console.log('📨 Received booking update:', update);
-          
+
           if (onMessage) {
             onMessage(update);
           }
         } catch (error) {
-          console.error('❌ Error parsing WebSocket message:', error);
+          // Silent error handling
         }
       });
 
       subscriptionsRef.current[subscriptionKey] = subscription;
-      console.log(`📱 Subscribed to booking #${bookingId} at topic: ${topic}`);
       return subscription;
     } catch (error) {
-      console.error('❌ Error subscribing to booking:', error);
       return null;
     }
   };
@@ -119,7 +117,6 @@ export const SimpleWebSocketProvider = ({ children }) => {
     if (subscription) {
       subscription.unsubscribe();
       delete subscriptionsRef.current[subscriptionKey];
-      console.log(`📱 Unsubscribed from booking #${bookingId}`);
     }
   };
 

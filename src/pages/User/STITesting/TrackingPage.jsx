@@ -120,7 +120,7 @@ const TrackingPage = () => {
         // Create status labels mapping
         const statusLabels = {
           'PENDING': 'Chờ xác nhận',
-          'CONFIRMED': 'Đã xác nhận',
+          'CONFIRMED': 'Xác nhận',
           'SAMPLE_COLLECTED': 'Đã lấy mẫu',
           'TESTING': 'Đang xét nghiệm',
           'COMPLETED': 'Hoàn thành',

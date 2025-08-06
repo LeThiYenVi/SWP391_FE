@@ -6,10 +6,10 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import TestResultForm from '../../components/staff/TestResultForm';
 import { toast } from 'react-toastify';
-import { useWebSocket } from '../../hooks/useWebSocketCompat';
+
 
 const StaffUploadResult = () => {
-  const { connected, notifications } = useWebSocket();
+
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,23 +28,7 @@ const StaffUploadResult = () => {
     filterBookings();
   }, [searchTerm, statusFilter, dateFilter, bookings]);
 
-  // Listen for WebSocket notifications to auto-refresh
-  useEffect(() => {
-    if (connected && notifications.length > 0) {
-      const latestNotification = notifications[notifications.length - 1];
-      console.log('📨 Staff Upload Result received notification:', latestNotification);
 
-      // If it's a booking status update, refresh the list
-      if (latestNotification.type === 'booking_status_update' ||
-          latestNotification.message?.includes('booking') ||
-          latestNotification.message?.includes('lịch hẹn') ||
-          latestNotification.message?.includes('mẫu')) {
-        console.log('🔄 Auto-refreshing bookings due to notification');
-        toast.info('Danh sách đã được cập nhật tự động');
-        fetchBookings();
-      }
-    }
-  }, [notifications, connected]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -52,19 +36,22 @@ const StaffUploadResult = () => {
       // Gọi API để lấy bookings theo status SAMPLE_COLLECTED
       const response = await getBookingsByStatusAPI('SAMPLE_COLLECTED', 1, 100);
 
-      if (response && response.content) {
-        console.log('📋 Bookings loaded:', response.content);
-        console.log('📋 Sample collection profiles:', response.content.map(b => ({
-          id: b.bookingId,
-          profile: b.sampleCollectionProfile
-        })));
+      console.log('🔍 Upload Result API Response:', response);
+
+      if (response && response.data && response.data.content) {
+        console.log('✅ Using response.data.content:', response.data.content);
+        setBookings(response.data.content);
+        setFilteredBookings(response.data.content);
+      } else if (response && response.content) {
+        console.log('✅ Using response.content:', response.content);
         setBookings(response.content);
         setFilteredBookings(response.content);
       } else if (response && Array.isArray(response)) {
-        console.log('📋 Bookings loaded (array):', response);
+        console.log('✅ Using response array:', response);
         setBookings(response);
         setFilteredBookings(response);
       } else {
+        console.log('❌ No valid data found, setting empty arrays');
         setBookings([]);
         setFilteredBookings([]);
       }
@@ -113,13 +100,22 @@ const StaffUploadResult = () => {
     try {
       const response = await getBookingsByStatusAPI(status, 1, 100);
 
-      if (response && response.content) {
+      console.log('🔍 Fetch Bookings By Status API Response:', response);
+
+      if (response && response.data && response.data.content) {
+        console.log('✅ Using response.data.content:', response.data.content);
+        setBookings(response.data.content);
+        setFilteredBookings(response.data.content);
+      } else if (response && response.content) {
+        console.log('✅ Using response.content:', response.content);
         setBookings(response.content);
         setFilteredBookings(response.content);
       } else if (response && Array.isArray(response)) {
+        console.log('✅ Using response array:', response);
         setBookings(response);
         setFilteredBookings(response);
       } else {
+        console.log('❌ No valid data found, setting empty arrays');
         setBookings([]);
         setFilteredBookings([]);
       }
@@ -169,8 +165,7 @@ const StaffUploadResult = () => {
         resultDate: new Date(resultDate).toISOString() // Convert to ISO string for backend
       };
 
-      console.log('📤 Sending result data:', resultData);
-      console.log('📤 Booking ID:', selectedBooking.bookingId);
+
 
       // Call API to update test result
       const result = await BookingService.updateTestResult(selectedBooking.bookingId, resultData);
@@ -205,10 +200,6 @@ const StaffUploadResult = () => {
       // Refresh data
       fetchBookings();
     } catch (err) {
-      console.error('❌ Error uploading result:', err);
-      console.error('❌ Error response:', err.response?.data);
-      console.error('❌ Error status:', err.response?.status);
-
       const errorMessage = err.response?.data?.message || err.message || 'Không thể cập nhật kết quả xét nghiệm';
       toast.error(`❌ ${errorMessage}`, {
         toastId: `error-result-${selectedBooking?.bookingId || 'unknown'}`, // Prevent duplicates
@@ -315,10 +306,7 @@ const StaffUploadResult = () => {
       <div className="mb-4 md:mb-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">Nhập kết quả xét nghiệm</h1>
-          <div className="text-xs md:text-sm bg-gray-100 p-2 rounded">
-            <div>WebSocket: {connected ? '✅ Kết nối' : '❌ Không kết nối'}</div>
-            <div>Thông báo: {notifications.length}</div>
-          </div>
+
         </div>
       </div>
 

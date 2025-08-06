@@ -32,7 +32,8 @@ instance.interceptors.response.use(
         };
         return Promise.reject(error);
       }
-      response.data = response.data.data || response.data;
+      // ✅ KEEP original ApiResponse structure: { success, message, data }
+      // Don't extract only data, keep the full response for proper handling
     }
 
     return response;

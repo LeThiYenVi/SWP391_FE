@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage.jsx';
 import SearchPage from '../pages/Search/Search.jsx';
 import Consultation from '../pages/User/Consultation/index.jsx';
+import ConsultationNew from '../pages/User/Consultation/ConsultationNew.jsx';
 import CycleTracking from '../pages/User/CycleTracking/index.jsx';
 import STITesting from '../pages/User/STITesting/index.jsx';
 import QA from '../pages/User/QA/index.jsx';
@@ -14,6 +15,7 @@ import BlogService from '../services/BlogService';
 import { toast } from 'react-toastify';
 import BlogDetailPage from '../pages/BlogDetailPage';
 import BlogPage from '../pages/BlogPage';
+import TimeslotPickerDemo from '../components/TimeslotPicker/demo';
 import axios from 'axios';
 
 // Simple placeholder components for missing pages
@@ -729,7 +731,7 @@ const HomePageRoutes = [
     element: (
       <ProtectedRoute>
         <MainLayout title="Tư vấn trực tuyến - Gynexa">
-          <Consultation />
+          <ConsultationNew />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -833,6 +835,12 @@ const HomePageRoutes = [
   {
     path: '/chinh-sach-bao-mat',
     element: <PrivacyPage />,
+  },
+
+  // Demo routes
+  {
+    path: '/demo/timeslot-picker',
+    element: <TimeslotPickerDemo />,
   },
 
   // Catch-all route for 404 errors - MUST be last

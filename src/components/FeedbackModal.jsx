@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Star as StarIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { submitConsultationFeedbackAPI, getConsultationFeedbackAPI } from '../services/FeedbackService';
+import { submitConsultationFeedbackAPI, getConsultationFeedbackAPI, getBookingFeedbackAPI } from '../services/FeedbackService';
 import { useAuth } from '../context/AuthContext';
 
 const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitted }) => {
@@ -65,9 +65,7 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
 
       const response = await submitConsultationFeedbackAPI(feedbackData);
       
-      // Response đã được xử lý bởi customize-axios interceptor
-      // Nếu thành công, response.data sẽ chứa data thực tế
-      // Nếu lỗi, sẽ throw error
+      // Response từ customize-axios sẽ có cấu trúc { success, message, data }
       toast.success('Gửi phản hồi thành công!');
       onFeedbackSubmitted && onFeedbackSubmitted();
       handleClose();
@@ -81,51 +79,65 @@ const FeedbackModal = ({ open, onClose, consultation, booking, onFeedbackSubmitt
 
   // Kiểm tra feedback hiện tại khi modal mở
   useEffect(() => {
-    if (open && consultation) {
+    if (open && (consultation || booking)) {
       checkExistingFeedback();
     }
-  }, [open, consultation]);
+  }, [open, consultation, booking]);
 
   const checkExistingFeedback = async () => {
     try {
       setCheckingFeedback(true);
       setError('');
       
-      // Kiểm tra từ consultation data trước
-      if (consultation.hasFeedback) {
-        setExistingFeedback({
-          rating: consultation.feedbackRating,
-          comment: consultation.feedbackComment,
-          createdAt: consultation.feedbackCreatedAt
-        });
-        setError('Bạn đã đánh giá consultation này rồi');
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-        return;
-      }
-      
-      // Nếu không có trong data, kiểm tra API
-      const response = await getConsultationFeedbackAPI(consultation.id);
-      // Response đã được xử lý bởi customize-axios interceptor
-      // Kiểm tra xem response có phải là object gốc không (có field success)
-      if (response && typeof response === 'object' && response.success !== undefined) {
-        // Đây là object gốc từ API, có nghĩa là data = null (chưa có feedback)
-        setExistingFeedback(null);
-      } else if (response && response !== null) {
-        // Đây là data thực tế (đã có feedback)
-        setExistingFeedback(response);
-        setError('Bạn đã đánh giá consultation này rồi');
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-      } else {
-        setExistingFeedback(null);
+      if (consultation) {
+        // Kiểm tra từ consultation data trước
+        if (consultation.hasFeedback) {
+          setExistingFeedback({
+            rating: consultation.feedbackRating,
+            comment: consultation.feedbackComment,
+            createdAt: consultation.feedbackCreatedAt
+          });
+          setError('Bạn đã đánh giá consultation này rồi');
+          setTimeout(() => {
+            handleClose();
+          }, 2000);
+          return;
+        }
+        
+        // Nếu không có trong data, kiểm tra API
+        const response = await getConsultationFeedbackAPI(consultation.id);
+        // Response từ customize-axios sẽ có cấu trúc { success, message, data }
+        if (response && response.success && response.data) {
+          // Đã có feedback
+          setExistingFeedback(response.data);
+          setError('Bạn đã đánh giá consultation này rồi');
+          setTimeout(() => {
+            handleClose();
+          }, 2000);
+        } else {
+          // Chưa có feedback
+          setExistingFeedback(null);
+        }
+      } else if (booking) {
+        // Kiểm tra feedback cho booking
+        const response = await getBookingFeedbackAPI(booking.bookingId);
+        // Response từ customize-axios sẽ có cấu trúc { success, message, data }
+        if (response && response.success && response.data) {
+          // Đã có feedback
+          setExistingFeedback(response.data);
+          setError('Bạn đã đánh giá booking này rồi');
+          setTimeout(() => {
+            handleClose();
+          }, 2000);
+        } else {
+          // Chưa có feedback
+          setExistingFeedback(null);
+        }
       }
     } catch (error) {
       console.error('Check existing feedback error:', error);
       if (error.response?.status === 404) {
-        setExistingFeedback(null);
+        setExistingFeedback(null); // Không có feedback
       } else {
         setError('Có lỗi xảy ra khi kiểm tra đánh giá');
       }
