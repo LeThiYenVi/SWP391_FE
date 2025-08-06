@@ -10,7 +10,7 @@ const WebSocketContext = createContext();
 export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
   if (!context) {
-    throw new Error('useWebSocket must be used within a WebSocketProvider');
+    throw new Error('useWebSocket phải được sử dụng trong WebSocketProvider');
   }
   return context;
 };
